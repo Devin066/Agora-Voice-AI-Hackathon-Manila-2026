@@ -35,15 +35,15 @@ event:
     - Register an Agora Developer account in advance: https://console.agora.io/
 
 judges:
-  - name: "TBA"
+  - name: "Hennessy Vince Solis"
     title: "TBA"
     organization: "Agora"
-    expertise: "Agora RTC SDK"
+    expertise: "Agora SDK"
 
   - name: "Derek Zheng"
     title: "DevRel & Partnership"
     organization: "Agora"
-    expertise: "Agora RTC SDK"
+    expertise: "Agora SDK"
 
 project_constraints:
   required_technologies:
@@ -93,9 +93,6 @@ resources:
 
     - name: "Agora Convo AI Guides"
       url: "https://docs.agora.io/en/conversational-ai/overview/product-overview"
-
-    - name: "TEN Framework"
-      url: "https://github.com/TEN-framework/ten-framework"
 
     - name: "Hackathon Technical Handbook"
       url: "https://github.com/AgoraIO-Community/hackathon-handbook"

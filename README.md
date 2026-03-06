@@ -102,7 +102,6 @@ Get up and running quickly with these official repositories:
 - [Agora Developer Console](https://console.agora.io/)
 - [Event Page (Luma)](https://luma.com/iuxsx2ia)
 - [Agora Convo AI Guides](https://docs.agora.io/en/conversational-ai/overview/product-overview)
-- [TEN Framework](https://github.com/TEN-framework/ten-framework)
 - [Hackathon Technical Handbook](https://github.com/AgoraIO-Community/hackathon-handbook)
 - [TRAE IDE User Guide](https://trae.ai/docs)
 
@@ -133,6 +132,7 @@ cd Agora-Voice-AI-Hackathon-Manila-2026
 Inside the `submissions/` directory, create a new folder using your team name.  
 Example:
 
+```text
 submissions/
   ├── team-name/
   │   ├── README.md
@@ -141,6 +141,7 @@ submissions/
   │   ├── infra/
   │   └── docs/
 
+```
 
 ### **4. Work on Your Project**
 
@@ -172,7 +173,9 @@ git push
 
 ## 🏆 **Judging Criteria**
 
-Projects will be evaluated based on:## Judging Criteria
+Projects will be evaluated based on:
+
+## Judging Criteria
 
 The evaluation process consists of two rounds.
 
@@ -201,7 +204,7 @@ The evaluation process consists of two rounds.
 
 ✅ **Presentation & Pitch** (20%) – Clear, engaging delivery of problem, solution, and demo with strong storytelling and visuals.
 ### Judging Panel
-- **TBA** – TBA, Agora
+- **Hennessy Vince Solis** – TBA, Agora
 - **Derek Zheng** – DevRel & Partnership, Agora
 
 

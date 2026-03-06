@@ -9,14 +9,14 @@ This rubric provides a structured framework for evaluating hackathon submissions
 ## Judging Panel
 
 
-### TBA
+### Hennessy Vince Solis
 **TBA** | Agora  
-_Expertise: Agora RTC SDK_
+_Expertise: Agora SDK_
 
 
 ### Derek Zheng
 **DevRel & Partnership** | Agora  
-_Expertise: Agora RTC SDK_
+_Expertise: Agora SDK_
 
 
 

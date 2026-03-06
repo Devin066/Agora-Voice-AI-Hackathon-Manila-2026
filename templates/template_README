@@ -85,7 +85,9 @@ cd {{repo_name}}
 Inside the `submissions/` directory, create a new folder using your team name.  
 Example:
 
+```text
 {{submission_guidelines.team_folder_structure}}
+```
 
 ### **4. Work on Your Project**
 
@@ -117,7 +119,9 @@ git push
 
 ## 🏆 **Judging Criteria**
 
-Projects will be evaluated based on:## Judging Criteria
+Projects will be evaluated based on:
+
+## Judging Criteria
 
 The evaluation process consists of two rounds.
 
