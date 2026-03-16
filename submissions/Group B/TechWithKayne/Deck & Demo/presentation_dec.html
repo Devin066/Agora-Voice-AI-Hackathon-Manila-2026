@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UgnayAI — Agora Voice AI Hackathon Manila 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:    #FF3B30;
+      --red-dim: #7A1A14;
+      --yellow: #FFD60A;
+      --yellow-dim: #6B5700;
+      --green:  #30D158;
+      --green-dim: #0D5C26;
+      --bg:     #0A0A0F;
+      --bg2:    #12121A;
+      --bg3:    #1A1A26;
+      --border: rgba(255,255,255,0.08);
+      --text:   #F0F0F8;
+      --muted:  rgba(240,240,248,0.5);
+      --accent: #5E5CE6;
+      --accent2: #BF5AF2;
+    }
+
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+    /* ── DECK SHELL ── */
+    #deck { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px; z-index: 100;
+      background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+      transition: width 0.4s ease;
+      box-shadow: 0 0 12px rgba(48,209,88,0.6);
+    }
+
+    /* ── SLIDE COUNTER ── */
+    #counter {
+      position: fixed; bottom: 24px; right: 32px; z-index: 100;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+      color: var(--muted); font-family: 'Space Grotesk', sans-serif;
+    }
+    #counter span { color: var(--text); }
+
+    /* ── NAV HINTS ── */
+    #nav-hint {
+      position: fixed; bottom: 24px; left: 32px; z-index: 100;
+      font-size: 12px; color: var(--muted); letter-spacing: 0.05em;
+    }
+
+    /* ── SLIDES ── */
+    .slide {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      padding: 48px 64px;
+      opacity: 0; transform: translateX(60px);
+      transition: opacity 0.5s cubic-bezier(.4,0,.2,1), transform 0.5s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .slide.active {
+      opacity: 1; transform: translateX(0);
+      pointer-events: all;
+    }
+    .slide.exit {
+      opacity: 0; transform: translateX(-60px);
+    }
+
+    /* ── BACKGROUNDS ── */
+    .bg-dark    { background: var(--bg); }
+    .bg-darker  { background: #060608; }
+    .bg-mesh    { background: radial-gradient(ellipse at 20% 20%, rgba(94,92,230,0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(191,90,242,0.08) 0%, transparent 50%), var(--bg); }
+    .bg-red-glow { background: radial-gradient(ellipse at 50% 40%, rgba(255,59,48,0.15) 0%, transparent 55%), var(--bg); }
+    .bg-green-glow { background: radial-gradient(ellipse at 50% 40%, rgba(48,209,88,0.10) 0%, transparent 55%), var(--bg); }
+
+    /* Animated grid pattern overlay */
+    .slide::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* ── TYPOGRAPHY ── */
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .slide-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 4.5vw, 4.2rem);
+      font-weight: 800; line-height: 1.05;
+      text-align: center; margin-bottom: 20px;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.75) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .slide-subtitle {
+      font-size: clamp(0.95rem, 1.6vw, 1.25rem); color: var(--muted);
+      text-align: center; line-height: 1.7; max-width: 680px;
+    }
+
+    /* ── PILL BADGE ── */
+    .pill {
+      display: inline-block; padding: 5px 14px; border-radius: 100px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .pill-red    { background: rgba(255,59,48,0.15);  color: var(--red);    border: 1px solid rgba(255,59,48,0.3); }
+    .pill-yellow { background: rgba(255,214,10,0.12); color: var(--yellow); border: 1px solid rgba(255,214,10,0.3); }
+    .pill-green  { background: rgba(48,209,88,0.12);  color: var(--green);  border: 1px solid rgba(48,209,88,0.3); }
+    .pill-accent { background: rgba(94,92,230,0.15);  color: #A5A3FF;       border: 1px solid rgba(94,92,230,0.3); }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 32px;
+      backdrop-filter: blur(10px);
+    }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 1 — TITLE                             */
+    /* ─────────────────────────────────────────── */
+    #s1 .logo-text {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(4rem, 10vw, 9rem);
+      font-weight: 900; letter-spacing: -0.03em; line-height: 1;
+      background: linear-gradient(135deg, #fff 0%, #A5A3FF 50%, var(--accent2) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+    #s1 .tagline-big {
+      font-size: clamp(1rem, 2.2vw, 1.5rem); font-weight: 300; letter-spacing: 0.04em;
+      color: rgba(240,240,248,0.65); text-align: center; margin-top: 4px;
+    }
+    #s1 .triage-pills { display: flex; gap: 10px; margin-top: 32px; flex-wrap: wrap; justify-content: center; }
+    #s1 .meta { margin-top: 28px; font-size: 13px; color: var(--muted); text-align: center; line-height: 2; }
+    #s1 .meta strong { color: var(--text); }
+    #s1 .tagline-cta {
+      margin-top: 36px; font-size: clamp(0.9rem, 1.8vw, 1.2rem);
+      color: #A5A3FF; font-weight: 600; text-align: center; letter-spacing: 0.03em;
+      padding: 14px 32px; border: 1px solid rgba(165,163,255,0.25);
+      border-radius: 100px; background: rgba(94,92,230,0.1);
+    }
+
+    /* Orbiting ring decoration */
+    #s1 .ring {
+      position: absolute; border-radius: 50%; border: 1px solid;
+      animation: spin linear infinite; pointer-events: none;
+    }
+    #s1 .ring-1 { width: 420px; height: 420px; top: 50%; left: 50%; margin-top: -210px; margin-left: -210px; border-color: rgba(94,92,230,0.12); animation-duration: 30s; }
+    #s1 .ring-2 { width: 620px; height: 620px; top: 50%; left: 50%; margin-top: -310px; margin-left: -310px; border-color: rgba(191,90,242,0.07); animation-duration: 45s; animation-direction: reverse; }
+    #s1 .ring-3 { width: 820px; height: 820px; top: 50%; left: 50%; margin-top: -410px; margin-left: -410px; border-color: rgba(48,209,88,0.05); animation-duration: 60s; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 2 — THE PROBLEM                       */
+    /* ─────────────────────────────────────────── */
+    #s2 .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+      width: 100%; max-width: 900px; margin: 32px 0;
+    }
+    .stat-box {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px 20px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .stat-box::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    }
+    .stat-box.red-box::after  { background: var(--red);    box-shadow: 0 0 16px var(--red); }
+    .stat-box.yellow-box::after { background: var(--yellow); box-shadow: 0 0 16px var(--yellow); }
+    .stat-box.green-box::after  { background: var(--green);  box-shadow: 0 0 16px var(--green); }
+
+    .stat-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 4.2rem); font-weight: 800; line-height: 1;
+    }
+    .stat-box.red-box    .stat-num { color: var(--red); }
+    .stat-box.yellow-box .stat-num { color: var(--yellow); }
+    .stat-box.green-box  .stat-num { color: var(--green); }
+    .stat-label { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+    #s2 .quote-block {
+      max-width: 700px; text-align: center;
+      padding: 24px 32px; margin-top: 8px;
+      border-left: 3px solid var(--red); background: rgba(255,59,48,0.06);
+      border-radius: 0 12px 12px 0;
+    }
+    #s2 .quote-fil { font-size: clamp(0.9rem, 1.5vw, 1.15rem); font-style: italic; color: var(--text); line-height: 1.7; }
+    #s2 .quote-eng { font-size: 12px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 3 — BROKEN CHAIN                      */
+    /* ─────────────────────────────────────────── */
+    #s3 .chain {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0; margin: 24px 0; width: 100%; max-width: 600px;
+    }
+    .chain-step {
+      display: flex; align-items: center; gap: 16px;
+      width: 100%; padding: 14px 24px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; position: relative;
+    }
+    .chain-step.danger { border-color: rgba(255,59,48,0.3); background: rgba(255,59,48,0.06); }
+    .chain-step .step-icon { font-size: 1.4rem; width: 36px; text-align: center; flex-shrink: 0; }
+    .chain-step .step-text { font-size: clamp(0.8rem, 1.4vw, 1rem); font-weight: 500; }
+    .chain-step.danger .step-text { color: var(--red); }
+    .chain-arrow {
+      width: 2px; height: 20px; background: rgba(255,255,255,0.1);
+      position: relative;
+    }
+    .chain-arrow::after {
+      content: '▼'; position: absolute; bottom: -8px; left: 50%;
+      transform: translateX(-50%); font-size: 10px; color: var(--muted);
+    }
+    #s3 .caption {
+      margin-top: 24px; font-size: clamp(0.85rem, 1.5vw, 1.1rem);
+      font-weight: 700; color: var(--yellow);
+      padding: 12px 28px; border: 1px solid rgba(255,214,10,0.25);
+      border-radius: 100px; background: rgba(255,214,10,0.08);
+    }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 4 — THE SOLUTION                      */
+    /* ─────────────────────────────────────────── */
+    #s4 .steps-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 24px; width: 100%; max-width: 920px; margin-top: 32px;
+    }
+    .step-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px 24px; text-align: center;
+      position: relative; overflow: hidden;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .step-card:hover { transform: translateY(-6px); }
+    .step-card.s-green { border-top: 3px solid var(--green); }
+    .step-card.s-yellow { border-top: 3px solid var(--yellow); }
+    .step-card.s-red { border-top: 3px solid var(--red); }
+    .step-number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem; font-weight: 900; line-height: 1; opacity: 0.12;
+      position: absolute; top: 16px; right: 20px;
+    }
+    .step-card.s-green .step-number { color: var(--green); }
+    .step-card.s-yellow .step-number { color: var(--yellow); }
+    .step-card.s-red .step-number { color: var(--red); }
+    .step-icon-big { font-size: 2.8rem; margin-bottom: 16px; }
+    .step-verb {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.6rem; font-weight: 800; margin-bottom: 12px;
+      letter-spacing: 0.05em;
+    }
+    .step-card.s-green .step-verb { color: var(--green); }
+    .step-card.s-yellow .step-verb { color: var(--yellow); }
+    .step-card.s-red .step-verb { color: var(--red); }
+    .step-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 5 — AGORA INTEGRATION                 */
+    /* ─────────────────────────────────────────── */
+    #s5 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 980px; margin-top: 32px; }
+    .agora-card {
+      border-radius: 20px; padding: 32px;
+      border: 1px solid var(--border); position: relative; overflow: hidden;
+    }
+    .agora-card::before {
+      content: ''; position: absolute; inset: 0; opacity: 0.04;
+    }
+    .agora-card.conv { background: linear-gradient(135deg, rgba(94,92,230,0.15), var(--bg3)); border-color: rgba(94,92,230,0.3); }
+    .agora-card.rtc  { background: linear-gradient(135deg, rgba(48,209,88,0.1), var(--bg3)); border-color: rgba(48,209,88,0.3); }
+    .agora-card h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
+    .agora-card.conv h3 { color: #A5A3FF; }
+    .agora-card.rtc  h3 { color: var(--green); }
+    .agora-card ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .agora-card li { font-size: 0.9rem; color: var(--muted); padding-left: 20px; position: relative; line-height: 1.5; }
+    .agora-card li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+    .agora-card.rtc li::before { color: var(--green); }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 6 — ARCHITECTURE                      */
+    /* ─────────────────────────────────────────── */
+    #s6 .arch-diagram {
+      width: 100%; max-width: 860px; margin-top: 28px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .arch-layer {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 24px;
+    }
+    .arch-layer.frontend { border-color: rgba(94,92,230,0.4); }
+    .arch-layer.backend  { border-color: rgba(48,209,88,0.3); }
+    .arch-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+    }
+    .arch-layer.frontend .arch-label { color: #A5A3FF; }
+    .arch-layer.backend  .arch-label { color: var(--green); }
+    .arch-boxes { display: flex; flex-wrap: wrap; gap: 10px; }
+    .arch-box {
+      padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: 1px solid; display: flex; align-items: center; gap: 6px;
+    }
+    .arch-box.agora-conv { background: rgba(94,92,230,0.15); border-color: rgba(94,92,230,0.4); color: #A5A3FF; }
+    .arch-box.agora-rtc  { background: rgba(48,209,88,0.1);  border-color: rgba(48,209,88,0.3);  color: var(--green); }
+    .arch-box.react      { background: rgba(97,218,251,0.1);  border-color: rgba(97,218,251,0.3);  color: #61DAFB; }
+    .arch-box.express    { background: rgba(255,255,255,0.05); border-color: var(--border); color: var(--text); }
+    .arch-box.bedrock    { background: rgba(255,153,0,0.1);   border-color: rgba(255,153,0,0.3);   color: #FF9900; }
+    .arch-box.supabase   { background: rgba(63,207,142,0.1);  border-color: rgba(63,207,142,0.3);  color: #3FCF8E; }
+    .arch-box.fly        { background: rgba(126,87,194,0.1);  border-color: rgba(126,87,194,0.3);  color: #C084FC; }
+    .arch-arrow-down {
+      text-align: center; font-size: 20px; color: var(--muted); letter-spacing: 0.1em;
+      position: relative;
+    }
+    .arch-arrow-down::before {
+      content: '';
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 2px; height: 28px; background: linear-gradient(to bottom, rgba(94,92,230,0.5), rgba(48,209,88,0.5));
+    }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 7 — SAFETY                            */
+    /* ─────────────────────────────────────────── */
+    #s7 .safety-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 16px; max-width: 900px; margin-top: 28px;
+    }
+    .safety-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px; position: relative;
+      overflow: hidden;
+    }
+    .safety-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.2rem; font-weight: 900; color: var(--red); opacity: 0.15;
+      position: absolute; top: 8px; right: 12px;
+    }
+    .safety-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+    .safety-card p  { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+    #s7 .sos-banner {
+      margin-top: 28px; max-width: 900px; width: 100%;
+      padding: 18px 32px; text-align: center;
+      background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.3);
+      border-radius: 12px; font-size: 1.05rem; font-weight: 700;
+      color: var(--red); letter-spacing: 0.04em;
+    }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 8 — DEMO FLOW                         */
+    /* ─────────────────────────────────────────── */
+    #s8 .timeline {
+      display: flex; flex-direction: column; gap: 0;
+      max-width: 720px; margin-top: 24px; width: 100%;
+    }
+    .tl-item {
+      display: flex; gap: 20px; align-items: flex-start;
+      padding: 14px 0; position: relative;
+    }
+    .tl-item:not(:last-child)::after {
+      content: ''; position: absolute; left: 39px; top: 48px;
+      width: 2px; height: calc(100% - 14px);
+      background: linear-gradient(to bottom, rgba(165,163,255,0.3), rgba(165,163,255,0.05));
+    }
+    .tl-time {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem; font-weight: 700; color: #A5A3FF;
+      width: 60px; flex-shrink: 0; padding-top: 2px; letter-spacing: 0.05em;
+    }
+    .tl-dot {
+      width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+      margin-top: 4px; border: 2px solid; position: relative; z-index: 1;
+    }
+    .tl-dot.d-green  { background: var(--green);  border-color: var(--green);  box-shadow: 0 0 8px var(--green); }
+    .tl-dot.d-yellow { background: var(--yellow); border-color: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+    .tl-dot.d-red    { background: var(--red);    border-color: var(--red);    box-shadow: 0 0 8px var(--red); }
+    .tl-dot.d-accent { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .tl-content { font-size: 0.9rem; color: var(--muted); padding-top: 0; line-height: 1.5; }
+    .tl-content strong { color: var(--text); font-weight: 600; }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 9 — IMPACT & SCALE                    */
+    /* ─────────────────────────────────────────── */
+    #s9 .impact-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 20px; max-width: 860px; margin-top: 28px;
+    }
+    .impact-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px; display: flex; gap: 20px; align-items: flex-start;
+    }
+    .impact-icon { font-size: 2.2rem; flex-shrink: 0; }
+    .impact-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+    .impact-card p  { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+    #s9 .gov-path {
+      margin-top: 28px; max-width: 860px; width: 100%;
+      padding: 16px 28px; text-align: center;
+      background: rgba(94,92,230,0.08); border: 1px solid rgba(94,92,230,0.25);
+      border-radius: 12px; font-size: 0.9rem; color: #A5A3FF;
+    }
+    #s9 .gov-path strong { color: var(--text); }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 10 — TECH STACK                       */
+    /* ─────────────────────────────────────────── */
+    #s10 .stack-table {
+      width: 100%; max-width: 760px; margin-top: 28px;
+      border-collapse: separate; border-spacing: 0 8px;
+    }
+    .stack-table tr td:first-child {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--muted); width: 180px; padding: 14px 20px; border-radius: 10px 0 0 10px;
+      background: var(--bg3); border: 1px solid var(--border); border-right: none;
+    }
+    .stack-table tr td:last-child {
+      font-size: 0.95rem; font-weight: 600; padding: 14px 20px; border-radius: 0 10px 10px 0;
+      background: var(--bg3); border: 1px solid var(--border); border-left: none; color: var(--text);
+    }
+    .stack-table tr.hl-agora td { background: rgba(94,92,230,0.12); }
+    .stack-table tr.hl-agora td:first-child { border-color: rgba(94,92,230,0.3); }
+    .stack-table tr.hl-agora td:last-child  { border-color: rgba(94,92,230,0.3); color: #A5A3FF; }
+    .stack-table tr.hl-agora2 td { background: rgba(48,209,88,0.07); }
+    .stack-table tr.hl-agora2 td:first-child { border-color: rgba(48,209,88,0.25); }
+    .stack-table tr.hl-agora2 td:last-child  { border-color: rgba(48,209,88,0.25); color: var(--green); }
+    .stack-table tr.hl-ai td { background: rgba(255,153,0,0.07); }
+    .stack-table tr.hl-ai td:first-child { border-color: rgba(255,153,0,0.25); }
+    .stack-table tr.hl-ai td:last-child  { border-color: rgba(255,153,0,0.25); color: #FF9900; }
+
+    /* ─────────────────────────────────────────── */
+    /* SLIDE 11 — THE CLOSE                        */
+    /* ─────────────────────────────────────────── */
+    #s11 {
+      background: radial-gradient(ellipse at 50% 30%, rgba(255,59,48,0.18) 0%, transparent 55%),
+                  radial-gradient(ellipse at 50% 80%, rgba(94,92,230,0.12) 0%, transparent 50%),
+                  var(--bg);
+    }
+    #s11::before { display: none; }
+    #s11 .close-quote {
+      max-width: 800px; text-align: center; margin-bottom: 48px;
+      font-size: clamp(0.95rem, 1.6vw, 1.2rem); font-style: italic; line-height: 1.9;
+      color: rgba(240,240,248,0.75);
+      padding: 36px 40px;
+      border: 1px solid rgba(255,59,48,0.2);
+      border-radius: 20px;
+      background: rgba(255,59,48,0.06);
+      position: relative;
+    }
+    #s11 .close-quote::before {
+      content: '"'; position: absolute; top: -20px; left: 24px;
+      font-size: 5rem; color: var(--red); opacity: 0.3; line-height: 1;
+      font-family: Georgia, serif;
+    }
+    #s11 .close-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3rem, 7vw, 6rem); font-weight: 900;
+      background: linear-gradient(135deg, #fff 0%, #A5A3FF 60%, var(--red) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; text-align: center; line-height: 1;
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%,100% { filter: drop-shadow(0 0 12px rgba(165,163,255,0.3)); }
+      50%      { filter: drop-shadow(0 0 28px rgba(165,163,255,0.6)); }
+    }
+    #s11 .close-tagline {
+      font-size: clamp(0.9rem, 1.5vw, 1.15rem); color: rgba(240,240,248,0.55);
+      text-align: center; margin-top: 12px; font-style: italic;
+    }
+    #s11 .close-tagline em { color: rgba(240,240,248,0.8); font-style: normal; font-weight: 600; }
+    #s11 .close-meta {
+      margin-top: 32px; font-size: 13px; color: var(--muted); text-align: center;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .slide { padding: 32px 24px; }
+      #s2 .stats-grid { grid-template-columns: 1fr; }
+      #s4 .steps-row  { grid-template-columns: 1fr; }
+      #s5 .cols       { grid-template-columns: 1fr; }
+      #s7 .safety-grid{ grid-template-columns: 1fr 1fr; }
+      #s9 .impact-grid{ grid-template-columns: 1fr; }
+      #s1 .ring-1, #s1 .ring-2, #s1 .ring-3 { display: none; }
+    }
+    @media (max-width: 480px) {
+      #s7 .safety-grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="counter"><span id="curr">1</span> / <span id="total">11</span></div>
+<div id="nav-hint">← → or Space to navigate</div>
+
+<div id="deck">
+
+  <!-- ──────────────── SLIDE 1 ──────────────── -->
+  <div class="slide bg-mesh active" id="s1">
+    <div class="ring ring-1"></div>
+    <div class="ring ring-2"></div>
+    <div class="ring ring-3"></div>
+
+    <div class="eyebrow">Agora Voice AI Hackathon Manila 2026</div>
+    <div class="logo-text">UgnayAI</div>
+    <div class="tagline-big">Ang Boses ng Bawat Barangay</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px;">The Voice of Every Barangay</div>
+
+    <div class="triage-pills">
+      <span class="pill pill-green">● GREEN — Monitor</span>
+      <span class="pill pill-yellow">● YELLOW — Consult</span>
+      <span class="pill pill-red">● RED — Emergency</span>
+    </div>
+
+    <div class="tagline-cta">Voice AI health triage. Filipino. Real-time. Life-saving.</div>
+
+    <div class="meta">
+      <strong>March 16, 2026</strong> &nbsp;·&nbsp; Team: <strong>TechWithKayne</strong> &nbsp;·&nbsp; <strong>Group B</strong>
+    </div>
+  </div>
+
+  <!-- ──────────────── SLIDE 2 ──────────────── -->
+  <div class="slide bg-red-glow" id="s2">
+    <div class="eyebrow">The Problem</div>
+    <div class="slide-title">Dengue is a Solvable Crisis</div>
+
+    <div class="stats-grid">
+      <div class="stat-box red-box">
+        <div class="stat-num">702</div>
+        <div class="stat-label">Dengue deaths<br/>in 9 months (2024)</div>
+      </div>
+      <div class="stat-box yellow-box">
+        <div class="stat-num">82%</div>
+        <div class="stat-label">Surge vs 2023<br/>year-over-year</div>
+      </div>
+      <div class="stat-box green-box">
+        <div class="stat-num">80%</div>
+        <div class="stat-label">Were children<br/>under 15 years old</div>
+      </div>
+    </div>
+
+    <div class="quote-block">
+      <div class="quote-fil">"Hindi sila namatay dahil walang gamot.<br/>Namatay sila dahil walang nakaalam sa tamang oras."</div>
+      <div class="quote-eng">"They didn't die because there was no medicine. They died because nobody knew in time."</div>
+    </div>
+  </div>
+
+  <!-- ──────────────── SLIDE 3 ──────────────── -->
+  <div class="slide bg-dark" id="s3">
+    <div class="eyebrow">The Broken Chain</div>
+    <div class="slide-title">The 72-Hour Window</div>
+
+    <div class="chain">
+      <div class="chain-step">
+        <div class="step-icon">🧒</div>
+        <div class="step-text">Child has fever</div>
+      </div>
+      <div class="chain-arrow"></div>
+      <div class="chain-step">
+        <div class="step-icon">⏳</div>
+        <div class="step-text">Family waits for BHW (monthly visits only)</div>
+      </div>
+      <div class="chain-arrow"></div>
+      <div class="chain-step">
+        <div class="step-icon">❓</div>
+        <div class="step-text">BHW has no decision support — relies on memory</div>
+      </div>
+      <div class="chain-arrow"></div>
+      <div class="chain-step">
+        <div class="step-icon">🚗</div>
+        <div class="step-text">45-minute drive to Rural Health Unit (RHU)</div>
+      </div>
+      <div class="chain-arrow"></div>
+      <div class="chain-step danger">
+        <div class="step-icon">📅</div>
+        <div class="step-text">Child arrives on Day 3 — dengue hemorrhagic shock</div>
+      </div>
+      <div class="chain-arrow"></div>
+      <div class="chain-step danger">
+        <div class="step-icon">💔</div>
+        <div class="step-text">Death. Preventable. Every time.</div>
+      </div>
+    </div>
+
+    <div class="caption">UgnayAI closes the 72-hour window.</div>
+  </div>
+
+  <!-- ──────────────── SLIDE 4 ──────────────── -->
+  <div class="slide bg-mesh" id="s4">
+    <div class="eyebrow">The Solution</div>
+    <div class="slide-title">Three Steps. Thirty Seconds.</div>
+
+    <div class="steps-row">
+      <div class="step-card s-green">
+        <div class="step-number">1</div>
+        <div class="step-icon-big">🎙️</div>
+        <div class="step-verb">SPEAK</div>
+        <div class="step-desc">Patient speaks symptoms in Filipino via <strong>Agora Conversational AI Engine</strong>. No forms. No literacy required.</div>
+      </div>
+      <div class="step-card s-yellow">
+        <div class="step-number">2</div>
+        <div class="step-icon-big">🧠</div>
+        <div class="step-verb">TRIAGE</div>
+        <div class="step-desc"><strong>Claude Sonnet 4.6</strong> returns GREEN / YELLOW / RED verdict in seconds. In Filipino. With safety overrides.</div>
+      </div>
+      <div class="step-card s-red">
+        <div class="step-number">3</div>
+        <div class="step-icon-big">📞</div>
+        <div class="step-verb">CONNECT</div>
+        <div class="step-desc">RED case → <strong>Agora RTC</strong> emergency voice bridge to nurse in 30 seconds. Replaces a 45-minute drive.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── SLIDE 5 ──────────────── -->
+  <div class="slide bg-dark" id="s5">
+    <div class="eyebrow">Agora Integration</div>
+    <div class="slide-title" style="font-size:clamp(1.6rem,3.5vw,3rem);">Agora is the Product.<br/>Not a Feature.</div>
+
+    <div class="cols">
+      <div class="agora-card conv">
+        <h3>🎤 Agora Conversational AI Engine</h3>
+        <ul>
+          <li>Every triage runs through an Agora voice channel</li>
+          <li>STT → Claude Sonnet 4.6 → TTS pipeline</li>
+          <li>Filipino language support via ElevenLabs multilingual</li>
+          <li>Voice-first design = literacy-independent access</li>
+          <li>Works on any phone, any network, any barangay</li>
+        </ul>
+      </div>
+      <div class="agora-card rtc">
+        <h3>📡 Agora RTC SDK</h3>
+        <ul>
+          <li>Emergency nurse bridge on RED alert</li>
+          <li>JWT token-gated real-time voice channels</li>
+          <li>Patient ↔ Nurse connected in 30 seconds</li>
+          <li>Replaces the 45-minute RHU drive</li>
+          <li>Nurse dashboard receives pre-briefed case summary</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── SLIDE 6 ──────────────── -->
+  <div class="slide bg-dark" id="s6">
+    <div class="eyebrow">System Architecture</div>
+    <div class="slide-title" style="font-size:clamp(1.5rem,3vw,2.8rem);">Minimal. Scalable. Deployable Today.</div>
+
+    <div class="arch-diagram">
+      <div class="arch-layer frontend">
+        <div class="arch-label">Frontend — Browser (React 19 + Vite + Tailwind)</div>
+        <div class="arch-boxes">
+          <div class="arch-box react">⚛ React 19</div>
+          <div class="arch-box agora-conv">🎤 Agora Conversational AI Engine</div>
+          <div class="arch-box agora-rtc">📡 Agora RTC SDK (Emergency Bridge)</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow-down" style="height:32px;"></div>
+
+      <div class="arch-layer backend">
+        <div class="arch-label">Backend — Express 5 · Node.js · Fly.io Singapore</div>
+        <div class="arch-boxes">
+          <div class="arch-box express">triage.js</div>
+          <div class="arch-box bedrock">☁ AWS Bedrock · Claude Sonnet 4.6</div>
+          <div class="arch-box express">bridge.js</div>
+          <div class="arch-box supabase">⚡ Supabase Realtime</div>
+          <div class="arch-box express">token.js → Agora RTC tokens</div>
+          <div class="arch-box fly">✈ Fly.io SG</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── SLIDE 7 ──────────────── -->
+  <div class="slide bg-dark" id="s7">
+    <div class="eyebrow">Safety Architecture</div>
+    <div class="slide-title" style="font-size:clamp(1.4rem,2.8vw,2.6rem);">6 Layers of Safety.<br/>Because Lives Depend On It.</div>
+
+    <div class="safety-grid">
+      <div class="safety-card">
+        <div class="safety-num">1</div>
+        <h4>Minimum Input Threshold</h4>
+        <p>≥10 character requirement prevents accidental or empty triage submissions.</p>
+      </div>
+      <div class="safety-card">
+        <div class="safety-num">2</div>
+        <h4>Hard-Coded RED Override</h4>
+        <p>Blood, seizures, unconscious, breathing difficulty — always RED regardless of model output.</p>
+      </div>
+      <div class="safety-card">
+        <div class="safety-num">3</div>
+        <h4>No False Reassurance</h4>
+        <p>Patient mode: GREEN → YELLOW. We never downgrade. Uncertainty always escalates.</p>
+      </div>
+      <div class="safety-card">
+        <div class="safety-num">4</div>
+        <h4>HITL Confirmation</h4>
+        <p>"Sigurado ka ba?" confirmation card before any emergency bridge connection is opened.</p>
+      </div>
+      <div class="safety-card">
+        <div class="safety-num">5</div>
+        <h4>BHW as Human Filter</h4>
+        <p>Community health worker applies local knowledge before any escalation decision.</p>
+      </div>
+      <div class="safety-card">
+        <div class="safety-num">6</div>
+        <h4>Device Rate Limiting</h4>
+        <p>Maximum 3 RED alerts per device per day prevents abuse and alarm fatigue.</p>
+      </div>
+    </div>
+
+    <div class="sos-banner">🚨 911 is always visible. On every screen. Always.</div>
+  </div>
+
+  <!-- ──────────────── SLIDE 8 ──────────────── -->
+  <div class="slide bg-mesh" id="s8">
+    <div class="eyebrow">Live Demo</div>
+    <div class="slide-title" style="font-size:clamp(1.6rem,3vw,3rem);">The Demo — 5 Minutes</div>
+
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-time">0:00</div>
+        <div class="tl-dot d-green"></div>
+        <div class="tl-content"><strong>Patient opens /patient</strong> — no login, no account required</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">0:30</div>
+        <div class="tl-dot d-green"></div>
+        <div class="tl-content"><strong>Intake:</strong> 8yr old male, Barangay Payatas, Quezon City</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">1:00</div>
+        <div class="tl-dot d-yellow"></div>
+        <div class="tl-content"><strong>Voice input:</strong> "May lagnat, dugo sa ihi, nanginginig na" (Fever, blood in urine, shaking)</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">1:30</div>
+        <div class="tl-dot d-red"></div>
+        <div class="tl-content"><strong>RED verdict</strong> triggered by hard-coded override + ElevenLabs TTS response in Filipino</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">2:00</div>
+        <div class="tl-dot d-yellow"></div>
+        <div class="tl-content"><strong>HITL "Sigurado ka ba?"</strong> confirmation → patient joins priority queue</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">2:30</div>
+        <div class="tl-dot d-accent"></div>
+        <div class="tl-content"><strong>Nurse dashboard:</strong> pre-briefed RED case summary visible in real-time</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">3:00</div>
+        <div class="tl-dot d-red"></div>
+        <div class="tl-content"><strong>Agora RTC bridge opens</strong> — nurse and patient connected in 30 seconds</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-time">4:00</div>
+        <div class="tl-dot d-accent"></div>
+        <div class="tl-content"><strong>Closing statement</strong> — this is what a 45-minute drive looks like in 30 seconds</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────── SLIDE 9 ──────────────── -->
+  <div class="slide bg-green-glow" id="s9">
+    <div class="eyebrow">Impact &amp; Scale</div>
+    <div class="slide-title" style="font-size:clamp(1.4rem,2.8vw,2.8rem);">Why This Scales to 115 Million Filipinos</div>
+
+    <div class="impact-grid">
+      <div class="impact-card">
+        <div class="impact-icon">🏘️</div>
+        <div>
+          <h3>200,000 BHWs</h3>
+          <p>Already deployed in every barangay across the Philippines. Zero new infrastructure required. UgnayAI augments existing community health workers.</p>
+        </div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-icon">🎙️</div>
+        <div>
+          <h3>Voice-First</h3>
+          <p>Works for users who cannot read. Agora Conversational AI + ElevenLabs TTS in Filipino means literacy is never a barrier to life-saving care.</p>
+        </div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-icon">📱</div>
+        <div>
+          <h3>Prepaid Compatible</h3>
+          <p>Uses less data than a single SMS per triage session. Designed for prepaid SIM cards and low-bandwidth barangay connections.</p>
+        </div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-icon">⚡</div>
+        <div>
+          <h3>Resilient Infrastructure</h3>
+          <p>Supabase Realtime + Fly.io Singapore means community health data survives political turnover, budget cuts, and offline periods.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gov-path">
+      Government path: <strong>Pilot QC / Cebu / Davao</strong> → LGU integration → <strong>DOH PIDSR replacement</strong>
+    </div>
+  </div>
+
+  <!-- ──────────────── SLIDE 10 ──────────────── -->
+  <div class="slide bg-dark" id="s10">
+    <div class="eyebrow">Tech Stack</div>
+    <div class="slide-title" style="font-size:clamp(1.6rem,3vw,3rem);">Every Layer. Chosen with Purpose.</div>
+
+    <table class="stack-table">
+      <tbody>
+        <tr class="hl-agora">
+          <td>Voice Triage</td>
+          <td>🎤 Agora Conversational AI Engine</td>
+        </tr>
+        <tr class="hl-agora2">
+          <td>Emergency Bridge</td>
+          <td>📡 Agora RTC SDK</td>
+        </tr>
+        <tr class="hl-ai">
+          <td>AI / LLM</td>
+          <td>Claude Sonnet 4.6 · AWS Bedrock</td>
+        </tr>
+        <tr>
+          <td>TTS</td>
+          <td>ElevenLabs eleven_multilingual_v2</td>
+        </tr>
+        <tr>
+          <td>Auth + DB</td>
+          <td>Supabase (JWT + Realtime)</td>
+        </tr>
+        <tr>
+          <td>Frontend</td>
+          <td>React 19 + Vite + Tailwind CSS</td>
+        </tr>
+        <tr>
+          <td>Backend</td>
+          <td>Node.js + Express 5</td>
+        </tr>
+        <tr>
+          <td>Deployment</td>
+          <td>Fly.io Singapore</td>
+        </tr>
+        <tr>
+          <td>Dev IDE</td>
+          <td>TRAE IDE</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ──────────────── SLIDE 11 ──────────────── -->
+  <div class="slide" id="s11">
+    <div class="close-quote">
+      702 Filipinos died from dengue in 9 months. A 9-month-old baby in Barangay Holy Spirit died in February. Her symptoms would have triggered our RED override. Her family would have had a nurse on the line in 30 seconds.
+    </div>
+
+    <div class="close-logo">UgnayAI</div>
+    <div class="close-tagline">
+      Ang boses ng bawat barangay. <em>Ngayon.</em><br/>
+      <span style="font-size:0.9em;opacity:0.7;">(The voice of every barangay. Now.)</span>
+    </div>
+
+    <div class="close-meta">
+      TechWithKayne &nbsp;·&nbsp; Group B &nbsp;·&nbsp; Agora Voice AI Hackathon Manila 2026
+    </div>
+
+    <div style="margin-top:32px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <span class="pill pill-green">● GREEN — Monitor</span>
+      <span class="pill pill-yellow">● YELLOW — Consult</span>
+      <span class="pill pill-red">● RED — Emergency</span>
+    </div>
+  </div>
+
+</div><!-- #deck -->
+
+<script>
+  (function () {
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const total = slides.length;
+    let current = 0;
+    let animating = false;
+
+    const progressBar = document.getElementById('progress-bar');
+    const currEl = document.getElementById('curr');
+
+    function updateUI() {
+      const pct = ((current + 1) / total) * 100;
+      progressBar.style.width = pct + '%';
+      currEl.textContent = current + 1;
+    }
+
+    function goTo(idx) {
+      if (animating) return;
+      if (idx < 0 || idx >= total || idx === current) return;
+
+      animating = true;
+      const prev = slides[current];
+      const next = slides[idx];
+      const forward = idx > current;
+
+      // Setup enter position
+      next.style.transform = forward ? 'translateX(60px)' : 'translateX(-60px)';
+      next.style.opacity = '0';
+      next.style.transition = 'none';
+      next.style.pointerEvents = 'none';
+      // Make visible but off-screen
+      next.classList.add('active');
+      next.classList.remove('exit');
+
+      // Force reflow
+      void next.offsetWidth;
+
+      // Animate out
+      prev.style.transition = 'opacity 0.45s cubic-bezier(.4,0,.2,1), transform 0.45s cubic-bezier(.4,0,.2,1)';
+      prev.style.opacity = '0';
+      prev.style.transform = forward ? 'translateX(-60px)' : 'translateX(60px)';
+
+      // Animate in
+      next.style.transition = 'opacity 0.45s cubic-bezier(.4,0,.2,1), transform 0.45s cubic-bezier(.4,0,.2,1)';
+      next.style.opacity = '1';
+      next.style.transform = 'translateX(0)';
+
+      current = idx;
+      updateUI();
+
+      setTimeout(function () {
+        prev.classList.remove('active');
+        prev.style.transform = '';
+        prev.style.opacity = '';
+        prev.style.transition = '';
+        next.style.pointerEvents = '';
+        animating = false;
+      }, 460);
+    }
+
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    // Keyboard
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); next(); }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+    });
+
+    // Click
+    document.getElementById('deck').addEventListener('click', function (e) {
+      // Ignore clicks on interactive elements if any
+      next();
+    });
+
+    // Touch swipe
+    let touchStartX = 0;
+    document.addEventListener('touchstart', function (e) { touchStartX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+    }, { passive: true });
+
+    updateUI();
+  })();
+</script>
+</body>
+</html>
