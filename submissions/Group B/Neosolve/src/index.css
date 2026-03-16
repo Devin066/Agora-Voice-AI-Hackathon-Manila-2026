@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  font-family: inherit; /* Use Tailwind's default sans-serif font stack */
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  @apply antialiased text-slate-900 bg-[#f4f0ec];
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+*:focus-visible {
+  outline: 2px solid #2a6de1;
+  outline-offset: 2px;
+}
