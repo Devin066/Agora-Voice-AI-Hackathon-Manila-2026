@@ -1085,7 +1085,7 @@ html, body {
             <button class="cook-header-close" onclick="showView('view-listen')">←</button>
             <div class="cook-recipe-info">
               <div class="cook-mode-label">Cooking Mode</div>
-              <div class="cook-recipe-name">Creamy Pesto Pasta</div>
+              <div class="cook-recipe-name">Garlic Herb Chicken</div>
             </div>
           </div>
           <button class="cook-header-close" onclick="stopVoice()">✕</button>
@@ -1095,22 +1095,22 @@ html, body {
 
           <div class="cook-progress-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 24px; font-weight: 800; color: #1d1d1f;">Step 3</span>
-              <span style="font-size: 14px; color: var(--text-low); font-weight: 600;">/8</span>
+              <span style="font-size: 24px; font-weight: 800; color: #1d1d1f;" id="stepNum">Step 3</span>
+              <span style="font-size: 14px; color: var(--text-low); font-weight: 600;" id="stepTotal">/6</span>
             </div>
             <div style="width: 100%;">
-              <div class="cook-prog-bar"><div class="cook-prog-fill"></div></div>
-              <span class="cook-prog-label" style="display: inline-block; margin-top: 8px;">60% complete</span>
+              <div class="cook-prog-bar"><div class="cook-prog-fill" id="stepFill"></div></div>
+              <span class="cook-prog-label" style="display: inline-block; margin-top: 8px;" id="stepPercent">50% complete</span>
             </div>
           </div>
 
           <div>
             <div class="cook-task-label" style="text-align: center;">Active Task</div>
             <div class="cook-step-card" style="text-align: center;">
-              <div class="cook-step-text">Boil the pasta in salted water for 8–10 minutes until <em>al dente</em>.</div>
+              <div class="cook-step-text" id="stepDesc">Sear chicken breasts in hot oil until golden brown on both sides.</div>
               <div style="background: #1a1a1a; border-radius: 12px; height: 120px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; overflow: hidden;">
-                <img src="https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=120&fit=crop" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
-                <div style="position: absolute; text-align: center; bottom: 12px; left: 0; right: 0; background: rgba(0,0,0,0.6); padding: 8px; font-size: 11px;">Tip: Use 1 tbsp salt per 4 quarts of water</div>
+                <img id="stepImg" src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=120&fit=crop" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+                <div style="position: absolute; text-align: center; bottom: 12px; left: 0; right: 0; background: rgba(0,0,0,0.6); padding: 8px; font-size: 11px;" id="stepTip">Tip: Use medium-high heat for best results</div>
               </div>
             </div>
           </div>
@@ -1677,20 +1677,58 @@ function toggleTimer() {
 }
 
 function goBackStep() {
-  alert('Going back to previous step');
-  // Add your logic here to navigate to previous step
+  if (currentStep > 0) {
+    currentStep--;
+    updateStepDisplay();
+    console.log('Back to step ' + recipeSteps[currentStep].step);
+  } else {
+    alert('Already at the first step!');
+  }
 }
 
 function repeatStep() {
-  timerSec = 480; // Reset timer to 8 minutes
+  timerSec = recipeSteps[currentStep].timer;
   timerRunning = true;
-  alert('Step repeated');
-  // Add your logic here to repeat the current step
+  document.getElementById('timerPauseBtn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+  console.log('Repeating step ' + recipeSteps[currentStep].step);
 }
 
 function finishStep() {
-  alert('Step completed! Moving to next step.');
-  // Add your logic here to move to the next step
+  if (currentStep < recipeSteps.length - 1) {
+    currentStep++;
+    updateStepDisplay();
+    console.log('Finished step, now on step ' + recipeSteps[currentStep].step);
+  } else {
+    alert('Great! You\'ve completed all steps. Garlic Herb Chicken is ready to serve!');
+  }
+}
+
+/* ── Recipe Steps Data ── */
+const recipeSteps = [
+  { step: 1, total: 6, desc: 'Pat chicken dry and mix with garlic, rosemary, thyme, salt & pepper.', img: 'https://images.unsplash.com/photo-1598661108949-92e88adf3e65?w=400&h=120&fit=crop', tip: 'Tip: Let marinate for 15 mins for better flavor', timer: 180 },
+  { step: 2, total: 6, desc: 'Heat olive oil in a large skillet over medium-high heat until shimmering.', img: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae655?w=400&h=120&fit=crop', tip: 'Tip: Test oil with a drop of water—should sizzle', timer: 120 },
+  { step: 3, total: 6, desc: 'Sear chicken breasts in hot oil until golden brown on both sides.', img: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=120&fit=crop', tip: 'Tip: Use medium-high heat for best results', timer: 480 },
+  { step: 4, total: 6, desc: 'Transfer to a plate. Add garlic and herbs to the same pan, cook until fragrant.', img: 'https://images.unsplash.com/photo-1599599810694-b3b2b82b90ae?w=400&h=120&fit=crop', tip: 'Tip: Don\'t let garlic burn—watch closely', timer: 180 },
+  { step: 5, total: 6, desc: 'Add chicken broth and lemon juice. Return chicken to pan and simmer.', img: 'https://images.unsplash.com/photo-1473093295203-cad00df16e50?w=400&h=120&fit=crop', tip: 'Tip: Cover with lid to cook through faster', timer: 600 },
+  { step: 6, total: 6, desc: 'Check chicken internal temp reaches 165°F. Plate and drizzle with fresh herbs.', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=120&fit=crop', tip: 'Tip: Let rest 2 mins before serving', timer: 120 }
+];
+
+let currentStep = 2; // Start at step 3 (index 2)
+
+function updateStepDisplay() {
+  const step = recipeSteps[currentStep];
+  document.getElementById('stepNum').textContent = 'Step ' + step.step;
+  document.getElementById('stepTotal').textContent = '/' + step.total;
+  document.getElementById('stepDesc').textContent = step.desc;
+  document.getElementById('stepImg').src = step.img;
+  document.getElementById('stepTip').textContent = step.tip;
+  document.getElementById('stepPercent').textContent = Math.round((step.step / step.total) * 100) + '% complete';
+  document.getElementById('stepFill').style.width = ((step.step / step.total) * 100) + '%';
+  
+  // Reset timer
+  timerSec = step.timer;
+  timerRunning = true;
+  document.getElementById('timerPauseBtn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
 }
 
 /* ── Dynamic greeting ── */
