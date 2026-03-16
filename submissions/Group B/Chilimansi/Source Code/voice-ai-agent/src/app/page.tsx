@@ -5,6 +5,8 @@ import { Heart, Phone } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import PatientView from "@/components/patient-view";
 import ResponderView from "@/components/responder-view";
+import { useAgoraRTC } from "@/hooks/useAgoraRTC";
+import { useConvoAI } from "@/hooks/useConvoAI";
 
 type EmergencyState = "idle" | "alerting";
 type ResponderState = "waiting" | "alert-received" | "responding";
@@ -12,13 +14,17 @@ type ResponderState = "waiting" | "alert-received" | "responding";
 export default function Home() {
   const [emergencyState, setEmergencyState] = useState<EmergencyState>("idle");
   const [responderState, setResponderState] = useState<ResponderState>("waiting");
-  const [voiceAIConnected, setVoiceAIConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const alertTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const localTrackRef = useRef<import("agora-rtc-sdk-ng").ILocalAudioTrack | null>(null);
+
+  const { client, joinVoiceSession, leaveVoiceSession, toggleLocalMute } = useAgoraRTC();
+  const { status: convoStatus, startSession, stopSession, sessionData } = useConvoAI();
+
+  const voiceAIConnected = convoStatus === "active";
 
   const handleSOSTrigger = useCallback(() => {
     setEmergencyState("alerting");
-    // Simulate responder receiving alert after 2 seconds (demo)
     alertTimerRef.current = setTimeout(() => {
       setResponderState("alert-received");
     }, 2000);
@@ -34,12 +40,60 @@ export default function Home() {
     if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
   }, []);
 
-  const handleMarkComplete = useCallback(() => {
+  const handleConnectVoice = useCallback(async () => {
+    try {
+      // 1. Start the Conversational AI agent (server-side)
+      const session = await startSession();
+      if (!session || !client) return;
+
+      // 2. Join the Agora RTC channel as the user
+      await joinVoiceSession({
+        appId: session.appId,
+        channel: session.channelName,
+        token: session.userToken,
+        uid: session.userUid,
+      });
+
+      // 3. Create and publish local audio track
+      const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
+      const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+      await client.publish([localAudioTrack]);
+      localTrackRef.current = localAudioTrack;
+    } catch (err) {
+      console.error("Failed to connect voice AI:", err);
+    }
+  }, [client, joinVoiceSession, startSession]);
+
+  const handleDisconnectVoice = useCallback(async () => {
+    try {
+      // Stop local audio track
+      if (localTrackRef.current) {
+        localTrackRef.current.stop();
+        localTrackRef.current.close();
+        localTrackRef.current = null;
+      }
+
+      // Leave RTC channel
+      await leaveVoiceSession();
+
+      // Stop the Conversational AI agent
+      await stopSession();
+    } catch (err) {
+      console.error("Failed to disconnect voice AI:", err);
+    }
+  }, [leaveVoiceSession, stopSession]);
+
+  const handleToggleMute = useCallback(async () => {
+    await toggleLocalMute(localTrackRef.current);
+    setIsMuted((prev) => !prev);
+  }, [toggleLocalMute]);
+
+  const handleMarkComplete = useCallback(async () => {
+    await handleDisconnectVoice();
     setResponderState("waiting");
     setEmergencyState("idle");
-    setVoiceAIConnected(false);
     setIsMuted(false);
-  }, []);
+  }, [handleDisconnectVoice]);
 
   const status = emergencyState === "alerting" ? "alerting" : "idle";
 
@@ -82,9 +136,9 @@ export default function Home() {
               isMuted={isMuted}
               onAcceptAlert={handleAcceptAlert}
               onDeclineAlert={handleDeclineAlert}
-              onConnectVoice={() => setVoiceAIConnected(true)}
-              onDisconnectVoice={() => setVoiceAIConnected(false)}
-              onToggleMute={() => setIsMuted((prev) => !prev)}
+              onConnectVoice={handleConnectVoice}
+              onDisconnectVoice={handleDisconnectVoice}
+              onToggleMute={handleToggleMute}
               onMarkComplete={handleMarkComplete}
             />
           </TabsContent>
