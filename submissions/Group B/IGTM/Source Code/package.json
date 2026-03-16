@@ -1,0 +1,47 @@
+{
+  "name": "agora-voice-ai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "brain": "node server/brainServer.js",
+    "dev:full": "concurrently \"npm run brain\" \"npm run dev\"",
+    "build": "vite build",
+    "start": "node server/brainServer.js",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@deepgram/sdk": "^5.0.0",
+    "agora-rtc-sdk-ng": "^4.24.2",
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "elevenlabs-node": "^2.0.3",
+    "express": "^5.2.1",
+    "lucide-react": "^0.577.0",
+    "mammoth": "^1.12.0",
+    "openai": "^6.29.0",
+    "pdfjs-dist": "^5.5.207",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.0",
+    "autoprefixer": "^10.4.27",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.17",
+    "vite": "^8.0.0"
+  }
+}
