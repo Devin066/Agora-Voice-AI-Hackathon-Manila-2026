@@ -103,19 +103,26 @@ class VoiceSessionCoordinator: ObservableObject {
                 appId = try AppRuntimeConfiguration.load().agoraAppId
             }
 
+            // Join RTC first so an immediate greeting from the agent is audible.
+            try await agoraService.start(
+                appId: appId,
+                token: token.token,
+                channelName: token.channelName,
+                uid: UInt(token.uid),
+                agentUid: 0
+            )
+
             let startResponse = try await apiClient.startSession(
                 channelName: token.channelName,
                 scenario: scenario,
                 userId: token.uid
             )
 
-            try await agoraService.start(
-                appId: appId,
-                token: token.token,
-                channelName: startResponse.channelName,
-                uid: UInt(token.uid),
-                agentUid: UInt(startResponse.agentUid)
-            )
+            agoraService.setExpectedAgentUid(UInt(startResponse.agentUid))
+
+            if startResponse.channelName != token.channelName {
+                print("[agora] warning: token channel=\(token.channelName) start channel=\(startResponse.channelName)")
+            }
 
             try speechAnalyzer.start()
             pitchAnalyzer.start()

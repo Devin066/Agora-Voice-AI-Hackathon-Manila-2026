@@ -9,9 +9,11 @@ import json
 import asyncio
 import random
 import string
+import logging
 from prompts import get_system_prompt
 
 router = APIRouter(prefix="/session", tags=["session"])
+logger = logging.getLogger("uvicorn.error")
 MAX_CHANNEL_BYTES = 64
 SESSION_REGISTRY: dict[str, dict[str, str]] = {}
 SESSION_REGISTRY_LOCK = asyncio.Lock()
@@ -143,8 +145,17 @@ async def start_session(body: StartSessionRequest):
 
         system_prompt = get_system_prompt(body.scenario)
 
-        input_modalities = [s for s in os.getenv("INPUT_MODALITIES", "text").split(",") if s]
         output_modalities = [s for s in os.getenv("OUTPUT_MODALITIES", "text,audio").split(",") if s]
+        # Join schema expects string values in UID fields, but the iOS client
+        # joins with numeric RTC UID. Keep numeric UID mode for compatibility.
+        use_string_uid = False
+
+        if body.userId is None:
+            remote_rtc_uids: list[str] = []
+        else:
+            remote_rtc_uids = [str(body.userId)]
+
+        agent_rtc_uid = str(agent_uid)
 
         tts_vendor = os.getenv("TTS_VENDOR", "microsoft")
         tts: dict
@@ -182,16 +193,16 @@ async def start_session(body: StartSessionRequest):
             "properties": {
                 "channel": channel,
                 "token": token,
-                "agent_rtc_uid": str(agent_uid),
-                "remote_rtc_uids": [str(body.userId)] if body.userId is not None else [],
-                "enable_string_uid": isinstance(body.userId, str),
+                "agent_rtc_uid": agent_rtc_uid,
+                "remote_rtc_uids": remote_rtc_uids,
+                "enable_string_uid": use_string_uid,
                 "idle_timeout": 30,
                 "asr": {"language": "en-US", "task": "conversation"},
                 "llm": {
                     "url": os.getenv("LLM_URL"),
                     "api_key": os.getenv("LLM_TOKEN"),
                     "system_messages": [{"role": "system", "content": system_prompt}],
-                    "greeting_message": None,
+                    "greeting_message": os.getenv("GREETING_MESSAGE"),
                     "failure_message": "Please wait a moment.",
                     "max_history": 10,
                     "params": {
@@ -200,7 +211,6 @@ async def start_session(body: StartSessionRequest):
                         "temperature": 0.7,
                         "top_p": 0.95,
                     },
-                    "input_modalities": input_modalities,
                     "output_modalities": output_modalities,
                 },
                 "tts": tts,
@@ -215,6 +225,21 @@ async def start_session(body: StartSessionRequest):
             },
         }
 
+        logger.info(
+            "[convoai] start_session %s",
+            json.dumps(
+                {
+                    "channel": channel,
+                    "agent_uid": agent_uid,
+                    "remote_rtc_uids": remote_rtc_uids,
+                    "enable_string_uid": use_string_uid,
+                    "has_greeting": bool(os.getenv("GREETING_MESSAGE")),
+                    "output_modalities": output_modalities,
+                    "tts_vendor": tts_vendor,
+                }
+            ),
+        )
+
         async with httpx.AsyncClient() as client:
             auth_header = f"Basic {_basic_credentials()}"
             resp = await client.post(
@@ -224,20 +249,44 @@ async def start_session(body: StartSessionRequest):
             )
             resp.raise_for_status()
             data = resp.json()
+            logger.info(
+                "[convoai] join_response %s",
+                json.dumps(
+                    {
+                        "status_code": resp.status_code,
+                        "agent_id": data.get("agent_id") or data.get("id"),
+                        "agent_rtc_uid": data.get("agent_rtc_uid"),
+                        "status": data.get("status"),
+                        "response_keys": sorted(list(data.keys())),
+                    }
+                ),
+            )
             session_id = data.get("agent_id") or data.get("id")
             if not session_id:
                 raise HTTPException(status_code=500, detail="Missing agent_id in Agora response")
             session_id = str(session_id)
+
+            resolved_agent_uid = data.get("agent_rtc_uid")
+            if resolved_agent_uid is None:
+                resolved_agent_uid = agent_uid
+
+            try:
+                resolved_agent_uid_int = int(resolved_agent_uid)
+            except (TypeError, ValueError):
+                resolved_agent_uid_int = agent_uid
+
             await _mark_session_active(session_id=session_id, channel_name=channel)
             return StartSessionResponse(
                 sessionId=session_id,
-                agentUid=agent_uid,
+                agentUid=resolved_agent_uid_int,
                 channelName=channel,
-                status="active",
+                status=str(data.get("status") or "active"),
             )
     except httpx.HTTPStatusError as e:
+        logger.error("[convoai] join_failed status=%s body=%s", e.response.status_code, e.response.text)
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except Exception as e:
+        logger.exception("[convoai] unexpected_error")
         raise HTTPException(status_code=500, detail=str(e))
 
 

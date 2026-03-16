@@ -54,13 +54,9 @@ class SpeechAnalyzer {
         recognitionTask?.cancel()
         self.recognitionTask = nil
         
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(
-            .playAndRecord,
-            mode: .measurement,
-            options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .duckOthers]
-        )
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        // Do not override the app-wide AVAudioSession here.
+        // AgoraVoiceService already configures `.playAndRecord` + `.voiceChat`.
+        // Resetting to `.measurement` can break remote playback routing.
         
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
