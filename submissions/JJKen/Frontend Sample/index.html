@@ -772,6 +772,112 @@ html, body {
 .cook-nav-btn.ghost:active {
   background: #eaeaec;
 }
+
+.cook-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cook-step-chip {
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  font-size: 12px;
+  color: var(--text-mid);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cook-step-chip.done {
+  background: #eef7ef;
+  color: #2e7d32;
+  border-color: rgba(76,175,80,0.25);
+}
+
+.cook-step-chip.current {
+  background: #fff8ec;
+  color: #b76500;
+  border-color: rgba(243,160,37,0.4);
+  font-weight: 700;
+}
+
+.cook-feed {
+  width: 100%;
+  background: #f8f9fb;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.cook-feed-item {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-mid);
+  max-width: 88%;
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.cook-feed-item.assistant {
+  align-self: flex-start;
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.cook-feed-item.user {
+  align-self: flex-end;
+  background: #fff4df;
+  border: 1px solid rgba(243,160,37,0.35);
+}
+
+.cook-feed-item strong {
+  color: var(--text-hi);
+}
+
+.cook-transcript-toolbar {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  align-items: center;
+}
+
+.cook-transcript-input {
+  flex: 1;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.cook-transcript-status {
+  font-size: 11px;
+  color: var(--text-low);
+  font-weight: 600;
+}
+
+.cook-cmd-btn {
+  background: #f5f5f7;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  color: var(--text-mid);
+  font-weight: 600;
+}
+
+.cook-cmd-btn:hover {
+  background: #ececef;
+}
+
 .cvs-bar:nth-child(3){height:22px;animation-delay:.04s;}
 .cvs-bar:nth-child(4){height:12px;animation-delay:.12s;}
 .cvs-bar:nth-child(5){height:18px;animation-delay:.06s;}
@@ -841,8 +947,8 @@ html, body {
 .rec-list { flex:1; overflow-y:auto; padding:28px 20px 20px; display:flex; flex-direction:column; gap:12px; margin-top:8px; }
 .rec-list::-webkit-scrollbar { display:none; }
 
-.rec-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; display:flex; cursor:pointer; transition:all .2s; height:110px; }
-.rec-card:hover { background:var(--surface2); transform:translateY(-2px); }
+.rec-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; display:flex; cursor:default; transition:all .2s; height:110px; }
+.rec-card:hover { background:var(--surface2); }
 .rec-img { width:90px; height:110px; display:flex; align-items:center; justify-content:center; font-size:38px; flex-shrink:0; color:var(--c1); }
 .ri-1{background:linear-gradient(135deg,rgba(243,160,37,.3),rgba(217,130,5,.2));}
 .ri-2{background:linear-gradient(135deg,rgba(255,224,178,.2),rgba(243,160,37,.15));}
@@ -1093,6 +1199,7 @@ html, body {
               <div class="cook-recipe-name">Garlic Herb Chicken</div>
             </div>
           </div>
+          <button class="cook-header-close" title="Set recipe" onclick="setCookRecipeFromPrompt()">✎</button>
           <button class="cook-header-close" onclick="stopVoice()">✕</button>
         </div>
 
@@ -1107,6 +1214,11 @@ html, body {
               <div class="cook-prog-bar"><div class="cook-prog-fill" id="stepFill"></div></div>
               <span class="cook-prog-label" style="display: inline-block; margin-top: 8px;" id="stepPercent">50% complete</span>
             </div>
+          </div>
+
+          <div>
+            <div class="cook-task-label" style="margin-bottom: 8px;">Step Queue</div>
+            <div class="cook-step-list" id="cookStepList"></div>
           </div>
 
           <div>
@@ -1169,13 +1281,22 @@ html, body {
               <div class="cvs-bar"></div>
               <div class="cvs-bar"></div>
             </div>
-            <div class="cvs-text">Voice Mode Active<br/>Say a command below</div>
+            <div class="cvs-text">Live Transcript<br/>You and HeardChef</div>
+            <div class="cook-transcript-status" id="cookTranscriptStatus">Mic idle</div>
+            <div class="cook-feed" id="cookAssistantFeed"></div>
+            <div class="cook-transcript-toolbar">
+              <input class="cook-transcript-input" id="cookTranscriptInput" type="text" placeholder="Type to HeardChef (or use Start Mic)" />
+              <button class="cook-cmd-btn" id="cookSendBtn" onclick="submitCookTyped()">Send</button>
+            </div>
+            <div class="cook-transcript-toolbar">
+              <button class="cook-cmd-btn" id="cookMicBtn" onclick="toggleCookListening()">Start Mic</button>
+              <button class="cook-cmd-btn" onclick="runCookCommand('what-next')">What's next?</button>
+              <button class="cook-cmd-btn" onclick="runCookCommand('next')">Next step</button>
+            </div>
             <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px;">
-              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">What's next?</div>
-              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Repeat step</div>
-              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Set timer</div>
-              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Help</div>
-              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Convert cups to ml</div>
+              <button class="cook-cmd-btn" onclick="runCookCommand('repeat')">Repeat step</button>
+              <button class="cook-cmd-btn" onclick="runCookCommand('pause')">Pause timer</button>
+              <button class="cook-cmd-btn" onclick="runCookCommand('back')">Previous step</button>
             </div>
           </div>
 
@@ -1259,7 +1380,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="featured">
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-1">🍗</div>
             <div class="rec-body">
               <div class="rec-name">Garlic Herb Chicken</div>
@@ -1268,7 +1389,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-2">🍝</div>
             <div class="rec-body">
               <div class="rec-name">Creamy Basil Pasta</div>
@@ -1286,7 +1407,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-4">🥘</div>
             <div class="rec-body">
               <div class="rec-name">Herb Rice Bowl</div>
@@ -1298,7 +1419,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="quick" style="display: none;">
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-2">⏱</div>
             <div class="rec-body">
               <div class="rec-name">5-Minute Garlic Toast</div>
@@ -1307,7 +1428,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-1">🍳</div>
             <div class="rec-body">
               <div class="rec-name">Quick Fried Rice</div>
@@ -1316,7 +1437,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-3">🥙</div>
             <div class="rec-body">
               <div class="rec-name">30-Second Wrap</div>
@@ -1328,7 +1449,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="healthy" style="display: none;">
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-3">🥗</div>
             <div class="rec-body">
               <div class="rec-name">Quinoa Buddha Bowl</div>
@@ -1337,7 +1458,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-1">🍲</div>
             <div class="rec-body">
               <div class="rec-name">Grilled Salmon & Greens</div>
@@ -1346,7 +1467,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-4">🥑</div>
             <div class="rec-body">
               <div class="rec-name">Green Detox Smoothie</div>
@@ -1358,7 +1479,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="vegetarian" style="display: none;">
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-2">🥕</div>
             <div class="rec-body">
               <div class="rec-name">Roasted Veggie Medley</div>
@@ -1367,7 +1488,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-3">🌮</div>
             <div class="rec-body">
               <div class="rec-name">Black Bean Tacos</div>
@@ -1376,7 +1497,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-1">🍜</div>
             <div class="rec-body">
               <div class="rec-name">Miso Noodle Soup</div>
@@ -1388,7 +1509,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="desserts" style="display: none;">
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-1">🍰</div>
             <div class="rec-body">
               <div class="rec-name">Chocolate Lava Cake</div>
@@ -1397,7 +1518,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-2">🍓</div>
             <div class="rec-body">
               <div class="rec-name">Strawberry Shortcake</div>
@@ -1406,7 +1527,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="goToCooking()">
+          <div class="rec-card">
             <div class="rec-img ri-4">🍪</div>
             <div class="rec-body">
               <div class="rec-name">Chocolate Chip Cookies</div>
@@ -1497,6 +1618,11 @@ function showView(id) {
 }
 
 function navTo(name) {
+  if (name === 'cooking') {
+    goToCooking();
+    return;
+  }
+
   const map = { home:'view-home', recipes:'view-recipes', cooking:'view-cooking' };
   showView(map[name]);
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1527,10 +1653,116 @@ function setRingState(state) {
 
 /* ── Agora Voice Logic ── */
 const BACKEND_URL = 'http://localhost:3000'; // Adjust if backend is on a different port/host
+const API_BASE = `${BACKEND_URL}/api/v1`;
+const DEFAULT_AGENT_GREETING = "Hey there! I'm HeardChef, your personal cooking assistant. What are you cooking today?";
 let rtcClient;
 let localAudioTrack;
 let currentSessionId;
 let isVoiceActive = false;
+let selectedRecipe = {
+  name: 'Garlic Herb Chicken',
+  description: 'Pan-seared with lemon butter and fresh basil.',
+  durationMinutes: 25,
+  difficulty: 'Beginner'
+};
+let lastHydratedRecipeKey = '';
+let cookFeedEntries = [];
+let cookAssistantPending = false;
+let cookRecognition;
+let cookListening = false;
+let cookInterimText = '';
+
+function buildAgentPrompt() {
+  return [
+    'You are a real-time cooking coach.',
+    `When the session starts, greet exactly with: "${DEFAULT_AGENT_GREETING}".`,
+    'The user will speak the recipe name and short description they want to cook.',
+    'Keep guidance concise, practical, and step-by-step.',
+    'When asked for steps, provide numbered steps and a timer suggestion only when needed.',
+    'If user asks what is next, answer with only the immediate next action.'
+  ].join(' ');
+}
+
+function recipeKey(recipe) {
+  return `${String(recipe?.name || '').trim().toLowerCase()}|${String(recipe?.description || '').trim().toLowerCase()}`;
+}
+
+async function fetchRecipePlanFromBackend() {
+  const response = await fetch(`${API_BASE}/recipe-plan`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipeName: selectedRecipe.name,
+      description: selectedRecipe.description,
+      durationMinutes: selectedRecipe.durationMinutes,
+      difficulty: selectedRecipe.difficulty
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to get recipe steps');
+  }
+
+  return response.json();
+}
+
+async function hydrateRecipePlan(force = false) {
+  const key = recipeKey(selectedRecipe);
+  if (!force && key === lastHydratedRecipeKey) {
+    return;
+  }
+
+  const data = await fetchRecipePlanFromBackend();
+  const steps = Array.isArray(data?.plan?.steps) ? data.plan.steps : [];
+  if (!steps.length) {
+    throw new Error('No steps returned for recipe');
+  }
+
+  activeRecipePlan = steps.map((step, idx) => ({
+    index: idx + 1,
+    title: step.title || `Step ${idx + 1}`,
+    instruction: step.instruction || 'Follow this cooking instruction.',
+    tip: step.tip || 'Adjust heat and seasoning as needed.',
+    timerSeconds: Math.max(0, Number(step.timerSeconds || 0)),
+    image: STEP_IMAGES[idx % STEP_IMAGES.length]
+  }));
+
+  if (data?.recipe?.name) {
+    selectedRecipe.name = data.recipe.name;
+  }
+  if (data?.recipe?.description) {
+    selectedRecipe.description = data.recipe.description;
+  }
+
+  currentStep = 0;
+  lastHydratedRecipeKey = recipeKey(selectedRecipe);
+  updateStepDisplay();
+}
+
+function setCookRecipeFromPrompt() {
+  const recipeName = window.prompt('Recipe name for Cook Mode:', selectedRecipe.name || '');
+  if (!recipeName || !recipeName.trim()) {
+    return;
+  }
+
+  const recipeDescription = window.prompt('Short recipe description (optional):', selectedRecipe.description || '');
+  selectedRecipe = {
+    ...selectedRecipe,
+    name: recipeName.trim(),
+    description: (recipeDescription || '').trim()
+  };
+
+  const stepDesc = document.getElementById('stepDesc');
+  if (stepDesc) {
+    stepDesc.textContent = 'Loading steps for ' + selectedRecipe.name + '...';
+  }
+
+  hydrateRecipePlan(true).catch((error) => {
+    console.error('Failed to load recipe plan:', error);
+    alert('Could not load steps for this recipe. Please try again.');
+    updateStepDisplay();
+  });
+}
 
 async function initAgora() {
   if (rtcClient) return;
@@ -1546,7 +1778,7 @@ async function initAgora() {
     }
   });
 
-  rtcClient.on("user-unpublished", (user) => {
+  rtcClient.on("user-unpublished", (user, mediaType) => {
     if (mediaType === "audio") {
         setRingState('listening'); // Back to listening
         document.getElementById('orbStatus').textContent = 'Listening…';
@@ -1616,7 +1848,22 @@ async function activateVoice(qIdx) {
     const startRes = await fetch(`${BACKEND_URL}/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: currentSessionId })
+      body: JSON.stringify({
+        sessionId: currentSessionId,
+        agentConfig: {
+          name: 'cook-assistant',
+          greetingMessage: DEFAULT_AGENT_GREETING,
+          prompt: buildAgentPrompt(),
+          properties: {
+            greeting_message: DEFAULT_AGENT_GREETING,
+            greeting: DEFAULT_AGENT_GREETING,
+            llm: {
+              greeting_message: DEFAULT_AGENT_GREETING,
+              greeting: DEFAULT_AGENT_GREETING
+            }
+          }
+        }
+      })
     });
     
     if (!startRes.ok) throw new Error("Failed to start AI agent");
@@ -1635,8 +1882,16 @@ function triggerSuggestion(e, idx) {
   activateVoice(idx);
 }
 
-async function stopVoice() {
+async function stopVoice(returnHome = true) {
   if (!isVoiceActive) return;
+
+  if (cookRecognition && cookListening) {
+    try {
+      cookRecognition.stop();
+    } catch (error) {
+      console.warn('Failed to stop cook recognition:', error);
+    }
+  }
   
   try {
     // Stop local track
@@ -1665,18 +1920,30 @@ async function stopVoice() {
   } finally {
     isVoiceActive = false;
     setRingState(null);
-    showView('view-home');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('nav-home').classList.add('active');
+    if (returnHome) {
+      showView('view-home');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('nav-home').classList.add('active');
+    }
   }
 }
 
 function goToCooking() {
-  stopVoice(); // Stop voice when navigating away
+  // Keep voice session alive when entering Cook view.
   setRingState(null);
   showView('view-cooking');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('nav-cooking').classList.add('active');
+  initCookRecognition();
+
+  hydrateRecipePlan().catch((error) => {
+    console.error('Failed to fetch recipe steps:', error);
+    updateStepDisplay();
+  }).finally(() => {
+    if (!cookFeedEntries.length) {
+      announceCurrentStep('Cook mode is ready');
+    }
+  });
 }
 
 /* ── Substitution modal ── */
@@ -1709,66 +1976,457 @@ function updateConversion() {
 }
 
 /* ── Live countdown timer ── */
-let timerSec = 480; // 8 minutes = 480 seconds
-let timerRunning = true;
-let timerInterval = setInterval(() => {
-  if (timerRunning && timerSec > 0) timerSec--;
-  const m  = String(Math.floor(timerSec / 60)).padStart(2,'0');
-  const s  = String(timerSec % 60).padStart(2,'0');
+const STEP_IMAGES = [
+  'https://images.unsplash.com/photo-1604503468506-a8da13d11f36?w=400&h=150&fit=crop&auto=format&q=80',
+  'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=150&fit=crop&auto=format&q=80',
+  'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=150&fit=crop&auto=format&q=80',
+  'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=150&fit=crop&auto=format&q=80',
+  'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=150&fit=crop&auto=format&q=80',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=150&fit=crop&auto=format&q=80'
+];
+
+const FALLBACK_STEPS = [
+  { index: 1, title: 'Season chicken', instruction: 'Pat chicken dry and mix with garlic, rosemary, thyme, salt and pepper.', tip: 'Let it marinate briefly for better flavor.', timerSeconds: 180 },
+  { index: 2, title: 'Heat oil', instruction: 'Heat olive oil in a large skillet over medium-high heat until shimmering.', tip: 'A drop of water should sizzle instantly.', timerSeconds: 120 },
+  { index: 3, title: 'Sear chicken', instruction: 'Sear chicken breasts in hot oil until golden on both sides.', tip: 'Avoid moving the chicken too much.', timerSeconds: 480 },
+  { index: 4, title: 'Cook aromatics', instruction: 'Transfer chicken out. Add garlic and herbs to the same pan until fragrant.', tip: 'Keep heat controlled so garlic does not burn.', timerSeconds: 180 },
+  { index: 5, title: 'Simmer', instruction: 'Add chicken broth and lemon juice. Return chicken and simmer.', tip: 'Cover for faster finishing.', timerSeconds: 600 },
+  { index: 6, title: 'Finish', instruction: 'Check internal temp reaches 165F, then plate and garnish.', tip: 'Rest chicken for 2 minutes before serving.', timerSeconds: 120 }
+];
+
+let activeRecipePlan = FALLBACK_STEPS.map((step, idx) => ({
+  ...step,
+  image: STEP_IMAGES[idx % STEP_IMAGES.length]
+}));
+let currentStep = 0;
+let timerSec = 0;
+let timerRunning = false;
+let timerAutoAdvance = true;
+
+function formatClock(totalSeconds) {
+  const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
+  const m = String(Math.floor(safeSeconds / 60)).padStart(2, '0');
+  const s = String(safeSeconds % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function setPauseButtonIcon(isRunning) {
+  const btn = document.getElementById('timerPauseBtn');
+  if (!btn) return;
+
+  btn.innerHTML = isRunning
+    ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>'
+    : '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+}
+
+function setTimerControlsEnabled(enabled) {
+  ['timerPauseBtn', 'timerResetBtn', 'timerStopBtn'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = !enabled;
+    el.style.opacity = enabled ? '1' : '0.4';
+    el.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  });
+}
+
+function renderTimerValue() {
   const el = document.getElementById('timerVal');
-  if (el) el.textContent = m + ':' + s;
-  const f  = document.getElementById('timerFill');
-  if (f)  f.style.width = ((480 - timerSec) / 480 * 100) + '%';
+  if (!el) return;
+
+  const step = activeRecipePlan[currentStep];
+  const hasTimer = Boolean(step && Number(step.timerSeconds) > 0);
+  el.textContent = hasTimer ? formatClock(timerSec) : '--:--';
+}
+
+let timerInterval = setInterval(() => {
+  if (timerRunning && timerSec > 0) {
+    timerSec -= 1;
+    renderTimerValue();
+  }
+
+  if (timerRunning && timerSec === 0) {
+    timerRunning = false;
+    setPauseButtonIcon(false);
+    if (timerAutoAdvance) {
+      finishStep(true);
+    }
+  }
 }, 1000);
 
 function toggleTimer() {
-  timerRunning = !timerRunning;
-  const btn = document.getElementById('timerPauseBtn');
-  if (btn) {
-    if (timerRunning) {
-      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
-    } else {
-      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
-    }
+  const step = activeRecipePlan[currentStep];
+  if (!step || Number(step.timerSeconds) <= 0) {
+    return;
   }
+
+  timerRunning = !timerRunning;
+  setPauseButtonIcon(timerRunning);
 }
 
 function goBackStep() {
   if (currentStep > 0) {
     currentStep--;
     updateStepDisplay();
-    console.log('Back to step ' + recipeSteps[currentStep].step);
+    console.log('Back to step ' + activeRecipePlan[currentStep].index);
   } else {
     alert('Already at the first step!');
   }
 }
 
 function repeatStep() {
-  timerSec = recipeSteps[currentStep].timer;
+  const step = activeRecipePlan[currentStep];
+  if (!step || Number(step.timerSeconds) <= 0) {
+    return;
+  }
+
+  timerSec = Number(step.timerSeconds);
   timerRunning = true;
-  document.getElementById('timerPauseBtn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
-  console.log('Repeating step ' + recipeSteps[currentStep].step);
+  setPauseButtonIcon(true);
+  renderTimerValue();
+  console.log('Repeating step ' + step.index);
 }
 
 function stopTimer() {
+  const step = activeRecipePlan[currentStep];
+  if (!step || Number(step.timerSeconds) <= 0) {
+    return;
+  }
+
   timerRunning = false;
   timerSec = 0;
-  const el = document.getElementById('timerVal');
-  if (el) el.textContent = '00:00';
-  document.getElementById('timerPauseBtn').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>';
+  renderTimerValue();
+  setPauseButtonIcon(false);
 }
 
-function finishStep() {
-  if (currentStep < recipeSteps.length - 1) {
+function finishStep(fromTimer = false) {
+  if (currentStep < activeRecipePlan.length - 1) {
     currentStep++;
     updateStepDisplay();
-    console.log('Finished step, now on step ' + recipeSteps[currentStep].step);
+    if (fromTimer) {
+      announceCurrentStep('Timer finished. Moving on');
+    }
+    console.log(fromTimer ? 'Auto-advanced to step ' + activeRecipePlan[currentStep].index : 'Finished step, now on step ' + activeRecipePlan[currentStep].index);
   } else {
-    // Recipe is complete!
-    document.getElementById('completeRecipeName').textContent = 'Garlic Herb Chicken';
-    document.getElementById('stepsCompleted').textContent = recipeSteps.length + '/' + recipeSteps.length;
+    document.getElementById('completeRecipeName').textContent = selectedRecipe.name || 'Recipe';
+    document.getElementById('stepsCompleted').textContent = activeRecipePlan.length + '/' + activeRecipePlan.length;
     showView('view-recipe-complete');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  }
+}
+
+function getStepSummary(step) {
+  if (!step) {
+    return 'No step is currently active.';
+  }
+
+  const timerHint = Number(step.timerSeconds) > 0 ? ` Set a timer for ${formatClock(step.timerSeconds)}.` : '';
+  return `Step ${step.index}: ${step.instruction}${timerHint}`;
+}
+
+function speakCookText(text) {
+  if (!('speechSynthesis' in window)) {
+    return;
+  }
+
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(String(text || ''));
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  } catch (error) {
+    console.warn('Speech synthesis unavailable:', error);
+  }
+}
+
+function setCookTranscriptStatus(text) {
+  const el = document.getElementById('cookTranscriptStatus');
+  if (el) {
+    el.textContent = String(text || 'Mic idle');
+  }
+}
+
+function setCookMicButtonState() {
+  const btn = document.getElementById('cookMicBtn');
+  if (!btn) {
+    return;
+  }
+
+  btn.textContent = cookListening ? 'Stop Mic' : 'Start Mic';
+}
+
+function initCookRecognition() {
+  if (cookRecognition) {
+    return;
+  }
+
+  const SpeechRecognitionCtor = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognitionCtor) {
+    setCookTranscriptStatus('Speech recognition not supported in this browser');
+    return;
+  }
+
+  cookRecognition = new SpeechRecognitionCtor();
+  cookRecognition.lang = 'en-US';
+  cookRecognition.continuous = true;
+  cookRecognition.interimResults = true;
+
+  cookRecognition.onstart = () => {
+    cookListening = true;
+    setCookMicButtonState();
+    setCookTranscriptStatus('Listening...');
+  };
+
+  cookRecognition.onend = () => {
+    cookListening = false;
+    setCookMicButtonState();
+    if (cookInterimText) {
+      setCookTranscriptStatus(`Heard: ${cookInterimText}`);
+    } else {
+      setCookTranscriptStatus('Mic idle');
+    }
+  };
+
+  cookRecognition.onerror = (event) => {
+    console.warn('Cook speech recognition error:', event?.error);
+    cookListening = false;
+    setCookMicButtonState();
+    setCookTranscriptStatus(`Mic error: ${event?.error || 'unknown'}`);
+  };
+
+  cookRecognition.onresult = (event) => {
+    let interim = '';
+    let finalText = '';
+
+    for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      const transcript = String(event.results[i][0]?.transcript || '').trim();
+      if (!transcript) {
+        continue;
+      }
+
+      if (event.results[i].isFinal) {
+        finalText += (finalText ? ' ' : '') + transcript;
+      } else {
+        interim += (interim ? ' ' : '') + transcript;
+      }
+    }
+
+    cookInterimText = interim;
+    if (interim) {
+      setCookTranscriptStatus(`Listening: ${interim}`);
+    } else if (cookListening) {
+      setCookTranscriptStatus('Listening...');
+    }
+
+    if (finalText) {
+      submitCookTranscript(finalText);
+    }
+  };
+}
+
+function toggleCookListening() {
+  initCookRecognition();
+  if (!cookRecognition) {
+    return;
+  }
+
+  if (cookListening) {
+    cookRecognition.stop();
+    return;
+  }
+
+  cookInterimText = '';
+  cookRecognition.start();
+}
+
+function getCookHistoryPayload() {
+  return cookFeedEntries.slice(-8).map((entry) => ({
+    role: entry.role === 'assistant' ? 'assistant' : 'user',
+    content: String(entry.text || '')
+  }));
+}
+
+async function requestCookAssistant({ command = '', userText = '' }) {
+  const step = activeRecipePlan[currentStep];
+  const response = await fetch(`${API_BASE}/cook-assistant-reply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      command,
+      userText,
+      recipeName: selectedRecipe.name,
+      recipeDescription: selectedRecipe.description,
+      stepSummary: getStepSummary(step),
+      history: getCookHistoryPayload()
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Cook assistant backend request failed');
+  }
+
+  const data = await response.json();
+  return String(data?.reply || '').trim();
+}
+
+function submitCookTyped() {
+  const input = document.getElementById('cookTranscriptInput');
+  if (!input) {
+    return;
+  }
+
+  const text = String(input.value || '').trim();
+  if (!text) {
+    return;
+  }
+
+  input.value = '';
+  submitCookTranscript(text);
+}
+
+async function submitCookTranscript(text) {
+  const normalized = String(text || '').trim();
+  if (!normalized) {
+    return;
+  }
+
+  if (cookAssistantPending) {
+    pushCookFeed('assistant', 'One moment, finishing the previous response.');
+    return;
+  }
+
+  pushCookFeed('user', normalized);
+  setCookTranscriptStatus('Generating reply...');
+  cookAssistantPending = true;
+
+  try {
+    const reply = await requestCookAssistant({ userText: normalized });
+    if (reply) {
+      pushCookFeed('assistant', reply);
+      speakCookText(reply);
+    }
+    setCookTranscriptStatus(cookListening ? 'Listening...' : 'Mic idle');
+  } catch (error) {
+    console.warn('Cook transcript request failed:', error);
+    announceCurrentStep('Backend unavailable, using local cook guide');
+    setCookTranscriptStatus('Reply fallback active');
+  } finally {
+    cookAssistantPending = false;
+  }
+}
+
+function pushCookFeed(role, text) {
+  const trimmedText = String(text || '').trim();
+  if (!trimmedText) {
+    return;
+  }
+
+  cookFeedEntries.push({ role, text: trimmedText });
+  cookFeedEntries = cookFeedEntries.slice(-8);
+
+  const feed = document.getElementById('cookAssistantFeed');
+  if (!feed) {
+    return;
+  }
+
+  feed.innerHTML = '';
+  cookFeedEntries.forEach((entry) => {
+    const row = document.createElement('div');
+    row.className = 'cook-feed-item ' + (entry.role === 'user' ? 'user' : 'assistant');
+
+    const speaker = document.createElement('strong');
+    speaker.textContent = entry.role === 'user' ? 'You: ' : 'HeardChef: ';
+
+    const msg = document.createElement('span');
+    msg.textContent = entry.text;
+
+    row.appendChild(speaker);
+    row.appendChild(msg);
+    feed.appendChild(row);
+  });
+
+  feed.scrollTop = feed.scrollHeight;
+}
+
+function announceCurrentStep(prefix = '') {
+  const step = activeRecipePlan[currentStep];
+  const summary = getStepSummary(step);
+  const spoken = prefix ? `${prefix}. ${summary}` : summary;
+
+  pushCookFeed('assistant', spoken);
+  speakCookText(spoken);
+}
+
+function renderCookStepList() {
+  const list = document.getElementById('cookStepList');
+  if (!list) {
+    return;
+  }
+
+  list.innerHTML = '';
+  activeRecipePlan.forEach((step, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'cook-step-chip';
+    if (idx < currentStep) {
+      chip.classList.add('done');
+    } else if (idx === currentStep) {
+      chip.classList.add('current');
+    }
+
+    const status = idx < currentStep ? 'Done' : idx === currentStep ? 'Now' : 'Next';
+    chip.textContent = `${status} - Step ${step.index}: ${step.title}`;
+    list.appendChild(chip);
+  });
+}
+
+async function runCookCommand(command) {
+  const clean = String(command || '').toLowerCase();
+  const commandLabels = {
+    'what-next': "What's next?",
+    repeat: 'Repeat step',
+    pause: 'Pause timer',
+    next: 'Next step',
+    back: 'Previous step'
+  };
+
+  if (cookAssistantPending) {
+    pushCookFeed('assistant', 'One moment, I am still finishing the previous cooking response.');
+    return;
+  }
+
+  pushCookFeed('user', commandLabels[clean] || clean);
+
+  if (clean === 'repeat') {
+    repeatStep();
+  } else if (clean === 'pause') {
+    if (timerRunning) {
+      toggleTimer();
+    } else {
+      const step = activeRecipePlan[currentStep];
+      if (step && Number(step.timerSeconds) > 0 && timerSec > 0) {
+        toggleTimer();
+      }
+    }
+  } else if (clean === 'next') {
+    finishStep(false);
+  } else if (clean === 'back') {
+    goBackStep();
+  }
+
+  cookAssistantPending = true;
+  try {
+    const reply = await requestCookAssistant({ command: clean });
+    if (reply) {
+      pushCookFeed('assistant', reply);
+      speakCookText(reply);
+    } else {
+      announceCurrentStep('Here is your current step');
+    }
+  } catch (error) {
+    console.warn('Cook assistant request failed:', error);
+    announceCurrentStep('Backend unavailable, using local cook guide');
+  } finally {
+    cookAssistantPending = false;
   }
 }
 
@@ -1786,37 +2444,42 @@ function tryAnother() {
 }
 
 function goHome() {
+  timerRunning = false;
+  if (cookRecognition && cookListening) {
+    try {
+      cookRecognition.stop();
+    } catch (error) {
+      console.warn('Failed to stop cook recognition:', error);
+    }
+  }
   showView('view-home');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('nav-home').classList.add('active');
 }
 
-/* ── Recipe Steps Data ── */
-const recipeSteps = [
-  { step: 1, total: 6, desc: 'Pat chicken dry and mix with garlic, rosemary, thyme, salt & pepper.', img: 'https://images.unsplash.com/photo-1604503468506-a8da13d11f36?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Let marinate for 15 mins for better flavor', timer: 180 },
-  { step: 2, total: 6, desc: 'Heat olive oil in a large skillet over medium-high heat until shimmering.', img: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Test oil with a drop of water—should sizzle', timer: 120 },
-  { step: 3, total: 6, desc: 'Sear chicken breasts in hot oil until golden brown on both sides.', img: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Use medium-high heat for best results', timer: 480 },
-  { step: 4, total: 6, desc: 'Transfer to a plate. Add garlic and herbs to the same pan, cook until fragrant.', img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Don\'t let garlic burn—watch closely', timer: 180 },
-  { step: 5, total: 6, desc: 'Add chicken broth and lemon juice. Return chicken to pan and simmer.', img: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Cover with lid to cook through faster', timer: 600 },
-  { step: 6, total: 6, desc: 'Check chicken internal temp reaches 165°F. Plate and drizzle with fresh herbs.', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Let rest 2 mins before serving', timer: 120 }
-];
-
-let currentStep = 2; // Start at step 3 (index 2)
-
 function updateStepDisplay() {
-  const step = recipeSteps[currentStep];
-  document.getElementById('stepNum').textContent = 'Step ' + step.step;
-  document.getElementById('stepTotal').textContent = '/' + step.total;
-  document.getElementById('stepDesc').textContent = step.desc;
-  document.getElementById('stepImg').src = step.img;
-  document.getElementById('stepTip').textContent = step.tip;
-  document.getElementById('stepPercent').textContent = Math.round((step.step / step.total) * 100) + '% complete';
-  document.getElementById('stepFill').style.width = ((step.step / step.total) * 100) + '%';
-  
-  // Reset timer
-  timerSec = step.timer;
-  timerRunning = true;
-  document.getElementById('timerPauseBtn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+  const step = activeRecipePlan[currentStep];
+  if (!step) return;
+
+  const total = activeRecipePlan.length;
+  const pct = Math.round(((currentStep + 1) / total) * 100);
+  const timerForStep = Number(step.timerSeconds || 0);
+
+  document.getElementById('stepNum').textContent = 'Step ' + (currentStep + 1);
+  document.getElementById('stepTotal').textContent = '/' + total;
+  document.getElementById('stepDesc').textContent = step.instruction;
+  document.getElementById('stepImg').src = step.image;
+  document.getElementById('stepTip').textContent = 'Tip: ' + step.tip;
+  document.getElementById('stepPercent').textContent = pct + '% complete';
+  document.getElementById('stepFill').style.width = pct + '%';
+  document.querySelector('.cook-recipe-name').textContent = selectedRecipe.name || 'Recipe';
+
+  timerSec = timerForStep;
+  timerRunning = timerForStep > 0;
+  setPauseButtonIcon(timerRunning);
+  setTimerControlsEnabled(timerForStep > 0);
+  renderTimerValue();
+  renderCookStepList();
 }
 
 /* ── Dynamic greeting ── */
@@ -1826,6 +2489,16 @@ function updateStepDisplay() {
   const el = document.getElementById('homeTime');
   if (el) el.textContent = g;
 })();
+
+updateStepDisplay();
+updateConversion();
+
+document.getElementById('cookTranscriptInput')?.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    submitCookTyped();
+  }
+});
 </script>
 </body>
 </html>
