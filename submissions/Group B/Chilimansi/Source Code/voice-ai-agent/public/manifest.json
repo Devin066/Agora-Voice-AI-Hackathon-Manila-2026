@@ -1,0 +1,17 @@
+{
+  "name": "First Aid Bot",
+  "short_name": "FirstAidBot",
+  "description": "Offline-capable emergency action plan assistant for civilian responders.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#081326",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/next.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

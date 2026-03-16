@@ -1,0 +1,89 @@
+# Implementation Plan
+
+- [x] 1. Install dependencies and configure Tailwind CSS v4
+  - [x] 1.1 Install Tailwind CSS v4, PostCSS plugin, and UI dependencies
+    - Run `npm install tailwindcss @tailwindcss/postcss postcss class-variance-authority clsx tailwind-merge lucide-react @radix-ui/react-tabs @radix-ui/react-slot`
+    - Create `postcss.config.mjs` with `@tailwindcss/postcss` plugin
+    - _Requirements: 8.1, 8.2_
+  - [x] 1.2 Rewrite `globals.css` with Tailwind v4 theme tokens and custom animations
+    - Add `@import "tailwindcss"` and `@theme` block with all oklch color tokens (background, foreground, card, destructive, success, warning, muted, border, primary, secondary, accent, ring, radius)
+    - Define `@keyframes pulse-emergency` and `@keyframes audio-wave`
+    - Add base layer styles for body, html, and reset
+    - _Requirements: 8.1, 8.3, 8.4_
+  - [x] 1.3 Create `src/lib/utils.ts` with `cn()` utility
+    - Export `cn` function using `clsx` and `tailwind-merge`
+    - _Requirements: 8.1_
+
+- [x] 2. Create shadcn/ui primitive components
+  - [x] 2.1 Create `src/components/ui/button.tsx`
+    - Implement Button with variants: `default`, `destructive`, `outline`, `success`, `ghost`; sizes: `default`, `sm`, `lg`, `icon`
+    - Use `class-variance-authority` and `@radix-ui/react-slot` for `asChild` support
+    - _Requirements: 2.1, 5.4, 6.1, 6.6, 9.1_
+  - [x] 2.2 Create `src/components/ui/card.tsx`
+    - Implement Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter
+    - _Requirements: 3.1, 5.3, 6.3_
+  - [x] 2.3 Create `src/components/ui/tabs.tsx`
+    - Implement Tabs, TabsList, TabsTrigger, TabsContent using `@radix-ui/react-tabs`
+    - _Requirements: 1.1, 1.2, 1.3, 9.1_
+  - [x] 2.4 Create `src/components/ui/badge.tsx`
+    - Implement Badge with variants: `default`, `destructive`, `outline`, `success`, `warning`
+    - _Requirements: 4.1, 5.3_
+
+- [x] 3. Build core UI components
+  - [x] 3.1 Create `src/components/status-indicator.tsx`
+    - Accept `status` prop with values "idle", "alerting", "connected", "offline"
+    - Render pill-shaped badge with appropriate icon (Wifi, Radio, WifiOff), color, and text per state
+    - Add `role="status"` and `aria-live="polite"`
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 9.2_
+  - [x] 3.2 Create `src/components/sos-button.tsx`
+    - Accept `isAlerting` and `onTrigger` props
+    - Render 192×192px circular button with AlertTriangle icon, "SOS", "TULONG!" text
+    - Apply `pulse-emergency` animation when not alerting, disable when alerting
+    - Render conditional helper text below
+    - Add `aria-label` and visually hidden state change text
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 9.1, 9.4_
+  - [x] 3.3 Create `src/components/emergency-action-plan.tsx`
+    - Accept `condition`, `actionRequired`, `emergencyContact`, and optional `compact` props
+    - Render Card with FileText icon header, condition (warning color), action text, phone (success color)
+    - Compact mode reduces padding and font sizes
+    - _Requirements: 3.1, 3.2, 3.3_
+  - [x] 3.4 Create `src/components/incoming-alert-card.tsx`
+    - Accept `patient` object and `onAccept`/`onDecline` callbacks
+    - Render Card with red border tint, patient avatar/name, URGENT badge, info grid (location, distance, time), condition box
+    - Render Decline (outline) and Accept & Respond (success) buttons
+    - _Requirements: 5.3, 5.4, 5.5, 5.6, 9.1_
+  - [x] 3.5 Create `src/components/voice-ai-interface.tsx`
+    - Accept `isConnected`, `isMuted`, `onConnect`, `onDisconnect`, `onToggleMute` props
+    - Disconnected state: green Connect button
+    - Connected state: Card with "Voice AI Active", 8-bar audio visualizer with staggered `audio-wave` animation, mute toggle, red End Call button
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 9.1, 9.3_
+
+- [x] 4. Build view components and wire up main page
+  - [x] 4.1 Create `src/components/patient-view.tsx`
+    - Accept `emergencyState`, `onSOSTrigger`, `status` props
+    - Render centered vertical layout: StatusIndicator → SOSButton → EAP card → location text
+    - Include Supabase integration placeholder comments
+    - _Requirements: 10.1, 10.2, 2.1, 2.2, 2.3, 3.1, 4.1_
+  - [x] 4.2 Create `src/components/responder-view.tsx`
+    - Accept props for responder state, voice AI state, and all action callbacks
+    - Implement three states: waiting (Shield icon, standby text, realtime indicator), alert-received (emergency header, IncomingAlertCard with demo data), responding (nav card, compact EAP, VoiceAIInterface, Mark Complete button)
+    - Include Supabase/Agora integration placeholder comments
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 6.1, 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [x] 4.3 Rewrite `src/app/layout.tsx`
+    - Import updated globals.css (Tailwind v4)
+    - Keep Geist fonts, update metadata and viewport for emergency theme
+    - _Requirements: 8.1, 8.2_
+  - [x] 4.4 Rewrite `src/app/page.tsx` with header, tabs, footer, and state management
+    - Implement sticky header with Heart icon logo (red square, green dot), "First Aid Bot" title, "Agora Voice AI Hackathon" label
+    - Implement Tabs with Patient and Responder views
+    - Implement footer with hackathon credit and emergency hotlines (911, 143)
+    - Manage all state: activeTab, emergencyState, responderState, voiceAIConnected, isMuted
+    - Wire SOS trigger to set emergencyState and simulate 2-second responder alert
+    - Pass all state and callbacks to PatientView and ResponderView
+    - Delete `page.module.css` (no longer needed)
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 2.3, 5.2, 7.5, 9.1_
+  - [ ]* 4.5 Write unit tests for component rendering and state transitions
+    - Test SOSButton renders correctly in idle and alerting states
+    - Test ResponderView transitions between waiting, alert-received, and responding
+    - Test VoiceAIInterface toggles between connected and disconnected
+    - _Requirements: 2.1, 2.3, 5.1, 5.2, 5.5, 6.1, 6.2_

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "agora": {
+      "command": "uvx",
+      "args": ["agora-mcp@latest"],
+      "env": {
+        "AGORA_APP_ID": "807781d6ceec4dfa9efc2725064dcc8f",
+        "AGORA_APP_CERTIFICATE": "deec0fab62f74be5bb238d2e1efb5b1f",
+        "AGORA_CUSTOMER_ID": "05a95ef8968349fd93593adc0f0d6c94",
+        "AGORA_CUSTOMER_SECRET": "2e7db594efdc4ef2a21f6db009f21648"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
