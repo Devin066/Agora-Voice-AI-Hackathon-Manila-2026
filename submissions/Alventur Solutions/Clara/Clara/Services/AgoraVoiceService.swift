@@ -7,6 +7,7 @@ protocol AgoraVoiceServiceProtocol: AnyObject {
 
     func start(appId: String, token: String, channelName: String, uid: UInt, agentUid: UInt) async throws
     func setExpectedAgentUid(_ uid: UInt)
+    func reconfigureAudioRoute()
     func stop() async
 }
 
@@ -78,6 +79,11 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         print("[agora] updated expectedAgentUid=\(uid)")
     }
 
+    func reconfigureAudioRoute() {
+        _ = engine?.setEnableSpeakerphone(true)
+        print("[agora] reconfigured audio route to speakerphone")
+    }
+
     func start(appId: String, token: String, channelName: String, uid: UInt, agentUid: UInt) async throws {
         let normalizedAppId = appId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedAppId.isEmpty else {
@@ -132,9 +138,9 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         try audioSession.setCategory(
             .playAndRecord,
             mode: .voiceChat,
-            options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .duckOthers]
+            options: [.defaultToSpeaker, .allowBluetooth, .duckOthers]
         )
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        try audioSession.setActive(true)
     }
 
     private func joinChannel(token: String, channelName: String, uid: UInt) async throws {
@@ -218,7 +224,7 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
 
     nonisolated func rtcEngine(
         _ engine: AgoraRtcEngineKit,
-        connectionChangedTo state: AgoraConnectionStateType,
+        connectionChangedTo state: AgoraConnectionState,
         reason: AgoraConnectionChangedReason
     ) {
         print("[agora] connection state=\(state.rawValue) reason=\(reason.rawValue)")

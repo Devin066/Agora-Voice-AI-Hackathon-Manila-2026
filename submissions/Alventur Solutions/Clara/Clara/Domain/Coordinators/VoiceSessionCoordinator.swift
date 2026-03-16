@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import AVFoundation
 
 @MainActor
 class VoiceSessionCoordinator: ObservableObject {
@@ -49,6 +50,16 @@ class VoiceSessionCoordinator: ObservableObject {
         }
     }
     
+    private func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(
+            .playAndRecord,
+            mode: .voiceChat,
+            options: [.defaultToSpeaker, .allowBluetooth]
+        )
+        try? session.setActive(true)
+    }
+
     func requestPermissions(completion: @escaping (Bool) -> Void) {
         speechAnalyzer.requestAuthorization { granted in
             completion(granted)
@@ -58,14 +69,18 @@ class VoiceSessionCoordinator: ObservableObject {
     func startSession(scenario: ScenarioType) async {
         guard state != .active && state != .connecting else { return }
 
+        configureAudioSession()
         resetMetricsForNewSession()
         self.state = .connecting
         self.errorMessage = nil
         
         // Hooks
         pitchAnalyzer.onPitchDetected = { [weak self] hz in
-            self?.currentPitch = hz
-            self?.pitchSamples.append(hz)
+            guard let self = self else { return }
+            self.currentPitch = hz
+            self.pitchSamples.append(hz)
+            let elapsed = Int(Date().timeIntervalSince(self.session?.startedAt ?? Date()))
+            self.liveActivityManager.updateMetrics(wpm: self.wpm, pitchHz: Int(hz), fillers: self.fillerCount, elapsed: elapsed, scenario: scenario)
         }
         
         pitchAnalyzer.onEnergyDetected = { [weak self] energy in
@@ -79,12 +94,18 @@ class VoiceSessionCoordinator: ObservableObject {
         }
         
         speechAnalyzer.onFillerWordDetected = { [weak self] word in
-            self?.fillerCount += 1
-            self?.hapticsEngine.playFillerWordBuzz()
+            guard let self = self else { return }
+            self.fillerCount += 1
+            self.hapticsEngine.playFillerWordBuzz()
+            let elapsed = Int(Date().timeIntervalSince(self.session?.startedAt ?? Date()))
+            self.liveActivityManager.updateMetrics(wpm: self.wpm, pitchHz: Int(self.currentPitch), fillers: self.fillerCount, elapsed: elapsed, scenario: scenario)
         }
         
         speechAnalyzer.onWPMUpdated = { [weak self] newWPM in
-            self?.wpm = newWPM
+            guard let self = self else { return }
+            self.wpm = newWPM
+            let elapsed = Int(Date().timeIntervalSince(self.session?.startedAt ?? Date()))
+            self.liveActivityManager.updateMetrics(wpm: newWPM, pitchHz: Int(self.currentPitch), fillers: self.fillerCount, elapsed: elapsed, scenario: scenario)
         }
         
         speechAnalyzer.onPauseDetected = { [weak self] duration in
@@ -109,7 +130,7 @@ class VoiceSessionCoordinator: ObservableObject {
                 token: token.token,
                 channelName: token.channelName,
                 uid: UInt(token.uid),
-                agentUid: 0
+                agentUid: 10001
             )
 
             let startResponse = try await apiClient.startSession(
@@ -127,6 +148,21 @@ class VoiceSessionCoordinator: ObservableObject {
             try speechAnalyzer.start()
             pitchAnalyzer.start()
 
+            // Re-assert audio session after AVAudioEngines have modified it
+            let audioSession = AVAudioSession.sharedInstance()
+            try? audioSession.setCategory(
+                .playAndRecord,
+                mode: .voiceChat,
+                options: [.defaultToSpeaker, .allowBluetooth, .duckOthers]
+            )
+            try? audioSession.setActive(true)
+            
+            // Re-apply speakerphone routing for Agora
+            Task {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                agoraService.reconfigureAudioRoute()
+            }
+
             let newSession = VoiceSession(
                 id: startResponse.sessionId,
                 scenario: scenario.rawValue,
@@ -139,6 +175,9 @@ class VoiceSessionCoordinator: ObservableObject {
             self.activeSessionId = startResponse.sessionId
             self.activeChannelName = startResponse.channelName
             self.state = .active
+            
+            liveActivityManager.startPrompt()
+            liveActivityManager.transitionToActive(scenario: scenario)
         } catch {
             await agoraService.stop()
             print("Failed to start voice session: \(error)")
@@ -148,6 +187,7 @@ class VoiceSessionCoordinator: ObservableObject {
     }
 
     func stopSession() async {
+        guard state == .active || state == .connecting else { return }
         self.state = .stopping
         speechAnalyzer.stop()
         pitchAnalyzer.stop()
@@ -191,7 +231,7 @@ class VoiceSessionCoordinator: ObservableObject {
         let pacingScore: Float = wpm >= 130 && wpm <= 160 ? 100 : 70
         let intonationScore: Float = range > 40 ? 100 : 60 // High range = good
         let filScore: Float = max(100 - (fillerRate * 5), 0)
-        let overall = (pacingScore * 0.2) + (intonationScore * 0.25) + (filScore * 0.25) + 20 // pad confidence
+        let overall = (pacingScore * 0.2) + (intonationScore * 0.25) + (filScore * 0.25) + (80.0 * 0.2) + (85.0 * 0.1) // confidence + fluency
         
         let newMetrics = SessionMetrics(
             overallScore: overall,
