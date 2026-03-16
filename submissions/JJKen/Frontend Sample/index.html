@@ -492,70 +492,289 @@ html, body {
 /* ════════════════════════════════════════════
    VIEW 4 — STEP-BY-STEP COOKING
 ════════════════════════════════════════════ */
-#view-cooking { padding-top: 54px; }
+#view-cooking {
+  padding-top: 54px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 
-.cook-header { padding:18px 24px 14px; border-bottom:1px solid var(--border); }
-.cook-recipe-name { font-size:17px; font-weight:800; color:var(--text-hi); letter-spacing:-.4px; }
-.cook-progress-row { display:flex; align-items:center; gap:10px; margin-top:10px; }
-.cook-prog-bar  { flex:1; height:5px; background:rgba(255,255,255,.1); border-radius:3px; }
-.cook-prog-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--c5),var(--c2)); width:45%; }
-.cook-prog-label { font-size:11px; color:var(--text-low); font-weight:600; }
+.cook-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-.cook-body { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:14px; }
-.cook-body::-webkit-scrollbar { display:none; }
+.cook-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.cook-header-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-mid);
+}
+
+.cook-recipe-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cook-mode-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c1);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.cook-recipe-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-hi);
+  letter-spacing: -0.3px;
+}
+
+.cook-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cook-prog-bar {
+  flex: 1;
+  height: 6px;
+  background: #e8e8ea;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cook-prog-fill {
+  height: 100%;
+  background: var(--c1);
+  width: 60%;
+  border-radius: 3px;
+}
+
+.cook-prog-label {
+  font-size: 11px;
+  color: var(--text-low);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cook-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px 120px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cook-body::-webkit-scrollbar { display: none; }
+
+.cook-task-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c1);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
 
 .cook-step-card {
-  background:#ffffff; border:1px solid rgba(0,0,0,0.06);
-  border-left:3px solid var(--c5); border-radius:16px; padding:16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
-.cook-step-num  { font-size:11px; font-weight:700; color:var(--c5); text-transform:uppercase; letter-spacing:.7px; margin-bottom:7px; }
-.cook-step-text { font-size:17px; font-weight:700; color:#1d1d1f; line-height:1.4; letter-spacing:-.3px; }
-.cook-step-tip  {
-  margin-top:11px; background:#fff8f0; border-radius:10px;
-  padding:9px 12px; font-size:12px; color:#c45e00; font-weight:600;
-  display:flex; gap:6px; align-items:flex-start;
+  background: #ffffff;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.cook-tools-row { display:flex; gap:10px; }
+.cook-step-num {
+  display: none;
+}
+
+.cook-step-text {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1d1d1f;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+}
+
+.cook-step-text em {
+  font-style: normal;
+  color: var(--c1);
+}
+
+.cook-step-tip {
+  background: #1d1d1f;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 500;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cook-tools-row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .cook-tool {
-  flex:1; background:#ffffff; border:1px solid rgba(0,0,0,0.06);
-  border-radius:14px; padding:13px 11px; display:flex; flex-direction:column; gap:7px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  background: #f0f7ff;
+  border: none;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.cook-tool-label { font-size:10px; font-weight:700; color:var(--text-low); text-transform:uppercase; letter-spacing:.5px; }
-.cook-timer-val  { font-size:26px; font-weight:800; color:#1d1d1f; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
-.cook-timer-name { font-size:11px; color:var(--text-low); }
-.cook-timer-bar  { height:3px; border-radius:2px; background:rgba(0,0,0,0.06); }
-.cook-timer-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--c4),var(--c3)); width:55%; }
 
-.conv-input  { width:44px; padding:5px 7px; background:#f5f5f7; border:1px solid rgba(0,0,0,0.1); border-radius:8px; font-size:15px; font-weight:700; color:#1d1d1f; text-align:center; font-family:inherit; outline:none; }
-.conv-unit   { font-size:12px; color:var(--text-low); font-weight:600; }
-.conv-eq     { font-size:12px; color:var(--c5); font-weight:700; }
-.conv-field  { display:flex; align-items:center; gap:6px; }
+.cook-tool-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c1);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.cook-timer-val {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--c1);
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cook-timer-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.timer-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.timer-btn:active {
+  transform: scale(0.95);
+}
+
+.timer-btn.check {
+  background: var(--c1);
+  color: #fff;
+  border-color: var(--c1);
+}
 
 .cook-voice-strip {
-  background:linear-gradient(135deg, #fff3e0, #fff8e1);
-  border:1px solid #ffe0b2;
-  border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
 }
-.cvs-eq { display:flex; align-items:center; gap:2px; height:22px; }
-.cvs-bar { width:3px; border-radius:2px; background:linear-gradient(to top,var(--c2),var(--c1)); animation:diEq .5s ease-in-out infinite alternate; }
-.cvs-bar:nth-child(1){height:8px; animation-delay:0s;}
-.cvs-bar:nth-child(2){height:16px;animation-delay:.08s;}
+
+.cvs-eq {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  justify-content: center;
+}
+
+.cvs-bar {
+  width: 2px;
+  border-radius: 2px;
+  background: var(--c1);
+  animation: diEq 0.5s ease-in-out infinite alternate;
+}
+
+.cvs-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+.cvs-bar:nth-child(2) { height: 16px; animation-delay: 0.08s; }
+.cvs-bar:nth-child(3) { height: 20px; animation-delay: 0.04s; }
+.cvs-bar:nth-child(4) { height: 12px; animation-delay: 0.12s; }
+.cvs-bar:nth-child(5) { height: 18px; animation-delay: 0.06s; }
+
+.cvs-text {
+  font-size: 12px;
+  color: var(--text-low);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cook-nav {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  padding-bottom: 20px;
+}
+
+.cook-nav-btn {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cook-nav-btn.primary {
+  background: var(--c1);
+  color: #fff;
+}
+
+.cook-nav-btn.primary:active {
+  transform: scale(0.98);
+}
+
+.cook-nav-btn.ghost {
+  background: #f5f5f7;
+  color: var(--text-hi);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.cook-nav-btn.ghost:active {
+  background: #eaeaec;
+}
 .cvs-bar:nth-child(3){height:22px;animation-delay:.04s;}
 .cvs-bar:nth-child(4){height:12px;animation-delay:.12s;}
 .cvs-bar:nth-child(5){height:18px;animation-delay:.06s;}
-.cvs-text strong { font-size:13px; font-weight:700; color:#e65100; display:block; }
-.cvs-text span   { font-size:11px; color:rgba(230,81,0,.65); }
-
-.cook-cmd-chips { display:flex; flex-wrap:wrap; gap:6px; }
-.cmd-chip {
-  background:#ffffff; border:1px solid rgba(0,0,0,0.08);
-  border-radius:50px; padding:5px 12px; font-size:11px;
-  color:var(--text-mid); font-weight:500;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-}
 
 .filter-pill {
   padding:7px 16px; border-radius:50px; font-size:13px; font-weight:600;
@@ -564,11 +783,6 @@ html, body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 .filter-pill.active { background:linear-gradient(135deg,rgba(243,160,37,.2),rgba(217,130,5,.15)); border-color:var(--c5); color:var(--c5); }
-
-.cook-nav { display:flex; gap:10px; }
-.cook-nav-btn { flex:1; padding:13px; border-radius:14px; font-size:15px; font-weight:700; transition:all .2s; }
-.cook-nav-btn.primary { background:linear-gradient(135deg,var(--c5),var(--c2)); color:#fff; box-shadow:0 4px 18px rgba(217,130,5,.4); }
-.cook-nav-btn.ghost   { background:var(--surface); border:1px solid var(--border); color:var(--text-mid); }
 
 /* ════════════════════════════════════════════
    VIEW 5 — RECIPES
@@ -674,6 +888,11 @@ html, body {
 @keyframes sheetUp {
   from { opacity:0; transform:translateY(50px); }
   to   { opacity:1; transform:translateY(0); }
+}
+@keyframes celebrate {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(10deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 .modal-sheet {
   background:#ffffff; border-top:1px solid rgba(0,0,0,0.1);
@@ -867,69 +1086,156 @@ html, body {
       <div class="view" id="view-cooking">
 
         <div class="cook-header">
-          <div class="cook-recipe-name">🍗 Garlic Herb Chicken Rice Bowl</div>
-          <div class="cook-progress-row">
-            <div class="cook-prog-bar"><div class="cook-prog-fill"></div></div>
-            <span class="cook-prog-label">Step 4 / 8</span>
+          <div class="cook-header-left">
+            <button class="cook-header-close" onclick="showView('view-listen')">←</button>
+            <div class="cook-recipe-info">
+              <div class="cook-mode-label">Cooking Mode</div>
+              <div class="cook-recipe-name">Garlic Herb Chicken</div>
+            </div>
           </div>
+          <button class="cook-header-close" onclick="stopVoice()">✕</button>
         </div>
 
         <div class="cook-body">
 
+          <div class="cook-progress-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 24px; font-weight: 800; color: #1d1d1f;" id="stepNum">Step 3</span>
+              <span style="font-size: 14px; color: var(--text-low); font-weight: 600;" id="stepTotal">/6</span>
+            </div>
+            <div style="width: 100%;">
+              <div class="cook-prog-bar"><div class="cook-prog-fill" id="stepFill"></div></div>
+              <span class="cook-prog-label" style="display: inline-block; margin-top: 8px;" id="stepPercent">50% complete</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="cook-task-label" style="text-align: center;">Active Task</div>
+            <div class="cook-step-card" style="text-align: center;">
+              <div class="cook-step-text" id="stepDesc">Sear chicken breasts in hot oil until golden brown on both sides.</div>
+              <div style="background: #1a1a1a; border-radius: 12px; height: 120px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; overflow: hidden;">
+                <img id="stepImg" src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=120&fit=crop" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+                <div style="position: absolute; text-align: center; bottom: 12px; left: 0; right: 0; background: rgba(0,0,0,0.6); padding: 8px; font-size: 11px;" id="stepTip">Tip: Use medium-high heat for best results</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: #e8f5e9; border-radius: 12px; padding: 18px;">
+            <div class="cook-tool-label" style="color: #4caf50; margin-bottom: 12px;">Active Timer</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+              <div class="cook-timer-val" id="timerVal" style="color: #000; font-size: 44px; font-weight: 700; font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;">08:00</div>
+              <div class="cook-timer-controls">
+              <button class="timer-btn" id="timerPauseBtn" style="background: #fff; border: 1px solid #ddd;" onclick="toggleTimer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg></button>
+                <button class="timer-btn check" id="timerFinishBtn" style="background: var(--c1); color: #fff; border: none;" onclick="finishStep()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+              </div>
+            </div>
+            <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 14px; font-size: 12px; color: var(--text-low); font-weight: 600;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-size: 11px; text-transform: uppercase; color: #4caf50; font-weight: 700; margin-bottom: 4px;">Convert</div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-low);"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 14v3a2 2 0 0 0 2 2h3"></path></svg>
+                    <input type="number" id="convAmount" value="2" style="width: 60px; padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-weight: 700; text-align: center;" oninput="updateConversion()">
+                    <select id="convUnit" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-weight: 600; background: #fff; cursor: pointer; color: var(--text-mid);" onchange="updateConversion()">
+                      <option value="tbsp">tbsp</option>
+                      <option value="tsp">tsp</option>
+                      <option value="cup">cup</option>
+                      <option value="mL">mL</option>
+                      <option value="L">L</option>
+                      <option value="oz">oz</option>
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="color: #000; font-size: 14px; font-weight: 700;">=</div>
+                  <div style="color: #000; font-size: 16px; font-weight: 800; margin-top: 4px;" id="convResult">30 mL</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="cook-voice-strip">
+            <div style="display: flex; gap: 12px; width: 100%;">
+              <button class="cook-nav-btn ghost" style="flex: 0.5; min-height: 44px;" onclick="goBackStep()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>Back</button>
+              <button class="cook-nav-btn ghost" style="flex: 0.5; min-height: 44px;" onclick="repeatStep()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px; vertical-align: middle;"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>Repeat</button>
+              <button class="cook-nav-btn primary" style="flex: 1; min-height: 44px;" onclick="finishStep()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: inline; margin-right: 4px; vertical-align: middle;"><polyline points="20 6 9 17 4 12"></polyline></svg>Finish</button>
+            </div>
             <div class="cvs-eq">
-              <div class="cvs-bar"></div><div class="cvs-bar"></div>
-              <div class="cvs-bar"></div><div class="cvs-bar"></div>
+              <div class="cvs-bar"></div>
+              <div class="cvs-bar"></div>
+              <div class="cvs-bar"></div>
+              <div class="cvs-bar"></div>
               <div class="cvs-bar"></div>
             </div>
-            <div class="cvs-text">
-              <strong>Voice Mode Active</strong>
-              <span>Say a command below</span>
-            </div>
-          </div>
-          <div class="cook-cmd-chips">
-            <span class="cmd-chip">"What's next?"</span>
-            <span class="cmd-chip">"Repeat step"</span>
-            <span class="cmd-chip">"Set timer"</span>
-            <span class="cmd-chip">"Help!"</span>
-            <span class="cmd-chip">"Convert cups to ml"</span>
-          </div>
-
-          <div class="cook-step-card">
-            <div class="cook-step-num">▶ Current — Step 4</div>
-            <div class="cook-step-text">Add the chicken to the hot pan and sear for 5 minutes without moving it.</div>
-            <div class="cook-step-tip"><span>💡</span><span>Don't disturb the chicken — let the crust form naturally before flipping.</span></div>
-          </div>
-
-          <div class="cook-tools-row">
-            <div class="cook-tool">
-              <div class="cook-tool-label">⏱ Timer</div>
-              <div class="cook-timer-val" id="timerVal">04:59</div>
-              <div class="cook-timer-name">Chicken sear</div>
-              <div class="cook-timer-bar"><div class="cook-timer-fill" id="timerFill"></div></div>
-            </div>
-            <div class="cook-tool">
-              <div class="cook-tool-label">⚖ Convert</div>
-              <div class="conv-field">
-                <input class="conv-input" id="convInput" value="2" type="number" oninput="updateConv()" />
-                <span class="conv-unit">tbsp</span>
-              </div>
-              <div class="conv-eq" id="convResult">= 30 mL</div>
-              <div style="display:flex;gap:5px;margin-top:7px;">
-                <span class="filter-pill active" style="padding:3px 10px;font-size:10px;" onclick="togglePill(this)">ml</span>
-                <span class="filter-pill" style="padding:3px 10px;font-size:10px;" onclick="togglePill(this)">cups</span>
-                <span class="filter-pill" style="padding:3px 10px;font-size:10px;" onclick="togglePill(this)">oz</span>
-              </div>
+            <div class="cvs-text">Voice Mode Active<br/>Say a command below</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px;">
+              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">What's next?</div>
+              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Repeat step</div>
+              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Set timer</div>
+              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Help</div>
+              <div style="background: #f5f5f7; border: 1px solid rgba(0,0,0,0.08); border-radius: 20px; padding: 6px 14px; font-size: 12px; color: var(--text-mid); font-weight: 600;">Convert cups to ml</div>
             </div>
           </div>
 
-          <button style="width:100%;padding:13px;border-radius:14px;background:rgba(230,81,0,.15);border:1px solid rgba(230,81,0,.35);color:#ffcc80;font-size:14px;font-weight:700;transition:all .2s;" onclick="showSubModal()">
-            ⚠️ Missing Heavy Cream — find a substitute
-          </button>
+        </div>
 
-          <div class="cook-nav">
-            <button class="cook-nav-btn ghost"   onclick="showView('view-speaking')">‹ Back</button>
-            <button class="cook-nav-btn primary" onclick="stopVoice()">Finish 🎉</button>
+        <div class="cook-nav" style="padding: 12px 20px 20px; display: none; gap: 12px; margin-top: auto;">
+          <button class="cook-nav-btn ghost" style="flex: 0.5; min-height: 44px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px; vertical-align: middle;"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>Repeat</button>
+          <button class="cook-nav-btn ghost" style="flex: 0.5; min-height: 44px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px; vertical-align: middle;"><circle cx="12" cy="12" r="9"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Timer</button>
+          <button class="cook-nav-btn primary" style="flex: 1; min-height: 44px;">Next <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-left: 4px; vertical-align: middle;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
+        </div>
+
+      </div>
+
+      <!-- ══════════════════════════════════
+           VIEW 4B  RECIPE COMPLETE
+      ═══════════════════════════════════ -->
+      <div class="view" id="view-recipe-complete">
+        <div style="padding-top: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; min-height: 844px; padding: 54px 20px 82px 20px;">
+          
+          <!-- Celebration Icon -->
+          <div style="font-size: 80px; animation: celebrate 0.6s ease-out;">🎉</div>
+          
+          <!-- Recipe Name -->
+          <div style="text-align: center;">
+            <div style="font-size: 28px; font-weight: 800; color: #1d1d1f; margin-bottom: 8px;" id="completeRecipeName">Garlic Herb Chicken</div>
+            <div style="font-size: 14px; color: var(--text-mid);">Recipe Complete!</div>
+          </div>
+
+          <!-- Stats -->
+          <div style="background: #f5f5f7; border-radius: 16px; padding: 20px; width: 100%; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 12px; color: var(--text-low); font-weight: 600; text-transform: uppercase;">Total Time</div>
+              <div style="font-size: 18px; font-weight: 800; color: #1d1d1f;" id="totalTime">24 minutes</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 12px;">
+              <div style="font-size: 12px; color: var(--text-low); font-weight: 600; text-transform: uppercase;">Steps Completed</div>
+              <div style="font-size: 18px; font-weight: 800; color: var(--c1);" id="stepsCompleted">6/6</div>
+            </div>
+          </div>
+
+          <!-- Rating -->
+          <div style="text-align: center;">
+            <div style="font-size: 12px; color: var(--text-low); font-weight: 600; text-transform: uppercase; margin-bottom: 12px;">Rate this recipe</div>
+            <div style="display: flex; gap: 8px; justify-content: center; font-size: 32px; cursor: pointer;" onclick="rateRecipe(this)">
+              <span style="opacity: 0.3; transition: all 0.2s;">⭐</span>
+              <span style="opacity: 0.3; transition: all 0.2s;">⭐</span>
+              <span style="opacity: 0.3; transition: all 0.2s;">⭐</span>
+              <span style="opacity: 0.3; transition: all 0.2s;">⭐</span>
+              <span style="opacity: 0.3; transition: all 0.2s;">⭐</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 12px; width: 100%; flex-direction: column;">
+            <button style="width: 100%; padding: 14px; background: var(--c1); color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onclick="tryAnother()">
+              Try Another Recipe
+            </button>
+            <button style="width: 100%; padding: 14px; background: #f5f5f7; color: var(--text-hi); border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onclick="goHome()">
+              Back to Home
+            </button>
           </div>
 
         </div>
@@ -1378,22 +1684,132 @@ function showSubModal() { document.getElementById('subModal').classList.add('ope
 function closeSubModal() { document.getElementById('subModal').classList.remove('open'); }
 
 /* ── Converter ── */
-function updateConv() {
-  const v = parseFloat(document.getElementById('convInput').value) || 0;
-  document.getElementById('convResult').textContent = '= ' + (v * 14.787).toFixed(0) + ' mL';
+const conversionRates = {
+  'tbsp': { 'tsp': 3, 'cup': 0.0625, 'mL': 14.7868, 'L': 0.0147868, 'oz': 0.5, 'g': 14.7868, 'kg': 0.0147868 },
+  'tsp': { 'tbsp': 0.333, 'cup': 0.0208, 'mL': 4.92892, 'L': 0.00492892, 'oz': 0.166667, 'g': 4.92892, 'kg': 0.00492892 },
+  'cup': { 'tbsp': 16, 'tsp': 48, 'mL': 236.588, 'L': 0.236588, 'oz': 8, 'g': 236.588, 'kg': 0.236588 },
+  'mL': { 'tbsp': 0.067628, 'tsp': 0.202884, 'cup': 0.00422675, 'L': 0.001, 'oz': 0.033814, 'g': 1, 'kg': 0.001 },
+  'L': { 'tbsp': 67.628, 'tsp': 202.884, 'cup': 4.22675, 'mL': 1000, 'oz': 33.814, 'g': 1000, 'kg': 1 },
+  'oz': { 'tbsp': 2, 'tsp': 6, 'cup': 0.125, 'mL': 29.5735, 'L': 0.0295735, 'g': 29.5735, 'kg': 0.0295735 },
+  'g': { 'tbsp': 0.067628, 'tsp': 0.202884, 'cup': 0.00422675, 'mL': 1, 'L': 0.001, 'oz': 0.033814, 'kg': 0.001 },
+  'kg': { 'tbsp': 67.628, 'tsp': 202.884, 'cup': 4.22675, 'mL': 1000, 'L': 1, 'oz': 33.814, 'g': 1000 }
+};
+
+function updateConversion() {
+  const amount = parseFloat(document.getElementById('convAmount').value) || 0;
+  const fromUnit = document.getElementById('convUnit').value;
+  const toUnit = fromUnit === 'tbsp' ? 'mL' : fromUnit === 'mL' ? 'tbsp' : 'tbsp'; // Default conversion direction
+  
+  let result = amount;
+  if (conversionRates[fromUnit] && conversionRates[fromUnit][toUnit]) {
+    result = (amount * conversionRates[fromUnit][toUnit]).toFixed(2);
+  }
+  
+  document.getElementById('convResult').textContent = '= ' + result + ' ' + toUnit;
 }
 
 /* ── Live countdown timer ── */
-let timerSec = 299;
-setInterval(() => {
-  if (timerSec > 0) timerSec--;
+let timerSec = 480; // 8 minutes = 480 seconds
+let timerRunning = true;
+let timerInterval = setInterval(() => {
+  if (timerRunning && timerSec > 0) timerSec--;
   const m  = String(Math.floor(timerSec / 60)).padStart(2,'0');
   const s  = String(timerSec % 60).padStart(2,'0');
   const el = document.getElementById('timerVal');
   if (el) el.textContent = m + ':' + s;
   const f  = document.getElementById('timerFill');
-  if (f)  f.style.width = ((299 - timerSec) / 299 * 100) + '%';
+  if (f)  f.style.width = ((480 - timerSec) / 480 * 100) + '%';
 }, 1000);
+
+function toggleTimer() {
+  timerRunning = !timerRunning;
+  const btn = document.getElementById('timerPauseBtn');
+  if (btn) {
+    if (timerRunning) {
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+    } else {
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+    }
+  }
+}
+
+function goBackStep() {
+  if (currentStep > 0) {
+    currentStep--;
+    updateStepDisplay();
+    console.log('Back to step ' + recipeSteps[currentStep].step);
+  } else {
+    alert('Already at the first step!');
+  }
+}
+
+function repeatStep() {
+  timerSec = recipeSteps[currentStep].timer;
+  timerRunning = true;
+  document.getElementById('timerPauseBtn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+  console.log('Repeating step ' + recipeSteps[currentStep].step);
+}
+
+function finishStep() {
+  if (currentStep < recipeSteps.length - 1) {
+    currentStep++;
+    updateStepDisplay();
+    console.log('Finished step, now on step ' + recipeSteps[currentStep].step);
+  } else {
+    // Recipe is complete!
+    document.getElementById('completeRecipeName').textContent = 'Garlic Herb Chicken';
+    document.getElementById('stepsCompleted').textContent = recipeSteps.length + '/' + recipeSteps.length;
+    showView('view-recipe-complete');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  }
+}
+
+function rateRecipe(el) {
+  const stars = el.querySelectorAll('span');
+  stars.forEach((star, idx) => {
+    star.style.opacity = '1';
+  });
+}
+
+function tryAnother() {
+  showView('view-recipes');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-recipes').classList.add('active');
+}
+
+function goHome() {
+  showView('view-home');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-home').classList.add('active');
+}
+
+/* ── Recipe Steps Data ── */
+const recipeSteps = [
+  { step: 1, total: 6, desc: 'Pat chicken dry and mix with garlic, rosemary, thyme, salt & pepper.', img: 'https://images.unsplash.com/photo-1598661108949-92e88adf3e65?w=400&h=120&fit=crop', tip: 'Tip: Let marinate for 15 mins for better flavor', timer: 180 },
+  { step: 2, total: 6, desc: 'Heat olive oil in a large skillet over medium-high heat until shimmering.', img: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae655?w=400&h=120&fit=crop', tip: 'Tip: Test oil with a drop of water—should sizzle', timer: 120 },
+  { step: 3, total: 6, desc: 'Sear chicken breasts in hot oil until golden brown on both sides.', img: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=120&fit=crop', tip: 'Tip: Use medium-high heat for best results', timer: 480 },
+  { step: 4, total: 6, desc: 'Transfer to a plate. Add garlic and herbs to the same pan, cook until fragrant.', img: 'https://images.unsplash.com/photo-1599599810694-b3b2b82b90ae?w=400&h=120&fit=crop', tip: 'Tip: Don\'t let garlic burn—watch closely', timer: 180 },
+  { step: 5, total: 6, desc: 'Add chicken broth and lemon juice. Return chicken to pan and simmer.', img: 'https://images.unsplash.com/photo-1473093295203-cad00df16e50?w=400&h=120&fit=crop', tip: 'Tip: Cover with lid to cook through faster', timer: 600 },
+  { step: 6, total: 6, desc: 'Check chicken internal temp reaches 165°F. Plate and drizzle with fresh herbs.', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=120&fit=crop', tip: 'Tip: Let rest 2 mins before serving', timer: 120 }
+];
+
+let currentStep = 2; // Start at step 3 (index 2)
+
+function updateStepDisplay() {
+  const step = recipeSteps[currentStep];
+  document.getElementById('stepNum').textContent = 'Step ' + step.step;
+  document.getElementById('stepTotal').textContent = '/' + step.total;
+  document.getElementById('stepDesc').textContent = step.desc;
+  document.getElementById('stepImg').src = step.img;
+  document.getElementById('stepTip').textContent = step.tip;
+  document.getElementById('stepPercent').textContent = Math.round((step.step / step.total) * 100) + '% complete';
+  document.getElementById('stepFill').style.width = ((step.step / step.total) * 100) + '%';
+  
+  // Reset timer
+  timerSec = step.timer;
+  timerRunning = true;
+  document.getElementById('timerPauseBtn').innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+}
 
 /* ── Dynamic greeting ── */
 (function() {

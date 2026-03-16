@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HeardChef – Voice Test</title>
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 0 20px; }
+    button { padding: 10px 20px; margin: 8px 4px; font-size: 14px; cursor: pointer; }
+    #status { margin-top: 16px; padding: 12px; background: #f4f4f4; border-radius: 6px; white-space: pre-wrap; font-size: 13px; }
+    #log { margin-top: 12px; padding: 12px; background: #1e1e1e; color: #d4d4d4; border-radius: 6px; white-space: pre-wrap; font-size: 12px; max-height: 200px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h2>🍳 HeardChef – Voice Test</h2>
+  <p>Click <strong>Join & Start AI</strong> to connect to the cooking assistant, then speak into your mic.</p>
+
+  <button id="btnJoin" onclick="joinAndStart()">Join & Start AI</button>
+  <button id="btnLeave" onclick="leaveAndEnd()" disabled>Leave & Stop AI</button>
+
+  <div id="status">Idle</div>
+  <div id="micLevel" style="margin-top:8px; font-size:12px; color:#555;">Mic level: n/a</div>
+  <div id="log"></div>
+
+  <script>
+    const BASE = 'http://localhost:3000';
+    const CHANNEL = 'test-room';
+    const USER_ID = 'web-tester-' + Math.floor(Math.random() * 9999);
+
+    let client, localTrack, localMediaStream, sessionId, micMeterTimer;
+
+    async function subscribeAndPlayRemoteAudio(user, source) {
+      try {
+        await client.subscribe(user, 'audio');
+        if (user.audioTrack) {
+          user.audioTrack.play();
+          log('AI audio playing (uid=' + user.uid + ', source=' + source + ')');
+        } else {
+          log('Remote audio subscribed but no track found yet (uid=' + user.uid + ', source=' + source + ')');
+        }
+      } catch (err) {
+        log('Failed to subscribe/play remote audio (uid=' + user.uid + ', source=' + source + '): ' + err.message);
+      }
+    }
+
+    async function subscribeExistingRemoteUsers(source) {
+      if (!client || !Array.isArray(client.remoteUsers)) {
+        return;
+      }
+
+      const users = client.remoteUsers;
+      const uidList = users.map((u) => String(u.uid)).join(', ');
+      log('Remote users snapshot (' + source + '): ' + (uidList || 'none'));
+      for (const user of users) {
+        if (user.hasAudio || user.audioTrack) {
+          await subscribeAndPlayRemoteAudio(user, source + '-snapshot');
+        }
+      }
+    }
+
+    function log(msg) {
+      const el = document.getElementById('log');
+      el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+      el.scrollTop = el.scrollHeight;
+    }
+    function status(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    function canCaptureMic() {
+      return !!(navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function');
+    }
+
+    function getAnyGetUserMedia() {
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        return navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      }
+
+      const legacy =
+        navigator.getUserMedia ||
+        navigator.webkitGetUserMedia ||
+        navigator.mozGetUserMedia ||
+        navigator.msGetUserMedia;
+
+      if (!legacy) {
+        return null;
+      }
+
+      return (constraints) => new Promise((resolve, reject) => {
+        legacy.call(navigator, constraints, resolve, reject);
+      });
+    }
+
+    async function createLocalMicTrack() {
+      const getUserMedia = getAnyGetUserMedia();
+      if (!getUserMedia) {
+        throw new Error(getMicSupportErrorMessage());
+      }
+
+      if (!navigator.mediaDevices) {
+        navigator.mediaDevices = {};
+      }
+      if (typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        navigator.mediaDevices.getUserMedia = getUserMedia;
+      }
+
+      localMediaStream = await getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: false
+      });
+
+      const [mediaStreamTrack] = localMediaStream.getAudioTracks();
+      if (!mediaStreamTrack) {
+        throw new Error('Microphone stream was created but contains no audio tracks.');
+      }
+
+      return AgoraRTC.createCustomAudioTrack({ mediaStreamTrack });
+    }
+
+    function getMicSupportErrorMessage() {
+      const reasons = [];
+      if (!window.isSecureContext) {
+        reasons.push('This page is not running in a secure context (use http://localhost or https://).');
+      }
+      if (!navigator.mediaDevices) {
+        reasons.push('navigator.mediaDevices is unavailable in this browser/runtime.');
+      } else if (typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        reasons.push('navigator.mediaDevices.getUserMedia is not supported in this browser/runtime.');
+      }
+      if (reasons.length === 0) {
+        reasons.push('Microphone capture is unavailable in this environment.');
+      }
+      return reasons.join(' ');
+    }
+
+    async function cleanupFailedJoin() {
+      try {
+        if (localTrack) {
+          localTrack.stop();
+          localTrack.close();
+          localTrack = null;
+        }
+      } catch (err) {
+        log('Cleanup warning (local track): ' + err.message);
+      }
+
+      try {
+        if (localMediaStream) {
+          for (const track of localMediaStream.getTracks()) {
+            track.stop();
+          }
+          localMediaStream = null;
+        }
+      } catch (err) {
+        log('Cleanup warning (media stream): ' + err.message);
+      }
+
+      try {
+        if (client) {
+          await client.leave();
+          client = null;
+          log('Rolled back RTC join after failure');
+        }
+      } catch (err) {
+        log('Cleanup warning (rtc leave): ' + err.message);
+      }
+
+      if (sessionId) {
+        try {
+          await fetch(BASE + '/api/v1/end', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+          });
+          log('Rolled back backend session after failure');
+        } catch (err) {
+          log('Cleanup warning (session end): ' + err.message);
+        }
+      }
+
+      stopMicMeter();
+    }
+
+    function startMicMeter() {
+      stopMicMeter();
+      micMeterTimer = setInterval(() => {
+        if (!localTrack) return;
+        const level = localTrack.getVolumeLevel();
+        const pct = Math.round(level * 100);
+        document.getElementById('micLevel').textContent = 'Mic level: ' + pct + '%';
+      }, 200);
+    }
+
+    function stopMicMeter() {
+      if (micMeterTimer) {
+        clearInterval(micMeterTimer);
+        micMeterTimer = null;
+      }
+      document.getElementById('micLevel').textContent = 'Mic level: n/a';
+    }
+
+    async function joinAndStart() {
+      document.getElementById('btnJoin').disabled = true;
+      try {
+        if (!canCaptureMic() && !getAnyGetUserMedia()) {
+          throw new Error(getMicSupportErrorMessage());
+        }
+
+        // 1. Create session
+        status('Creating session...');
+        log('POST /api/v1/session');
+        const sessRes = await fetch(BASE + '/api/v1/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: USER_ID, channelName: CHANNEL })
+        });
+        const sess = await sessRes.json();
+        if (!sessRes.ok) throw new Error(JSON.stringify(sess));
+        sessionId = sess.sessionId;
+        log('Session created: ' + sessionId);
+        log('UID: ' + sess.uid);
+
+        // 2. Join RTC channel and publish mic first.
+        status('Joining RTC channel...');
+        client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        client.on('connection-state-change', (curState, prevState, reason) => {
+          log('RTC state: ' + prevState + ' -> ' + curState + (reason ? ' (' + reason + ')' : ''));
+        });
+        client.on('user-joined', (user) => {
+          log('Remote joined: uid=' + user.uid);
+        });
+        client.on('user-published', async (user, mediaType) => {
+          log('Remote published: uid=' + user.uid + ', media=' + mediaType);
+          if (mediaType === 'audio') {
+            await subscribeAndPlayRemoteAudio(user, 'user-published');
+          } else {
+            await client.subscribe(user, mediaType);
+          }
+        });
+        client.on('user-unpublished', (user, mediaType) => {
+          log('Remote unpublished: uid=' + user.uid + ', media=' + mediaType);
+        });
+        client.on('user-left', (user) => {
+          log('Remote left: uid=' + user.uid);
+        });
+
+        await client.join(
+          sess.appId,
+          CHANNEL,
+          sess.token,
+          sess.uid
+        );
+        log('Joined RTC channel: ' + CHANNEL + ' (appId=' + sess.appId + ')');
+        await subscribeExistingRemoteUsers('post-join');
+
+        localTrack = await createLocalMicTrack();
+        await client.publish([localTrack]);
+        log('Microphone published — speak now!');
+        startMicMeter();
+
+        // 3. Start AI agent after local media is confirmed working.
+        status('Starting AI agent...');
+        log('POST /api/v1/start');
+        const startRes = await fetch(BASE + '/api/v1/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId })
+        });
+        const startData = await startRes.json();
+        if (!startRes.ok) throw new Error(JSON.stringify(startData));
+        log('Agent joined: ' + startData.flow?.conversationalAi?.agentSessionId);
+        log('Start response: ' + JSON.stringify(startData));
+        await subscribeExistingRemoteUsers('post-start');
+
+        status('✅ Connected! Speak into your mic to talk to HeardChef.');
+        document.getElementById('btnLeave').disabled = false;
+      } catch (err) {
+        await cleanupFailedJoin();
+        log('ERROR: ' + err.message);
+        status('❌ Error — see log below');
+        sessionId = null;
+        document.getElementById('btnJoin').disabled = false;
+      }
+    }
+
+    async function leaveAndEnd() {
+      document.getElementById('btnLeave').disabled = true;
+      try {
+        if (localTrack) { localTrack.stop(); localTrack.close(); localTrack = null; }
+        if (localMediaStream) {
+          for (const track of localMediaStream.getTracks()) {
+            track.stop();
+          }
+          localMediaStream = null;
+        }
+        stopMicMeter();
+        if (client) { await client.leave(); client = null; }
+        log('Left RTC channel');
+
+        if (sessionId) {
+          await fetch(BASE + '/api/v1/end', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+          });
+          log('Session ended');
+          sessionId = null;
+        }
+        status('Disconnected.');
+      } catch (err) {
+        log('ERROR during leave: ' + err.message);
+      }
+      document.getElementById('btnJoin').disabled = false;
+    }
+  </script>
+</body>
+</html>

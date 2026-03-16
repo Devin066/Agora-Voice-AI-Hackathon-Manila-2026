@@ -274,7 +274,9 @@ async function startConvoAiAgent(session, agentConfig = {}) {
   const mergedLlm =
     providedProperties.llm && typeof providedProperties.llm === 'object' ? { ...providedProperties.llm } : {};
   const enableStringUid =
-    agentConfig.enableStringUid !== undefined ? Boolean(agentConfig.enableStringUid) : true;
+    agentConfig.enableStringUid !== undefined
+      ? Boolean(agentConfig.enableStringUid)
+      : DEFAULT_ENABLE_STRING_UID;
   const remoteRtcUids =
     Array.isArray(agentConfig.remoteRtcUids) && agentConfig.remoteRtcUids.length > 0
       ? agentConfig.remoteRtcUids.map((uid) => (uid === '*' ? '*' : normalizeRtcUid(uid)))
