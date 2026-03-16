@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <title>Cooking Mama – AI Voice Assistant</title>
+  <title>HEARD! – AI Voice Assistant</title>
 <style>
 /* ════════════════════════════════════════════
    RESET
@@ -958,7 +958,7 @@ html, body {
               <div class="di-eq-bar"></div>
             </div>
             <div class="di-text-wrap">
-              <div class="di-title" id="diTitle">Cooking Mama</div>
+              <div class="di-title" id="diTitle">HEARD!</div>
               <div class="di-sub"   id="diSub">Listening…</div>
             </div>
             <div class="di-waveform-pill">
@@ -1113,9 +1113,9 @@ html, body {
             <div class="cook-task-label" style="text-align: center;">Active Task</div>
             <div class="cook-step-card" style="text-align: center;">
               <div class="cook-step-text" id="stepDesc">Sear chicken breasts in hot oil until golden brown on both sides.</div>
-              <div style="background: #1a1a1a; border-radius: 12px; height: 120px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; overflow: hidden;">
-                <img id="stepImg" src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=120&fit=crop" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
-                <div style="position: absolute; text-align: center; bottom: 12px; left: 0; right: 0; background: rgba(0,0,0,0.6); padding: 8px; font-size: 11px;" id="stepTip">Tip: Use medium-high heat for best results</div>
+              <div style="position: relative; background: #1a1a1a; border-radius: 12px; height: 150px; overflow: hidden;">
+                <img id="stepImg" src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=150&fit=crop&auto=format&q=80" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.85;">
+                <div style="position: absolute; text-align: center; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.75)); padding: 20px 10px 10px; font-size: 11px; color: #fff; font-weight: 600;" id="stepTip">Tip: Use medium-high heat for best results</div>
               </div>
             </div>
           </div>
@@ -1123,10 +1123,11 @@ html, body {
           <div style="background: #e8f5e9; border-radius: 12px; padding: 18px;">
             <div class="cook-tool-label" style="color: #4caf50; margin-bottom: 12px;">Active Timer</div>
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-              <div class="cook-timer-val" id="timerVal" style="color: #000; font-size: 44px; font-weight: 700; font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;">08:00</div>
+              <button class="cook-timer-val" id="timerVal" onclick="repeatStep()" style="color: #000; font-size: 44px; font-weight: 700; font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif; background: none; border: none; cursor: pointer; padding: 0;">08:00</button>
               <div class="cook-timer-controls">
               <button class="timer-btn" id="timerPauseBtn" style="background: #fff; border: 1px solid #ddd;" onclick="toggleTimer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg></button>
-                <button class="timer-btn check" id="timerFinishBtn" style="background: var(--c1); color: #fff; border: none;" onclick="finishStep()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+              <button class="timer-btn" id="timerResetBtn" style="background: #fff; border: 1px solid #ddd;" onclick="repeatStep()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" /></svg></button>
+              <button class="timer-btn" id="timerStopBtn" style="background: #fff; border: 1px solid #ddd; color: #e74c3c;" onclick="stopTimer()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M9 9.563C9 9.252 9.252 9 9.563 9h4.874c.311 0 .563.252.563.563v4.874c0 .311-.252.563-.563.563H9.564A.562.562 0 0 1 9 14.437V9.564Z" /></svg></button>
               </div>
             </div>
             <div style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 14px; font-size: 12px; color: var(--text-low); font-weight: 600;">
@@ -1159,8 +1160,7 @@ html, body {
           <div class="cook-voice-strip">
             <div style="display: flex; gap: 12px; width: 100%;">
               <button class="cook-nav-btn ghost" style="flex: 0.5; min-height: 44px;" onclick="goBackStep()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px; vertical-align: middle;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>Back</button>
-              <button class="cook-nav-btn ghost" style="flex: 0.5; min-height: 44px;" onclick="repeatStep()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px; vertical-align: middle;"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path></svg>Repeat</button>
-              <button class="cook-nav-btn primary" style="flex: 1; min-height: 44px;" onclick="finishStep()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: inline; margin-right: 4px; vertical-align: middle;"><polyline points="20 6 9 17 4 12"></polyline></svg>Finish</button>
+<button class="cook-nav-btn primary" style="flex: 1; min-height: 44px;" onclick="finishStep()">Next <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-left: 4px; vertical-align: middle;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
             </div>
             <div class="cvs-eq">
               <div class="cvs-bar"></div>
@@ -1575,7 +1575,7 @@ async function activateVoice(qIdx) {
 
   // UI Updates
   di.classList.add('expanded');
-  document.getElementById('diTitle').textContent = 'Cooking Mama';
+  document.getElementById('diTitle').textContent = 'HEARD!';
   document.getElementById('diSub').textContent   = 'Connecting…';
   setRingState('listening');
   showView('view-listen');
@@ -1750,6 +1750,14 @@ function repeatStep() {
   console.log('Repeating step ' + recipeSteps[currentStep].step);
 }
 
+function stopTimer() {
+  timerRunning = false;
+  timerSec = 0;
+  const el = document.getElementById('timerVal');
+  if (el) el.textContent = '00:00';
+  document.getElementById('timerPauseBtn').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" /></svg>';
+}
+
 function finishStep() {
   if (currentStep < recipeSteps.length - 1) {
     currentStep++;
@@ -1785,12 +1793,12 @@ function goHome() {
 
 /* ── Recipe Steps Data ── */
 const recipeSteps = [
-  { step: 1, total: 6, desc: 'Pat chicken dry and mix with garlic, rosemary, thyme, salt & pepper.', img: 'https://images.unsplash.com/photo-1598661108949-92e88adf3e65?w=400&h=120&fit=crop', tip: 'Tip: Let marinate for 15 mins for better flavor', timer: 180 },
-  { step: 2, total: 6, desc: 'Heat olive oil in a large skillet over medium-high heat until shimmering.', img: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae655?w=400&h=120&fit=crop', tip: 'Tip: Test oil with a drop of water—should sizzle', timer: 120 },
-  { step: 3, total: 6, desc: 'Sear chicken breasts in hot oil until golden brown on both sides.', img: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=120&fit=crop', tip: 'Tip: Use medium-high heat for best results', timer: 480 },
-  { step: 4, total: 6, desc: 'Transfer to a plate. Add garlic and herbs to the same pan, cook until fragrant.', img: 'https://images.unsplash.com/photo-1599599810694-b3b2b82b90ae?w=400&h=120&fit=crop', tip: 'Tip: Don\'t let garlic burn—watch closely', timer: 180 },
-  { step: 5, total: 6, desc: 'Add chicken broth and lemon juice. Return chicken to pan and simmer.', img: 'https://images.unsplash.com/photo-1473093295203-cad00df16e50?w=400&h=120&fit=crop', tip: 'Tip: Cover with lid to cook through faster', timer: 600 },
-  { step: 6, total: 6, desc: 'Check chicken internal temp reaches 165°F. Plate and drizzle with fresh herbs.', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=120&fit=crop', tip: 'Tip: Let rest 2 mins before serving', timer: 120 }
+  { step: 1, total: 6, desc: 'Pat chicken dry and mix with garlic, rosemary, thyme, salt & pepper.', img: 'https://images.unsplash.com/photo-1604503468506-a8da13d11f36?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Let marinate for 15 mins for better flavor', timer: 180 },
+  { step: 2, total: 6, desc: 'Heat olive oil in a large skillet over medium-high heat until shimmering.', img: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Test oil with a drop of water—should sizzle', timer: 120 },
+  { step: 3, total: 6, desc: 'Sear chicken breasts in hot oil until golden brown on both sides.', img: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Use medium-high heat for best results', timer: 480 },
+  { step: 4, total: 6, desc: 'Transfer to a plate. Add garlic and herbs to the same pan, cook until fragrant.', img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Don\'t let garlic burn—watch closely', timer: 180 },
+  { step: 5, total: 6, desc: 'Add chicken broth and lemon juice. Return chicken to pan and simmer.', img: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Cover with lid to cook through faster', timer: 600 },
+  { step: 6, total: 6, desc: 'Check chicken internal temp reaches 165°F. Plate and drizzle with fresh herbs.', img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=150&fit=crop&auto=format&q=80', tip: 'Tip: Let rest 2 mins before serving', timer: 120 }
 ];
 
 let currentStep = 2; // Start at step 3 (index 2)
