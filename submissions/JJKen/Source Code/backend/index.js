@@ -28,6 +28,9 @@ const DEFAULT_TTS_VOICE_ID = process.env.DEFAULT_TTS_VOICE_ID || '';
 const DEFAULT_LLM_URL = process.env.DEFAULT_LLM_URL || '';
 const DEFAULT_LLM_API_KEY = process.env.DEFAULT_LLM_API_KEY || '';
 const DEFAULT_LLM_MODEL = process.env.DEFAULT_LLM_MODEL || '';
+const DEFAULT_ENABLE_STRING_UID = /^(1|true|yes)$/i.test(
+  String(process.env.AGORA_ENABLE_STRING_UID || 'false').trim()
+);
 const MAX_RTC_UID = 2147483647;
 
 const sessions = new Map();
@@ -219,7 +222,9 @@ async function startConvoAiAgent(session, agentConfig = {}) {
   const mergedLlm =
     providedProperties.llm && typeof providedProperties.llm === 'object' ? { ...providedProperties.llm } : {};
   const enableStringUid =
-    agentConfig.enableStringUid !== undefined ? Boolean(agentConfig.enableStringUid) : true;
+    agentConfig.enableStringUid !== undefined
+      ? Boolean(agentConfig.enableStringUid)
+      : DEFAULT_ENABLE_STRING_UID;
   const remoteRtcUids =
     Array.isArray(agentConfig.remoteRtcUids) && agentConfig.remoteRtcUids.length > 0
       ? agentConfig.remoteRtcUids.map((uid) => normalizeRtcUid(uid))
