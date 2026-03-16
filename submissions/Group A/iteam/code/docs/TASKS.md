@@ -8,103 +8,33 @@
 **Frontend Developer**: UI dashboard, webcam integration, polish
 **QA/Demo**: Testing, fallback modes, demo scenarios
 
-## Implementation Order
+## 📅 Implementation Timeline
 
-### 🔴 Phase 1: Foundation (Days 1-2)
-**Priority: CRITICAL - Must work for anything else to function**
+**Duration**: 1-Day Hackathon
 
-- [ ] **Set up React project with Vite + TypeScript**
-- [ ] **Integrate Agora Web SDK boilerplate**
-- [ ] **Implement webcam capture using getUserMedia()**
-- [ ] **Create basic dashboard layout (left: webcam, right: status)**
-- [ ] **Add status indicators for camera, CV, Agora connection**
-- [ ] **Test cross-browser compatibility (Chrome, Firefox, Safari)**
+### Phase 1: Foundation (Hours 1-2)
+- [ ] Initialize React + Vite + Tailwind project
+- [ ] Set up Agora credentials and environment variables
+- [ ] Build basic UI layout (Webcam feed, status bar, transcript)
+- [ ] Implement `useWebcam` hook and display video stream
 
-**Success Criteria**: Camera feed visible, Agora connected, basic UI responsive
+### Phase 2: Local Perception (Hours 2-4)
+- [ ] Integrate `@tensorflow-models/coco-ssd` for object detection
+- [ ] Draw bounding boxes on canvas overlay
+- [ ] Implement basic hazard heuristics (size/position of objects)
+- [ ] *Optional:* Integrate `@vladmandic/face-api` for known person recognition
 
-### 🔴 Phase 2: Computer Vision Core (Days 2-3)
-**Priority: CRITICAL - Core product functionality**
+### Phase 3: Voice Integration (Hours 4-6)
+- [ ] Connect Agora ConvoAI SDK
+- [ ] Build `contextBuilder.ts` to convert CV detections into text prompts
+- [ ] Feed context into Agora Agent
+- [ ] Verify agent speaks proactive alerts (e.g., "Chair ahead")
 
-- [ ] **Install and configure @tensorflow-models/coco-ssd**
-- [ ] **Implement object detection pipeline (2-3 FPS target)**
-- [ ] **Create hazard analysis logic (proximity-based)**
-- [ ] **Add object tracking to avoid duplicate alerts**
-- [ ] **Test with common objects (chair, table, bottle, bag)**
-- [ ] **Implement confidence filtering (>70% threshold)**
-
-**Success Criteria**: Reliably detects chair, table, bottle; minimal false positives
-
-### 🔴 Phase 3: Person Recognition (Days 3-4)
-**Priority: HIGH - Key differentiator**
-
-- [ ] **Install and configure @vladmandic/face-api**
-- [ ] **Create contact registration system (name + photo)**
-- [ ] **Implement face detection and encoding**
-- [ ] **Add face matching for known contacts only**
-- [ ] **Create privacy safeguards (opt-in confirmation)**
-- [ ] **Test with 2-3 team members' faces**
-
-**Success Criteria**: Recognizes registered people >90% accuracy, no public face matching
-
-### 🔴 Phase 4: Voice Integration (Days 4-5)
-**Priority: CRITICAL - Agora requirement**
-
-- [ ] **Integrate Agora ConvoAI SDK**
-- [ ] **Build context builder for scene summaries**
-- [ ] **Implement proactive hazard alerts**
-- [ ] **Add reactive voice command handling**
-- [ ] **Create voice response rules (<1 sentence)**
-- [ ] **Test voice latency (<2 second target)**
-
-**Success Criteria**: "Chair ahead" spoken when object detected; responds to "What's in front?"
-
-### 🟡 Phase 5: UI Polish (Days 5-6)
-**Priority: HIGH - Demo readiness**
-
-- [ ] **Refine dashboard layout for demo clarity**
-- [ ] **Add confidence indicators for detections**
-- [ ] **Create transcript panel for voice history**
-- [ ] **Add object list with bounding boxes**
-- [ ] **Implement status animations**
-- [ ] **Create dark/light theme toggle**
-
-**Success Criteria**: Clean, professional UI that clearly shows system status
-
-### 🟡 Phase 6: Caregiver Features (Days 6-7)
-**Priority: MEDIUM - Bonus feature**
-
-- [ ] **Add voice command "Call [name]"**
-- [ ] **Implement safeword detection ("Help" "Emergency")**
-- [ ] **Create manual help button**
-- [ ] **Add caregiver contact management**
-- [ ] **Test Agora A/V connection to caregiver**
-- [ ] **Create escalation flow UI**
-
-**Success Criteria**: Can trigger caregiver connection via voice or button
-
-### 🟢 Phase 7: Testing & Fallbacks (Days 7-8)
-**Priority: HIGH - Demo reliability**
-
-- [ ] **Create 3 test scenarios with props**
-- [ ] **Implement CV confidence thresholds**
-- [ ] **Add manual trigger buttons (bypass CV)**
-- [ ] **Create pre-recorded voice responses**
-- [ ] **Test poor lighting conditions**
-- [ ] **Verify network failure modes**
-
-**Success Criteria**: Demo works even if CV accuracy drops; backup modes ready
-
-### 🟢 Phase 8: Demo Prep (Days 8-9)
-**Priority: HIGH - Competition success**
-
-- [ ] **Record backup demo video**
-- [ ] **Create pitch deck slides**
-- [ ] **Practice 2-minute demo script**
-- [ ] **Prepare technical explanations**
-- [ ] **Set up GitHub repository**
-- [ ] **Write final documentation**
-
-**Success Criteria**: Confident 2-minute demo, clear technical story, polished materials
+### Phase 4: Polish & Fallbacks (Hours 6-8)
+- [ ] Refine UI/UX for live demo
+- [ ] Implement "Call for Help" caregiver escalation button (Agora RTC)
+- [ ] Test fallback modes (text input, mock data)
+- [ ] Record backup demo video
 
 ## Must-Have vs Nice-to-Have
 

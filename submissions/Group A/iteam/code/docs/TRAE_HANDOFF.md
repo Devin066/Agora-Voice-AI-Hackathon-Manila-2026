@@ -23,35 +23,29 @@ VisionVoice is a webcam-based assistive smart-glasses simulator that helps visua
 
 ## Implementation Order
 
-### Phase 1: Foundation (Day 1)
-1. Start with Agora boilerplate
-2. Set up React project with Vite
-3. Integrate webcam using getUserMedia()
-4. Create basic dashboard layout
+Follow this order strictly to maintain momentum during the 1-day hackathon:
 
-### Phase 2: Computer Vision (Day 2)
-1. Implement COCO-SSD object detection
-2. Add hazard proximity analysis
-3. Create context builder for scene summaries
-4. Test with common household objects
+### Phase 1: Foundation (Hours 1-2)
+1. Initialize React + Vite + Tailwind project.
+2. Set up Agora credentials and basic layout.
+3. Get `getUserMedia()` working and displayed.
 
-### Phase 3: Person Recognition (Day 3)
-1. Set up face-api for face detection
-2. Create contact registration system
-3. Implement face matching for known contacts
-4. Add privacy safeguards
+### Phase 2: Local Perception (Hours 2-4)
+1. Add `@tensorflow-models/coco-ssd`.
+2. Draw bounding boxes on the video feed.
+3. Add simple hazard logic (e.g., if bounding box area > 30% of screen).
+4. *Optional*: Add `@vladmandic/face-api` if time permits.
 
-### Phase 4: Voice Integration (Day 4)
-1. Connect context builder to Agora ConvoAI
-2. Implement proactive hazard alerts
-3. Add reactive voice command handling
-4. Test voice response latency
+### Phase 3: Voice Integration (Hours 4-6)
+1. Connect Agora ConvoAI SDK.
+2. Build the context logic: "I see a chair and a person."
+3. Trigger proactive alerts when hazards are detected.
+4. Allow user to ask questions via voice.
 
-### Phase 5: Polish (Day 5)
-1. Refine UI for demo reliability
-2. Add confidence indicators
-3. Implement fallback modes
-4. Create test scenarios
+### Phase 4: Polish & Demo Prep (Hours 6-8)
+1. Clean up the UI (status indicators, transcripts).
+2. Build fallback modes (e.g., a button to force an alert for the demo).
+3. Practice and record the demo.
 
 ## What to Avoid
 
