@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "ai-assistant",
+    "slug": "ai-assistant",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "web": {
+    }
+  }
+}
