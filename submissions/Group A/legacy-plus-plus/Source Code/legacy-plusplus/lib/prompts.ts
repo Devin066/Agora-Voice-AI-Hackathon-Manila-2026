@@ -35,10 +35,31 @@ export const PROMPTS: Prompt[] = [
   { id: "e3", text: "Butterflies are beautiful", phonemeTarget: "B", ageGroups: ["early", "growing"], imageEmoji: "🦋" },
 ];
 
+// Phonemes practiced at each level (matches LEVELS in child home page)
+export const LEVEL_PHONEMES: Record<number, string[]> = {
+  1: ["R"],
+  2: ["S"],
+  3: ["L", "SH"],
+  4: ["TH"],
+  5: ["R", "S", "L", "SH", "TH", "P", "T", "B"], // Mix & Master — all phonemes
+};
+
 export function getPromptsForAge(ageGroup: AgeGroup, count = 5): Prompt[] {
   const filtered = PROMPTS.filter((p) => p.ageGroups.includes(ageGroup));
   const shuffled = [...filtered].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
+}
+
+/** Returns prompts for a specific level, filtered by age group. */
+export function getPromptsForLevel(levelId: number, ageGroup: AgeGroup, count = 5): Prompt[] {
+  const phonemes = LEVEL_PHONEMES[levelId] ?? LEVEL_PHONEMES[1];
+  const filtered = PROMPTS.filter(
+    (p) => phonemes.includes(p.phonemeTarget) && p.ageGroups.includes(ageGroup)
+  );
+  // If not enough prompts for this level/age combo, relax the age filter
+  const pool = filtered.length >= 2 ? filtered : PROMPTS.filter((p) => phonemes.includes(p.phonemeTarget));
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
 export function getAgeGroup(age: number): AgeGroup {

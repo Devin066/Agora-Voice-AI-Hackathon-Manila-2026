@@ -7,7 +7,7 @@ import type {
   IMicrophoneAudioTrack,
   IAgoraRTCRemoteUser,
 } from "agora-rtc-sdk-ng";
-import { Mic, MicOff, SkipForward, RotateCcw, X, Volume2, Heart } from "lucide-react";
+import { Mic, MicOff, SkipForward, RotateCcw, X, Volume2, Heart, Sparkles, Star, Target, Play, Waves } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -17,7 +17,7 @@ import {
   saveFeedbackEvents,
   saveRecommendation,
 } from "@/lib/db";
-import { getPromptsForAge, getAgeGroup, type Prompt } from "@/lib/prompts";
+import { getPromptsForLevel, getAgeGroup, type Prompt } from "@/lib/prompts";
 import type { FeedbackChip, SessionScore } from "@/types";
 
 type MicState = "idle" | "listening" | "processing" | "done";
@@ -78,9 +78,9 @@ export default function PracticePage() {
   const profileRef         = useRef<{ childId?: string; childAge?: number; childName?: string } | null>(null);
   const channelRef         = useRef("");
   const userUidRef         = useRef(0);
-  // Track whether we're waiting for Sparky's response after the child spoke
-  const waitingForSparky   = useRef(false);
-  const seenSparkyStart    = useRef(false);
+  // Track whether we're waiting for Wavi's response after the child spoke
+  const waitingForWavi   = useRef(false);
+  const seenWaviStart    = useRef(false);
   const speakDurationRef   = useRef(0);
   const volumeRafRef       = useRef<number | null>(null);
 
@@ -92,8 +92,9 @@ export default function PracticePage() {
     profileRef.current = profile;
     setChildName(profile.childName || "there");
 
-    const ageGroup       = getAgeGroup(profile.childAge);
-    const sessionPrompts = getPromptsForAge(ageGroup, 5);
+    const ageGroup  = getAgeGroup(profile.childAge);
+    const levelId   = parseInt(localStorage.getItem("legacypp_level") || "1");
+    const sessionPrompts = getPromptsForLevel(levelId, ageGroup, 5);
     setPrompts(sessionPrompts);
 
     const channelName = `session-${profile.childId ?? "demo"}-${Date.now()}`;
@@ -145,13 +146,13 @@ export default function PracticePage() {
           await client.subscribe(ru, "audio");
           ru.audioTrack?.play();
           setAgentSpeaking(true);
-          seenSparkyStart.current = true;
+          seenWaviStart.current = true;
           // Safety: auto-clear after 20s
           if (agentSpeakTimer.current) clearTimeout(agentSpeakTimer.current);
           agentSpeakTimer.current = setTimeout(() => {
             setAgentSpeaking(false);
-            if (waitingForSparky.current) {
-              waitingForSparky.current = false;
+            if (waitingForWavi.current) {
+              waitingForWavi.current = false;
               const score = scoreFromDuration(speakDurationRef.current);
               setScores((prev) => [...prev, score]);
               setMicState("done");
@@ -164,10 +165,10 @@ export default function PracticePage() {
         if (mt === "audio") {
           if (agentSpeakTimer.current) clearTimeout(agentSpeakTimer.current);
           setAgentSpeaking(false);
-          // Sparky finished — transition child to "done" if we were waiting
-          if (waitingForSparky.current && seenSparkyStart.current) {
-            waitingForSparky.current = false;
-            seenSparkyStart.current  = false;
+          // Wavi finished — transition child to "done" if we were waiting
+          if (waitingForWavi.current && seenWaviStart.current) {
+            waitingForWavi.current = false;
+            seenWaviStart.current  = false;
             const score = scoreFromDuration(speakDurationRef.current);
             setScores((prev) => [...prev, score]);
             setMicState("done");
@@ -284,15 +285,15 @@ export default function PracticePage() {
       await micTrackRef.current.setEnabled(false);
       setMicState("processing");
 
-      // Mark that we're waiting for Sparky's coaching response
-      waitingForSparky.current  = true;
-      seenSparkyStart.current   = false;
+      // Mark that we're waiting for Wavi's coaching response
+      waitingForWavi.current  = true;
+      seenWaviStart.current   = false;
 
-      // Fallback: if Sparky hasn't started within 10s, skip to done
+      // Fallback: if Wavi hasn't started within 10s, skip to done
       if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
       speakTimerRef.current = setTimeout(() => {
-        if (waitingForSparky.current && !seenSparkyStart.current) {
-          waitingForSparky.current = false;
+        if (waitingForWavi.current && !seenWaviStart.current) {
+          waitingForWavi.current = false;
           const score = scoreFromDuration(duration);
           setScores((prev) => [...prev, score]);
           setMicState("done");
@@ -389,45 +390,58 @@ export default function PracticePage() {
   // ── Start screen (shown before any Agora audio is initialised) ──────────
   if (!sessionStarted) {
     return (
-      <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-6 gap-8">
-        <div className="text-center">
-          <div className="text-8xl mb-4 select-none animate-bounce-in">🤖</div>
-          <h1 className="font-heading font-extrabold text-3xl text-text mb-2">
-            Ready to practice?
+      <div className="min-h-screen bg-bg flex flex-col items-center justify-center px-6 gap-6">
+
+        {/* Wavi mascot — matches child home */}
+        <div className="text-center animate-pop-up">
+          <div className="relative inline-flex items-center justify-center mb-4">
+            <div className="w-28 h-28 rounded-[2rem] bg-primary flex items-center justify-center shadow-[0_7px_0_#0369A1] animate-bounce-in">
+              <Waves size={48} className="text-white" strokeWidth={2} />
+            </div>
+            <Sparkles size={20} className="absolute -top-2 -right-2 text-accent fill-accent animate-float" />
+            <Star size={13} className="absolute -bottom-1 -left-2 text-warning fill-warning animate-float" style={{ animationDelay: "0.4s" }} />
+          </div>
+          <h1 className="font-heading font-extrabold text-3xl text-text mb-1">
+            Ready, {childName}?
           </h1>
           <p className="font-body text-muted text-base">
-            Sparky will listen and cheer you on!
+            Wavi will listen and cheer you on!
           </p>
         </div>
 
-        <div className="bg-surface border-2 border-border rounded-3xl p-5 w-full max-w-sm space-y-3">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎯</span>
-            <p className="font-body text-sm text-text">{prompts.length} phrases to practice</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">❤️</span>
-            <p className="font-body text-sm text-text">3 lives — use them wisely!</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎤</span>
-            <p className="font-body text-sm text-text">Tap the mic when you&apos;re ready to speak</p>
-          </div>
+        {/* Info cards — icon stickers */}
+        <div className="w-full max-w-sm space-y-3">
+          {[
+            { Icon: Target, bg: "#0284C7", shadow: "#0369A1", tint: "#E0F2FE", border: "#0284C755", text: `${prompts.length} phrases to practice` },
+            { Icon: Heart,  bg: "#EF4444", shadow: "#dc2626", tint: "#FFF0F0", border: "#EF444455", text: "3 lives — use them wisely!" },
+            { Icon: Mic,    bg: "#6366F1", shadow: "#4f46e5", tint: "#F0EEFF", border: "#6366F155", text: "Tap the mic when you're ready to speak" },
+          ].map(({ Icon, bg, shadow, tint, border, text }) => (
+            <div key={text} className="flex items-center gap-4 rounded-2xl border-2 px-4 py-3"
+              style={{ backgroundColor: tint, borderColor: border }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: bg, boxShadow: `0 3px 0 ${shadow}` }}>
+                <Icon size={20} className="text-white fill-white" strokeWidth={1.5} />
+              </div>
+              <p className="font-body text-sm text-text">{text}</p>
+            </div>
+          ))}
         </div>
 
-        <button
-          onClick={handleStart}
-          className="btn-3d w-full max-w-sm bg-primary text-white py-5 rounded-2xl font-heading font-extrabold text-xl shadow-[0_5px_0_#0b8a8b]"
-        >
-          Let&apos;s Go! 🚀
-        </button>
-
-        <button
-          onClick={() => router.push("/child/home")}
-          className="font-body text-sm text-muted hover:text-text"
-        >
-          ← Back to home
-        </button>
+        <div className="w-full max-w-sm flex flex-col gap-3">
+          <button
+            onClick={handleStart}
+            className="btn-3d w-full bg-primary text-white py-5 rounded-2xl font-heading font-extrabold text-xl shadow-[0_5px_0_#0369A1] flex items-center justify-center gap-3"
+          >
+            <Play size={24} className="fill-white text-white" />
+            Let&apos;s Go!
+          </button>
+          <button
+            onClick={() => router.push("/child/home")}
+            className="font-body text-sm text-muted hover:text-text text-center"
+          >
+            ← Back to home
+          </button>
+        </div>
       </div>
     );
   }
@@ -485,15 +499,20 @@ export default function PracticePage() {
         {/* Connecting indicator */}
         {!agoraReady && (
           <div className="flex items-center gap-3 bg-primary/10 border-2 border-primary/20 rounded-2xl px-5 py-3 w-full">
-            <div className="flex gap-1">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="w-2.5 h-2.5 bg-primary rounded-full animate-bounce"
-                  style={{ animationDelay: `${i * 150}ms` }} />
-              ))}
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-[0_3px_0_#0369A1]">
+              <Waves size={16} className="text-white" strokeWidth={2} />
             </div>
-            <span className="font-body text-sm text-primary font-semibold">
-              Setting up Sparky…
-            </span>
+            <div className="flex-1">
+              <span className="font-heading font-extrabold text-sm text-primary">
+                Setting up Wavi…
+              </span>
+              <div className="flex gap-1 mt-1">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="w-2 h-2 bg-primary rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 150}ms` }} />
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -504,38 +523,52 @@ export default function PracticePage() {
               <div key={c.ts + i} className={cn(
                 "flex items-start gap-2 px-3 py-2 rounded-2xl text-sm font-body",
                 c.who === "sparky"
-                  ? "bg-secondary/10 border border-secondary/20 text-secondary ml-6"
-                  : "bg-primary/10 border border-primary/20 text-primary mr-6"
+                  ? "bg-secondary/10 border-2 border-secondary/20 text-secondary ml-6"
+                  : "bg-primary/10 border-2 border-primary/20 text-primary mr-6"
               )}>
-                <span className="shrink-0">{c.who === "sparky" ? "🤖" : "🧒"}</span>
+                {/* mini icon sticker */}
+                <div className={cn(
+                  "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+                  c.who === "sparky" ? "bg-secondary" : "bg-primary"
+                )} style={{ boxShadow: c.who === "sparky" ? "0 2px 0 #4f46e5" : "0 2px 0 #0369A1" }}>
+                  <Waves size={10} className="text-white" strokeWidth={2} />
+                </div>
                 <span>{c.text}</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* Sparky speech bubble (when agent is speaking) */}
+        {/* Wavi speech bubble (when agent is speaking) */}
         {agentSpeaking && (
           <div className="flex items-end gap-3 w-full animate-pop-up">
-            <div className="text-5xl select-none animate-wiggle">🤖</div>
+            {/* Wavi mini mascot sticker */}
+            <div className="relative shrink-0">
+              <div className="w-14 h-14 rounded-[1rem] bg-primary flex items-center justify-center shadow-[0_4px_0_#0369A1]">
+                <Waves size={24} className="text-white" strokeWidth={2} />
+              </div>
+              <Sparkles size={12} className="absolute -top-1 -right-1 text-accent fill-accent animate-float" />
+            </div>
             <div className="flex-1 bg-secondary/10 border-2 border-secondary/25 rounded-3xl rounded-bl-sm px-4 py-3">
               <div className="flex items-center gap-2">
                 <Volume2 size={16} className="text-secondary animate-pulse" />
-                <span className="font-body font-semibold text-secondary text-sm">
-                  Sparky is talking…
+                <span className="font-heading font-extrabold text-secondary text-sm">
+                  Wavi is talking…
                 </span>
               </div>
-              <p className="text-xs text-muted font-body mt-0.5">Listen carefully! 👂</p>
+              <p className="text-xs text-muted font-body mt-0.5">Listen carefully!</p>
             </div>
           </div>
         )}
 
-        {/* Phoneme target */}
-        <div
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 font-data font-extrabold text-sm"
-          style={{ borderColor: "#0EA5A6aa", backgroundColor: "#0EA5A611", color: "#0EA5A6" }}
-        >
-          🎯 Practice sound: <span className="font-extrabold text-base">{prompt.phonemeTarget}</span>
+        {/* Phoneme target pill */}
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full border-2 font-heading font-extrabold text-sm"
+          style={{ borderColor: "#0284C755", backgroundColor: "#0284C711", color: "#0284C7" }}>
+          <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center"
+            style={{ boxShadow: "0 2px 0 #0369A1" }}>
+            <Target size={12} className="text-white" strokeWidth={2.5} />
+          </div>
+          Practice sound: <span className="text-base">{prompt.phonemeTarget}</span>
         </div>
 
         {/* Phrase card */}
@@ -563,24 +596,32 @@ export default function PracticePage() {
           )}
 
           {micState === "done" && (
-            <div className="mt-5 animate-pop-up">
-              <span className="inline-flex items-center gap-2 bg-success/15 text-success border-2 border-success/30 px-5 py-2 rounded-full font-heading font-bold text-sm">
-                ✓ Great try, {childName}!
+            <div className="mt-5 animate-pop-up flex items-center justify-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-success flex items-center justify-center shadow-[0_2px_0_#16a34a]">
+                <Star size={16} className="text-white fill-white" />
+              </div>
+              <span className="font-heading font-extrabold text-success text-base">
+                Great try, {childName}!
               </span>
             </div>
           )}
         </div>
 
-        {/* Processing dots */}
+        {/* Processing — Wavi thinking */}
         {micState === "processing" && (
-          <div className="flex items-center gap-2 text-primary font-body font-semibold text-sm">
-            <div className="flex gap-1">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="w-2 h-2 bg-primary rounded-full animate-bounce"
-                  style={{ animationDelay: `${i * 150}ms` }} />
-              ))}
+          <div className="flex items-center gap-3 bg-secondary/10 border-2 border-secondary/20 rounded-2xl px-4 py-3 w-full animate-pop-up">
+            <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center shrink-0 shadow-[0_3px_0_#4f46e5]">
+              <Sparkles size={16} className="text-white fill-white" />
             </div>
-            Sparky is thinking…
+            <div className="flex-1">
+              <span className="font-heading font-extrabold text-sm text-secondary">Wavi is thinking…</span>
+              <div className="flex gap-1 mt-1">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="w-2 h-2 bg-secondary rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 150}ms` }} />
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -623,7 +664,7 @@ export default function PracticePage() {
                 "btn-3d relative w-28 h-28 rounded-full flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed",
                 micState === "listening"
                   ? "bg-error shadow-[0_6px_0_#dc2626]"
-                  : "bg-primary shadow-[0_6px_0_#0b8a8b]"
+                  : "bg-primary shadow-[0_6px_0_#0369A1]"
               )}
             >
               {micState === "listening"
@@ -635,15 +676,15 @@ export default function PracticePage() {
 
           {/* Instruction */}
           <p className={cn(
-            "font-heading font-bold text-base text-center",
+            "font-heading font-extrabold text-base text-center",
             micState === "listening" ? "text-error" : "text-text"
           )}>
-            {!agoraReady                       && "Setting up your session…"}
-            {agoraReady && agentSpeaking  && micState === "idle"      && "Sparky is talking… tap mic anytime! 🎤"}
-            {agoraReady && !agentSpeaking && micState === "idle"      && "Tap the mic and say it! 🎤"}
-            {agoraReady && micState === "listening"                   && "I'm listening… tap to stop! 👂"}
-            {micState === "processing"         && "Sparky is thinking… 🤔"}
-            {micState === "done"               && "Awesome! What's next? 🎉"}
+            {!agoraReady                                               && "Setting up your session…"}
+            {agoraReady && agentSpeaking  && micState === "idle"      && "Wavi is talking… tap anytime!"}
+            {agoraReady && !agentSpeaking && micState === "idle"      && "Tap the mic and say it!"}
+            {agoraReady && micState === "listening"                   && "Listening… tap to stop!"}
+            {micState === "processing"                                && ""}
+            {micState === "done"                                      && "Awesome! What's next?"}
           </p>
 
           {/* After-attempt buttons */}
@@ -651,16 +692,18 @@ export default function PracticePage() {
             <div className="flex gap-3 mt-1 animate-slide-up">
               <button
                 onClick={handleRetry}
-                className="btn-3d flex items-center gap-2 bg-surface border-2 border-border text-muted px-5 py-3 rounded-2xl font-heading font-bold text-sm shadow-[0_3px_0_#CBD5E1] hover:border-primary hover:text-primary"
+                className="btn-3d flex items-center gap-2 bg-surface border-2 border-border text-muted px-5 py-3 rounded-2xl font-heading font-extrabold text-sm shadow-[0_3px_0_#CBD5E1]"
               >
                 <RotateCcw size={16} /> Try Again
               </button>
               <button
                 onClick={handleNext}
-                className="btn-3d flex items-center gap-2 bg-success text-white px-7 py-3 rounded-2xl font-heading font-bold text-sm shadow-[0_3px_0_#16a34a]"
+                className="btn-3d flex items-center gap-2 bg-success text-white px-7 py-3 rounded-2xl font-heading font-extrabold text-sm shadow-[0_4px_0_#16a34a]"
               >
-                {isLast ? "🎉 Finish!" : "Next"}
-                {!isLast && <SkipForward size={16} />}
+                {isLast
+                  ? <><Star size={18} className="fill-white text-white" /> Finish!</>
+                  : <>Next <SkipForward size={16} /></>
+                }
               </button>
             </div>
           )}

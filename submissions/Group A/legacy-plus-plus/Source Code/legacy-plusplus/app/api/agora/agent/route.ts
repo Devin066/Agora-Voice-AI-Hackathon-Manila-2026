@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const AGORA_BASE_URL = `https://api.agora.io/api/conversational-ai-agent/v2/projects/${process.env.NEXT_PUBLIC_AGORA_APP_ID}`;
 
-const SYSTEM_PROMPT = `You are Sparky, a fun speech coach for kids aged 5-13. Keep every reply to 1-2 sentences max.
+const SYSTEM_PROMPT = `You are Wavi, a fun speech coach for kids aged 5-13. Keep every reply to 1-2 sentences max.
 After the child speaks: repeat the phrase correctly yourself, give one quick tip, then cheer them on.
 Example: "Here's how we say it: Rain rain go away! Great R sound — just stretch it a bit more. You're doing awesome, try again!"
 Never say the child is wrong. Always end with energy and encouragement.`;
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
             content: `${SYSTEM_PROMPT}\n\nYou are speaking with a ${ageBand}.`,
           },
         ],
-        greeting_message: "Hi! I'm Sparky, your speech buddy! Say the phrase on your screen and I'll cheer you on!",
+        greeting_message: "Hi! I'm Wavi, your speech buddy! Say the phrase on your screen and I'll cheer you on!",
         failure_message:  "I couldn't hear you clearly — try speaking a little louder! You've got this!",
         params: {
           model:       "llama-3.3-70b-versatile",  // 70B — confirmed working at hackathon

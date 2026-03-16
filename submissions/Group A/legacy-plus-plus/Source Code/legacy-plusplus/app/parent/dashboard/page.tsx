@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   Circle,
   ShieldCheck,
-  Mic,
+  Waves,
   BarChart2,
   Inbox,
 } from "lucide-react";
@@ -131,18 +131,18 @@ function LineChart({ data }: { data: DayEntry[] }) {
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full">
-      <path d={areaD} fill="#0EA5A6" fillOpacity="0.08" />
+      <path d={areaD} fill="#0284C7" fillOpacity="0.08" />
       <path
         d={pathD}
         fill="none"
-        stroke="#0EA5A6"
+        stroke="#0284C7"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       {points.map((p) =>
         p.completed ? (
-          <circle key={p.day} cx={p.x} cy={p.y} r="4" fill="#0EA5A6" />
+          <circle key={p.day} cx={p.x} cy={p.y} r="4" fill="#0284C7" />
         ) : null
       )}
       {points.map((p) => (
@@ -217,7 +217,7 @@ export default function ParentDashboardPage() {
     confidence: 0,
   });
   const [focusAreas] = useState([
-    { label: "S Sound", value: 80, color: "#0EA5A6" },
+    { label: "S Sound", value: 80, color: "#0284C7" },
     { label: "TH Sound", value: 65, color: "#F59E0B" },
     { label: "R Sound", value: 90, color: "#2563EB" },
   ]);
@@ -326,11 +326,11 @@ export default function ParentDashboardPage() {
       <header className="bg-surface border-b-2 border-border px-5 py-3 flex items-center justify-between shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-[0_3px_0_#0b8a8b]">
-            <Mic size={18} className="text-white fill-white" />
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-[0_3px_0_#0369A1]">
+            <Waves size={18} className="text-white" strokeWidth={2} />
           </div>
           <span className="font-heading font-extrabold text-lg text-text">
-            Legacy<span className="text-primary">++</span>
+            <span className="text-primary">Alon</span>
           </span>
         </div>
 
@@ -464,15 +464,15 @@ function OverviewSection({
           Parent Dashboard
         </h1>
         <Button size="md" onClick={() => onNavigate("/practice")}>
-          <Mic size={16} /> Start Practice
+          <Waves size={16} /> Start Practice
         </Button>
       </div>
 
       {/* Welcome banner */}
       <div className="bg-primary/8 border-2 border-primary/20 rounded-3xl px-5 py-4 mb-6 flex items-center gap-4 relative overflow-hidden">
         <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-primary/10" />
-        <div className="w-14 h-14 rounded-[1rem] bg-primary flex items-center justify-center shadow-[0_4px_0_#0b8a8b] shrink-0 relative z-10">
-          <Mic size={26} className="text-white fill-white" strokeWidth={1.5} />
+        <div className="w-14 h-14 rounded-[1rem] bg-primary flex items-center justify-center shadow-[0_4px_0_#0369A1] shrink-0 relative z-10">
+          <Waves size={26} className="text-white" strokeWidth={2} />
         </div>
         <div className="relative z-10">
           <p className="font-heading font-extrabold text-text">
@@ -636,7 +636,7 @@ function ProgressSection({
                     cy="36"
                     r="28"
                     fill="none"
-                    stroke="#0EA5A6"
+                    stroke="#0284C7"
                     strokeWidth="8"
                     strokeDasharray={`${(avg / 100) * 2 * Math.PI * 28} ${2 * Math.PI * 28}`}
                     strokeLinecap="round"
@@ -657,7 +657,7 @@ function ProgressSection({
                 <ScoreBar
                   label="Clarity (Pronunciation)"
                   value={latestScores.pronunciation}
-                  color="#0EA5A6"
+                  color="#0284C7"
                 />
                 <ScoreBar
                   label="Smoothness (Fluency)"
@@ -875,7 +875,7 @@ function SettingsSection({
         </h2>
         <div className="flex items-center gap-3 mb-4">
           <div className="relative shrink-0">
-            <div className="w-14 h-14 rounded-[1rem] bg-primary flex items-center justify-center shadow-[0_4px_0_#0b8a8b]">
+            <div className="w-14 h-14 rounded-[1rem] bg-primary flex items-center justify-center shadow-[0_4px_0_#0369A1]">
               <span className="font-heading font-extrabold text-xl text-white">
                 {childName.slice(0, 2).toUpperCase() || "KD"}
               </span>
@@ -893,7 +893,7 @@ function SettingsSection({
         </div>
         <button
           onClick={() => onNavigate("/child/home")}
-          className="btn-3d w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-heading font-extrabold text-sm shadow-[0_4px_0_#0b8a8b]"
+          className="btn-3d w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-heading font-extrabold text-sm shadow-[0_4px_0_#0369A1]"
         >
           Go to Child View <ChevronRight size={16} />
         </button>

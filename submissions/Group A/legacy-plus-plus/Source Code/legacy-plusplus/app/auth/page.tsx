@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, Eye, EyeOff } from "lucide-react";
+import { Waves, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -50,11 +50,11 @@ export default function AuthPage() {
     <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-4 py-16">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-          <Mic className="text-white" size={20} />
+        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-[0_3px_0_#0369A1]">
+          <Waves className="text-white" size={20} strokeWidth={2} />
         </div>
         <span className="font-heading font-extrabold text-2xl text-text">
-          Legacy<span className="text-primary">++</span>
+          <span className="text-primary">Alon</span>
         </span>
       </div>
 
@@ -62,7 +62,7 @@ export default function AuthPage() {
         {signUpSuccess ? (
           <div className="text-center py-4">
             <div className="w-14 h-14 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mic className="text-success" size={24} />
+              <Waves className="text-success" size={24} strokeWidth={2} />
             </div>
             <h2 className="font-heading font-bold text-xl text-text mb-2">
               Check your email

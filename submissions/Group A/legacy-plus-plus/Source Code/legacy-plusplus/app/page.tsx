@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ChevronRight, Mic, TrendingUp, Heart } from "lucide-react";
+import { ShieldCheck, ChevronRight, Waves, TrendingUp, Heart } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { saveConsent, saveChildProfile, getChildProfile, hasConsent } from "@/lib/db";
 import Button from "@/components/ui/Button";
@@ -78,6 +78,9 @@ export default function ParentGatePage() {
         parentName,
       };
       localStorage.setItem("legacypp_profile", JSON.stringify(stored));
+      if (!localStorage.getItem("legacypp_level")) {
+        localStorage.setItem("legacypp_level", "1");
+      }
       router.push("/child/home");
     } catch {
       setError("Could not save profile. Please try again.");
@@ -103,7 +106,7 @@ export default function ParentGatePage() {
       <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-4 py-16">
         <div className="text-center max-w-2xl mb-12">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-body font-semibold mb-6">
-            <Mic size={16} />
+            <Waves size={16} />
             Powered by Agora Voice AI
           </div>
           <h1 className="font-heading font-extrabold text-5xl text-text mb-4 leading-tight">
@@ -111,7 +114,7 @@ export default function ParentGatePage() {
             <span className="text-primary">feels like play</span>
           </h1>
           <p className="text-muted text-lg font-body leading-relaxed mb-8">
-            Legacy++ helps children ages 5–13 practice speech at home with
+            Alon helps children ages 5–13 practice speech at home with
             instant, encouraging AI feedback — so every voice gets a chance to
             shine.
           </p>
@@ -122,7 +125,7 @@ export default function ParentGatePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full">
           {[
-            { icon: <Mic className="text-primary" size={28} />, title: "Real-Time Voice AI", desc: "Instant pronunciation feedback after every attempt — friendly, never punishing." },
+            { icon: <Waves className="text-primary" size={28} />, title: "Real-Time Voice AI", desc: "Instant pronunciation feedback after every attempt — friendly, never punishing." },
             { icon: <TrendingUp className="text-success" size={28} />, title: "Progress Tracking", desc: "Weekly trend charts and session report cards parents can actually understand." },
             { icon: <Heart className="text-error" size={28} />, title: "Child-Safe by Design", desc: "Parent consent gate, role-based access, and data deletion on request." },
           ].map((f) => (
@@ -150,7 +153,7 @@ export default function ParentGatePage() {
 
           <h2 className="font-heading font-bold text-2xl text-text mb-2">Parent Consent</h2>
           <p className="text-muted font-body mb-4 text-sm leading-relaxed">
-            Legacy++ is an assistive practice tool — not a medical device or diagnostic authority.
+            Alon is an assistive practice tool — not a medical device or diagnostic authority.
             By continuing, you confirm you are the parent or legal guardian.
           </p>
 
@@ -185,7 +188,7 @@ export default function ParentGatePage() {
               className="mt-0.5 w-5 h-5 accent-primary cursor-pointer"
             />
             <span className="text-sm font-body text-text">
-              I am the parent/guardian and I consent to my child using Legacy++ under my supervision.
+              I am the parent/guardian and I consent to my child using Alon under my supervision.
             </span>
           </label>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Star, Home, RotateCcw, ChevronRight } from "lucide-react";
+import { Star, Home, RotateCcw, ChevronRight, Waves, Trophy, Target } from "lucide-react";
 import ProgressBar from "@/components/ui/ProgressBar";
 import type { SessionScore, FeedbackChip } from "@/types";
 
@@ -20,10 +20,11 @@ const NEXT_DRILLS: Record<string, string> = {
   confidence:    "Record yourself saying a tongue twister and play it back",
 };
 
+// Icon + colors replace emoji mascots
 const BY_STARS = [
-  { heading: "Keep it up!", sub: "Every practice makes you stronger 💪", mascot: "🦕", bg: "from-warning/20 to-bg" },
-  { heading: "Nice work!",  sub: "You're getting better every day 🌟",   mascot: "🌟", bg: "from-primary/20 to-bg" },
-  { heading: "You crushed it!", sub: "That was an amazing session! 🏆",  mascot: "🏆", bg: "from-success/25 to-bg" },
+  { heading: "Keep it up!", sub: "Every practice makes you stronger!", Icon: Waves,  iconBg: "#F97316", iconShadow: "#ea580c", bg: "from-warning/20 to-bg" },
+  { heading: "Nice work!",  sub: "You're getting better every day!",   Icon: Waves,  iconBg: "#0284C7", iconShadow: "#0369A1", bg: "from-primary/20 to-bg" },
+  { heading: "You crushed it!", sub: "That was an amazing session!",   Icon: Trophy, iconBg: "#22C55E", iconShadow: "#16a34a", bg: "from-success/25 to-bg" },
 ];
 
 function stars(avg: number) {
@@ -65,11 +66,14 @@ export default function ReportCardPage() {
       {/* ── Celebration hero ──────────────────────────────── */}
       <div className={`bg-gradient-to-b ${info.bg} pt-10 pb-8 px-5 flex flex-col items-center text-center`}>
 
-        {/* Mascot */}
-        <div
-          className={`text-9xl mb-4 select-none ${visible ? "animate-bounce-in" : "opacity-0"}`}
-        >
-          {info.mascot}
+        {/* Wavi mascot sticker */}
+        <div className={`relative inline-flex items-center justify-center mb-4 ${visible ? "animate-bounce-in" : "opacity-0"}`}>
+          <div className="w-28 h-28 rounded-[2rem] flex items-center justify-center"
+            style={{ backgroundColor: info.iconBg, boxShadow: `0 7px 0 ${info.iconShadow}` }}>
+            <info.Icon size={52} className="text-white" strokeWidth={1.8} />
+          </div>
+          <Waves size={20} className="absolute -top-2 -right-2 text-accent animate-float" strokeWidth={2.5} />
+          <Star size={13} className="absolute -bottom-1 -left-2 text-warning fill-warning animate-float" style={{ animationDelay: "0.4s" }} />
         </div>
 
         {/* Heading */}
@@ -110,7 +114,9 @@ export default function ReportCardPage() {
           className={`flex items-center gap-3 bg-surface border-2 border-accent/30 rounded-2xl px-6 py-3 shadow-md ${visible ? "animate-slide-up" : "opacity-0"}`}
           style={{ animationDelay: "0.5s" }}
         >
-          <span className="text-2xl select-none">⚡</span>
+          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shadow-[0_3px_0_#d97706]">
+            <Star size={20} className="text-white fill-white" />
+          </div>
           <div className="text-left">
             <p className="font-heading font-extrabold text-2xl text-accent">+{xpGained} XP</p>
             <p className="font-body text-xs text-muted">Great session, {name}!</p>
@@ -138,7 +144,9 @@ export default function ReportCardPage() {
 
         {/* Next drill */}
         <div className="bg-accent/8 border-2 border-accent/30 rounded-3xl p-4 flex items-start gap-3">
-          <span className="text-2xl shrink-0 mt-0.5">🎯</span>
+          <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0 shadow-[0_3px_0_#d97706] mt-0.5">
+            <Target size={18} className="text-white" strokeWidth={2} />
+          </div>
           <div>
             <p className="font-heading font-extrabold text-sm text-accent uppercase tracking-wide mb-1">
               Next Drill
@@ -159,7 +167,7 @@ export default function ReportCardPage() {
           </button>
           <button
             onClick={() => router.push("/practice")}
-            className="btn-3d flex items-center justify-center gap-2 bg-primary text-white py-4 rounded-2xl font-heading font-extrabold text-sm shadow-[0_4px_0_#0b8a8b]"
+            className="btn-3d flex items-center justify-center gap-2 bg-primary text-white py-4 rounded-2xl font-heading font-extrabold text-sm shadow-[0_4px_0_#0369A1]"
           >
             <RotateCcw size={16} /> Play Again <ChevronRight size={16} />
           </button>

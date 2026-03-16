@@ -6,7 +6,7 @@ import {
   Flame, Star, Play, Lock,
   Home, BookOpen, Trophy, User, Users, ChevronRight,
   Volume2, Waves, Wind, Leaf, Zap,
-  Mic, Target, Award, Sparkles,
+  Target, Award, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,16 +19,16 @@ interface Profile {
 type Tab = "home" | "lessons" | "rewards" | "profile";
 
 const LEVELS = [
-  { id: 1, label: "R Sounds",     Icon: Volume2, color: "#0EA5A6", shadow: "#0b8a8b", bg: "#E0F7F7", bgIcon: "#0EA5A6", active: true,  desc: "Practice the R sound",      examples: ["red","rabbit","run"] },
-  { id: 2, label: "S Sounds",     Icon: Waves,   color: "#F97316", shadow: "#ea580c", bg: "#FFF0E8", bgIcon: "#F97316", active: false, desc: "Master the S sound",        examples: ["sun","sea","sing"] },
-  { id: 3, label: "L & SH",       Icon: Wind,    color: "#F59E0B", shadow: "#d97706", bg: "#FFFBE8", bgIcon: "#F59E0B", active: false, desc: "L and SH together",         examples: ["shell","she","like"] },
-  { id: 4, label: "TH Sounds",    Icon: Leaf,    color: "#22C55E", shadow: "#16a34a", bg: "#E8FFF0", bgIcon: "#22C55E", active: false, desc: "The tricky TH sound",       examples: ["three","think","this"] },
-  { id: 5, label: "Mix & Master", Icon: Zap,     color: "#6366F1", shadow: "#4f46e5", bg: "#F0EEFF", bgIcon: "#6366F1", active: false, desc: "Combine everything!",       examples: ["mix","all","sounds"] },
+  { id: 1, label: "R Sounds",     Icon: Volume2, color: "#0284C7", shadow: "#0369A1", bg: "#E0F2FE", bgIcon: "#0284C7", desc: "Practice the R sound",      examples: ["red","rabbit","run"] },
+  { id: 2, label: "S Sounds",     Icon: Waves,   color: "#F97316", shadow: "#ea580c", bg: "#FFF0E8", bgIcon: "#F97316", desc: "Master the S sound",        examples: ["sun","sea","sing"] },
+  { id: 3, label: "L & SH",       Icon: Wind,    color: "#F59E0B", shadow: "#d97706", bg: "#FFFBE8", bgIcon: "#F59E0B", desc: "L and SH together",         examples: ["shell","she","like"] },
+  { id: 4, label: "TH Sounds",    Icon: Leaf,    color: "#22C55E", shadow: "#16a34a", bg: "#E8FFF0", bgIcon: "#22C55E", desc: "The tricky TH sound",       examples: ["three","think","this"] },
+  { id: 5, label: "Mix & Master", Icon: Zap,     color: "#6366F1", shadow: "#4f46e5", bg: "#F0EEFF", bgIcon: "#6366F1", desc: "Combine everything!",       examples: ["mix","all","sounds"] },
 ];
 
-const BADGE_COLORS = ["#0EA5A6","#F97316","#F59E0B","#6366F1","#22C55E","#EC4899"];
+const BADGE_COLORS = ["#0284C7","#F97316","#F59E0B","#6366F1","#22C55E","#EC4899"];
 const BADGES = [
-  { id: 1, Icon: Mic,    label: "First Try!",    desc: "Finish your first session",  minStars: 1  },
+  { id: 1, Icon: Waves,  label: "First Wave!",   desc: "Finish your first session",  minStars: 1  },
   { id: 2, Icon: Flame,  label: "On Fire!",      desc: "Practice 3 days in a row",   minStreak: 3 },
   { id: 3, Icon: Star,   label: "Star Power",    desc: "Earn 10 stars total",         minStars: 10 },
   { id: 4, Icon: Trophy, label: "Level Up!",     desc: "Complete Level 1",            minStars: 5  },
@@ -45,17 +45,19 @@ const TABS: { key: Tab; icon: React.ElementType; label: string }[] = [
 
 export default function ChildHomePage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [streak, setStreak]   = useState(0);
-  const [stars,  setStars]    = useState(0);
-  const [tab,    setTab]      = useState<Tab>("home");
+  const [profile,      setProfile]      = useState<Profile | null>(null);
+  const [streak,       setStreak]       = useState(0);
+  const [stars,        setStars]        = useState(0);
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [tab,          setTab]          = useState<Tab>("home");
 
   useEffect(() => {
     const raw = localStorage.getItem("legacypp_profile");
     if (!raw) { router.replace("/"); return; }
     setProfile(JSON.parse(raw));
     setStreak(parseInt(localStorage.getItem("legacypp_streak") || "0"));
-    setStars(parseInt(localStorage.getItem("legacypp_stars")  || "0"));
+    setStars(parseInt(localStorage.getItem("legacypp_stars")   || "0"));
+    setCurrentLevel(parseInt(localStorage.getItem("legacypp_level") || "1"));
   }, [router]);
 
   if (!profile) return null;
@@ -66,11 +68,11 @@ export default function ChildHomePage() {
       {/* ── Top bar ──────────────────────────────────────────── */}
       <header className="bg-surface border-b-2 border-border px-5 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-[0_3px_0_#0b8a8b]">
-            <Mic size={18} className="text-white fill-white" />
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-[0_3px_0_#0369A1]">
+            <Waves size={18} className="text-white" strokeWidth={2} />
           </div>
           <span className="font-heading font-extrabold text-lg text-text">
-            Legacy<span className="text-primary">++</span>
+            <span className="text-primary">Alon</span>
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -87,8 +89,8 @@ export default function ChildHomePage() {
 
       {/* ── Main scrollable content ─────────────────────────── */}
       <main className="flex-1 overflow-y-auto pb-24 px-5 pt-6">
-        {tab === "home"    && <HomeTab    name={profile.childName} streak={streak} stars={stars} onStart={() => router.push("/practice")} />}
-        {tab === "lessons" && <LessonsTab onStart={() => router.push("/practice")} />}
+        {tab === "home"    && <HomeTab    name={profile.childName} streak={streak} stars={stars} currentLevel={currentLevel} onStart={() => router.push("/practice")} />}
+        {tab === "lessons" && <LessonsTab currentLevel={currentLevel} onStart={() => router.push("/practice")} />}
         {tab === "rewards" && <RewardsTab streak={streak} stars={stars} />}
         {tab === "profile" && <ProfileTab profile={profile} streak={streak} stars={stars} onParent={() => router.push("/parent/dashboard")} />}
       </main>
@@ -123,8 +125,8 @@ export default function ChildHomePage() {
 }
 
 /* ─── Home Tab ──────────────────────────────────────────────── */
-function HomeTab({ name, streak, stars, onStart }: { name: string; streak: number; stars: number; onStart: () => void }) {
-  const activeLevel = LEVELS.find((l) => l.active)!;
+function HomeTab({ name, streak, stars, currentLevel, onStart }: { name: string; streak: number; stars: number; currentLevel: number; onStart: () => void }) {
+  const activeLevel = LEVELS.find((l) => l.id === currentLevel) ?? LEVELS[0];
   const ActiveIcon  = activeLevel.Icon;
 
   return (
@@ -132,19 +134,18 @@ function HomeTab({ name, streak, stars, onStart }: { name: string; streak: numbe
 
       {/* Sparky mascot greeting */}
       <div className="text-center mb-8 animate-pop-up w-full">
-        {/* Mascot: animated mic icon with sparkle ring */}
+        {/* Wavi mascot */}
         <div className="relative inline-flex items-center justify-center mb-4">
-          <div className="w-24 h-24 rounded-[2rem] bg-primary flex items-center justify-center shadow-[0_6px_0_#0b8a8b] animate-bounce-in">
-            <Mic size={44} className="text-white fill-white" strokeWidth={1.5} />
+          <div className="w-24 h-24 rounded-[2rem] bg-primary flex items-center justify-center shadow-[0_6px_0_#0369A1] animate-bounce-in">
+            <Waves size={44} className="text-white" strokeWidth={2} />
           </div>
-          {/* sparkle corners */}
           <Sparkles size={18} className="absolute -top-2 -right-2 text-accent fill-accent animate-float" />
           <Star size={12} className="absolute -bottom-1 -left-2 text-warning fill-warning animate-float" style={{ animationDelay: "0.4s" }} />
         </div>
         <h1 className="font-heading font-extrabold text-3xl text-text">
           Hey, <span className="text-primary">{name}!</span>
         </h1>
-        <p className="text-muted font-body mt-1">Ready for today&apos;s speech mission?</p>
+        <p className="text-muted font-body mt-1">Wavi is ready for your speech mission!</p>
       </div>
 
       {/* Quick stats pills */}
@@ -214,7 +215,7 @@ function HomeTab({ name, streak, stars, onStart }: { name: string; streak: numbe
       {/* CTA */}
       <button
         onClick={onStart}
-        className="btn-3d w-full bg-primary text-white rounded-2xl py-5 font-heading font-extrabold text-xl shadow-[0_5px_0_#0b8a8b] flex items-center justify-center gap-3"
+        className="btn-3d w-full bg-primary text-white rounded-2xl py-5 font-heading font-extrabold text-xl shadow-[0_5px_0_#0369A1] flex items-center justify-center gap-3"
       >
         <Play className="fill-white text-white" size={24} />
         Start Practice!
@@ -224,7 +225,7 @@ function HomeTab({ name, streak, stars, onStart }: { name: string; streak: numbe
 }
 
 /* ─── Lessons Tab ───────────────────────────────────────────── */
-function LessonsTab({ onStart }: { onStart: () => void }) {
+function LessonsTab({ currentLevel, onStart }: { currentLevel: number; onStart: () => void }) {
   return (
     <div className="max-w-lg mx-auto">
       <h2 className="font-heading font-extrabold text-2xl text-text mb-1">All Lessons</h2>
@@ -232,44 +233,46 @@ function LessonsTab({ onStart }: { onStart: () => void }) {
 
       <div className="space-y-3">
         {LEVELS.map((level) => {
-          const LevelIcon = level.Icon;
+          const isActive   = level.id === currentLevel;
+          const isUnlocked = level.id <= currentLevel;
+          const LevelIcon  = level.Icon;
           return (
             <div
               key={level.id}
               className={cn(
                 "rounded-3xl border-2 p-4 flex items-center gap-4 transition-all",
-                level.active ? "shadow-md" : "border-border bg-surface/70 opacity-60"
+                isActive ? "shadow-md" : isUnlocked ? "shadow-sm" : "border-border bg-surface/70 opacity-60"
               )}
-              style={level.active ? { borderColor: level.color + "55", backgroundColor: level.bg } : {}}
+              style={isUnlocked ? { borderColor: level.color + "55", backgroundColor: level.bg } : {}}
             >
               {/* Icon sticker */}
               <div
                 className={cn(
                   "w-16 h-16 rounded-[1rem] flex items-center justify-center shrink-0",
-                  level.active ? "shadow-[0_3px_0_rgba(0,0,0,0.15)]" : "bg-border/40"
+                  isUnlocked ? "shadow-[0_3px_0_rgba(0,0,0,0.15)]" : "bg-border/40"
                 )}
-                style={level.active ? { backgroundColor: level.bgIcon } : {}}
+                style={isUnlocked ? { backgroundColor: level.bgIcon } : {}}
               >
                 <LevelIcon
                   size={28}
                   strokeWidth={1.5}
-                  className={level.active ? "text-white" : "text-muted"}
+                  className={isUnlocked ? "text-white" : "text-muted"}
                 />
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="text-[11px] font-data font-extrabold uppercase tracking-wide"
-                    style={{ color: level.active ? level.color : "#94a3b8" }}>
+                    style={{ color: isUnlocked ? level.color : "#94a3b8" }}>
                     Level {level.id}
                   </span>
-                  {level.active && (
+                  {isActive && (
                     <span className="text-[10px] font-heading font-bold px-2 py-0.5 rounded-full text-white"
                       style={{ backgroundColor: level.color }}>
                       ACTIVE
                     </span>
                   )}
-                  {!level.active && <Lock size={11} className="text-muted" />}
+                  {!isUnlocked && <Lock size={11} className="text-muted" />}
                 </div>
                 <p className="font-heading font-extrabold text-text text-base">{level.label}</p>
                 <p className="text-xs font-body text-muted mt-0.5">{level.desc}</p>
@@ -277,7 +280,7 @@ function LessonsTab({ onStart }: { onStart: () => void }) {
                   {level.examples.map((ex) => (
                     <span key={ex}
                       className="text-[11px] font-heading font-bold px-2 py-0.5 rounded-full"
-                      style={level.active
+                      style={isUnlocked
                         ? { color: level.color, backgroundColor: level.color + "15", border: `1.5px solid ${level.color}44` }
                         : { color: "#94a3b8", border: "1.5px solid #cbd5e1" }}
                     >
@@ -287,7 +290,7 @@ function LessonsTab({ onStart }: { onStart: () => void }) {
                 </div>
               </div>
 
-              {level.active ? (
+              {isActive ? (
                 <button
                   onClick={onStart}
                   className="btn-3d shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
@@ -401,7 +404,7 @@ function ProfileTab({
       <div className="bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/20 rounded-3xl p-6 flex items-center gap-5 mb-4">
         {/* initials avatar with ring */}
         <div className="relative shrink-0">
-          <div className="w-20 h-20 rounded-[1.25rem] bg-primary flex items-center justify-center shadow-[0_5px_0_#0b8a8b]">
+          <div className="w-20 h-20 rounded-[1.25rem] bg-primary flex items-center justify-center shadow-[0_5px_0_#0369A1]">
             <span className="font-heading font-extrabold text-3xl text-white">{initials}</span>
           </div>
           <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-xl bg-accent flex items-center justify-center shadow-sm border-2 border-surface">

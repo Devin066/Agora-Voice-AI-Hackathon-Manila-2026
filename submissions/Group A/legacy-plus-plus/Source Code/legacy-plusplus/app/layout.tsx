@@ -22,7 +22,7 @@ const atkinson = Atkinson_Hyperlegible({
 });
 
 export const metadata: Metadata = {
-  title: "Legacy++ | Voice AI Speech Therapy",
+  title: "Alon | Voice AI Speech Practice",
   description:
     "Child-centered speech practice with instant AI feedback — affordable, accessible, and fun.",
 };
