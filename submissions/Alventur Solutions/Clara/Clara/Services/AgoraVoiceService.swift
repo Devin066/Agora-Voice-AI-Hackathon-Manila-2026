@@ -6,6 +6,8 @@ protocol AgoraVoiceServiceProtocol: AnyObject {
     var onAgentSpeakingChanged: ((Bool) -> Void)? { get set }
 
     func start(appId: String, token: String, channelName: String, uid: UInt, agentUid: UInt) async throws
+    func setExpectedAgentUid(_ uid: UInt)
+    func reconfigureAudioRoute()
     func stop() async
 }
 
@@ -69,13 +71,26 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
 
     private var engine: AgoraRtcEngineKit?
     private var expectedAgentUid: UInt?
+    private var activeRemoteUid: UInt?
     private var joinContinuation: CheckedContinuation<Void, Error>?
+
+    func setExpectedAgentUid(_ uid: UInt) {
+        expectedAgentUid = uid
+        print("[agora] updated expectedAgentUid=\(uid)")
+    }
+
+    func reconfigureAudioRoute() {
+        _ = engine?.setEnableSpeakerphone(true)
+        print("[agora] reconfigured audio route to speakerphone")
+    }
 
     func start(appId: String, token: String, channelName: String, uid: UInt, agentUid: UInt) async throws {
         let normalizedAppId = appId.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !normalizedAppId.isEmpty else {
             throw AgoraVoiceServiceError.invalidAppId
         }
+
+        print("[agora] start localUid=\(uid) expectedAgentUid=\(agentUid) channel=\(channelName)")
 
         if engine == nil {
             let config = AgoraRtcEngineConfig()
@@ -88,11 +103,13 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         try configureAudioSession()
         onAgentSpeakingChanged?(false)
         expectedAgentUid = agentUid
+        activeRemoteUid = nil
 
         _ = engine?.enableAudio()
         _ = engine?.enableLocalAudio(true)
         _ = engine?.setDefaultAudioRouteToSpeakerphone(true)
         _ = engine?.setEnableSpeakerphone(true)
+        _ = engine?.enableAudioVolumeIndication(200, smooth: 3, reportVad: true)
 
         try await joinChannel(token: token, channelName: channelName, uid: uid)
     }
@@ -103,6 +120,7 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
 
         onAgentSpeakingChanged?(false)
         expectedAgentUid = nil
+        activeRemoteUid = nil
 
         guard let engine else { return }
         let result = engine.leaveChannel(nil)
@@ -120,9 +138,9 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         try audioSession.setCategory(
             .playAndRecord,
             mode: .voiceChat,
-            options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .duckOthers]
+            options: [.defaultToSpeaker, .allowBluetooth, .duckOthers]
         )
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        try audioSession.setActive(true)
     }
 
     private func joinChannel(token: String, channelName: String, uid: UInt) async throws {
@@ -141,6 +159,7 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
             await MainActor.run {
                 guard let self else { return }
                 if let continuation = self.joinContinuation {
+                    print("[agora] join timeout after 8s")
                     self.joinContinuation = nil
                     continuation.resume(throwing: AgoraVoiceServiceError.timeout)
                 }
@@ -155,12 +174,25 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
             self.joinContinuation = continuation
 
             let result = engine.joinChannel(byToken: token, channelId: channelName, uid: uid, mediaOptions: options)
+            print("[agora] joinChannel invoked channel=\(channelName) uid=\(uid) result=\(result)")
             guard result == 0 else {
                 self.joinContinuation = nil
                 continuation.resume(throwing: AgoraVoiceServiceError.joinFailed(code: result))
                 return
             }
         }
+    }
+
+    private func isTrackedAgentUid(_ uid: UInt) -> Bool {
+        if let activeRemoteUid {
+            return uid == activeRemoteUid
+        }
+
+        if let expectedAgentUid {
+            return uid == expectedAgentUid
+        }
+
+        return false
     }
 }
 
@@ -171,6 +203,7 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
         withUid uid: UInt,
         elapsed: Int
     ) {
+        print("[agora] didJoinChannel channel=\(channel) localUid=\(uid)")
         Task { @MainActor [weak self] in
             guard let self else { return }
             self.joinContinuation?.resume()
@@ -179,11 +212,31 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
     }
 
     nonisolated func rtcEngine(_ engine: AgoraRtcEngineKit, didOccurError errorCode: AgoraErrorCode) {
+        print("[agora] error code=\(errorCode.rawValue)")
         Task { @MainActor [weak self] in
             guard let self else { return }
             if let continuation = self.joinContinuation {
                 continuation.resume(throwing: AgoraVoiceServiceError.joinFailed(code: Int32(errorCode.rawValue)))
                 self.joinContinuation = nil
+            }
+        }
+    }
+
+    nonisolated func rtcEngine(
+        _ engine: AgoraRtcEngineKit,
+        connectionChangedTo state: AgoraConnectionState,
+        reason: AgoraConnectionChangedReason
+    ) {
+        print("[agora] connection state=\(state.rawValue) reason=\(reason.rawValue)")
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            // Some SDK/runtime combinations report connected state without
+            // immediately delivering didJoinChannel callback.
+            if state == .connected, let continuation = self.joinContinuation {
+                print("[agora] join continuation resumed from connection state")
+                self.joinContinuation = nil
+                continuation.resume()
             }
         }
     }
@@ -204,6 +257,7 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
         reason: AgoraAudioRemoteReason,
         elapsed: Int
     ) {
+        print("[agora] remoteAudioState uid=\(uid) state=\(state.rawValue) reason=\(reason.rawValue)")
         Task { @MainActor [weak self] in
             guard let self else { return }
             // Accept the expected agent UID or fall back to any remote user if agent UID is 0
@@ -226,11 +280,22 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
         didOfflineOfUid uid: UInt,
         reason: AgoraUserOfflineReason
     ) {
+        print("[agora] remoteOffline uid=\(uid) reason=\(reason.rawValue)")
         Task { @MainActor [weak self] in
             guard let self else { return }
             let isAgent = self.expectedAgentUid == 0 || uid == self.expectedAgentUid
             guard isAgent else { return }
             self.onAgentSpeakingChanged?(false)
         }
+    }
+
+    nonisolated func rtcEngine(
+        _ engine: AgoraRtcEngineKit,
+        reportAudioVolumeIndicationOfSpeakers speakers: [AgoraRtcAudioVolumeInfo],
+        totalVolume: Int
+    ) {
+        guard totalVolume > 0 else { return }
+        let activeUids = speakers.map { $0.uid }
+        print("[agora] volume total=\(totalVolume) activeUids=\(activeUids)")
     }
 }
