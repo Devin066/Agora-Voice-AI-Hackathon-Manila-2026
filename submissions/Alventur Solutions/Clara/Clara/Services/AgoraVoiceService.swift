@@ -191,7 +191,8 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
     nonisolated func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard uid == self.expectedAgentUid else { return }
+            let isAgent = self.expectedAgentUid == 0 || uid == self.expectedAgentUid
+            guard isAgent else { return }
             self.onAgentSpeakingChanged?(false)
         }
     }
@@ -205,10 +206,12 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
     ) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard uid == self.expectedAgentUid else { return }
+            // Accept the expected agent UID or fall back to any remote user if agent UID is 0
+            let isAgent = self.expectedAgentUid == 0 || uid == self.expectedAgentUid
+            guard isAgent else { return }
 
             switch state {
-            case .starting, .decoding:
+            case .starting, .decoding, .frozen:
                 self.onAgentSpeakingChanged?(true)
             case .stopped, .failed:
                 self.onAgentSpeakingChanged?(false)
@@ -225,7 +228,8 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
     ) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            guard uid == self.expectedAgentUid else { return }
+            let isAgent = self.expectedAgentUid == 0 || uid == self.expectedAgentUid
+            guard isAgent else { return }
             self.onAgentSpeakingChanged?(false)
         }
     }

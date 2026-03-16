@@ -6,15 +6,12 @@ import os
 import base64
 import httpx
 import json
-import asyncio
 import random
 import string
 from prompts import get_system_prompt
 
 router = APIRouter(prefix="/session", tags=["session"])
 MAX_CHANNEL_BYTES = 64
-SESSION_REGISTRY: dict[str, dict[str, str]] = {}
-SESSION_REGISTRY_LOCK = asyncio.Lock()
 
 
 class StartSessionRequest(BaseModel):
@@ -113,19 +110,10 @@ def _is_task_not_found_error(response_text: str) -> bool:
         return False
     return False
 
-async def _mark_session_active(session_id: str, channel_name: str) -> None:
-    async with SESSION_REGISTRY_LOCK:
-        SESSION_REGISTRY[session_id] = {"status": "active", "channelName": channel_name}
 
-async def _mark_session_stopped(session_id: str) -> None:
-    async with SESSION_REGISTRY_LOCK:
-        existing = SESSION_REGISTRY.get(session_id)
-        channel_name = existing["channelName"] if existing and "channelName" in existing else ""
-        SESSION_REGISTRY[session_id] = {"status": "stopped", "channelName": channel_name}
-
-async def _is_session_already_stopped(session_id: str) -> bool:
-    async with SESSION_REGISTRY_LOCK:
-        return SESSION_REGISTRY.get(session_id, {}).get("status") == "stopped"
+def _parse_modalities(raw: str, fallback: list[str]) -> list[str]:
+    parsed = [item.strip() for item in raw.split(",") if item.strip()]
+    return parsed or fallback
 
 
 @router.post("/start", response_model=StartSessionResponse)
@@ -133,8 +121,7 @@ async def start_session(body: StartSessionRequest):
     try:
         base_url = os.getenv("AGORA_CONVO_AI_BASE_URL")
         app_id = os.getenv("AGORA_APP_ID")
-        configured_agent_uid = int(os.getenv("AGENT_UID", "10001"))
-        agent_uid = configured_agent_uid if configured_agent_uid > 0 else 10001
+        agent_uid = int(os.getenv("AGENT_UID", "10001"))
         if not base_url or not app_id:
             raise HTTPException(status_code=500, detail="Missing AGORA_CONVO_AI_BASE_URL or AGORA_APP_ID")
 
@@ -143,8 +130,9 @@ async def start_session(body: StartSessionRequest):
 
         system_prompt = get_system_prompt(body.scenario)
 
-        input_modalities = [s for s in os.getenv("INPUT_MODALITIES", "text").split(",") if s]
-        output_modalities = [s for s in os.getenv("OUTPUT_MODALITIES", "text,audio").split(",") if s]
+        input_modalities = _parse_modalities(os.getenv("INPUT_MODALITIES", "audio,text"), ["audio", "text"])
+        output_modalities = _parse_modalities(os.getenv("OUTPUT_MODALITIES", "text,audio"), ["text", "audio"])
+        llm_style = os.getenv("LLM_STYLE", "openai")
 
         tts_vendor = os.getenv("TTS_VENDOR", "microsoft")
         tts: dict
@@ -183,19 +171,20 @@ async def start_session(body: StartSessionRequest):
                 "channel": channel,
                 "token": token,
                 "agent_rtc_uid": str(agent_uid),
-                "remote_rtc_uids": [str(body.userId)] if body.userId is not None else [],
-                "enable_string_uid": isinstance(body.userId, str),
+                "remote_rtc_uids": ["*"],
+                "enable_string_uid": False,
                 "idle_timeout": 30,
                 "asr": {"language": "en-US", "task": "conversation"},
                 "llm": {
                     "url": os.getenv("LLM_URL"),
-                    "api_key": os.getenv("LLM_TOKEN"),
                     "system_messages": [{"role": "system", "content": system_prompt}],
-                    "greeting_message": None,
+                    "greeting_message": "Hello! I'm ready to help you practice. Let's get started.",
                     "failure_message": "Please wait a moment.",
                     "max_history": 10,
+                    "style": llm_style,
+                    "ignore_empty": True,
                     "params": {
-                        "model": os.getenv("LLM_MODEL"),
+                        "model": os.getenv("LLM_MODEL", "gemini-2.0-flash"),
                         "max_tokens": 150,
                         "temperature": 0.7,
                         "top_p": 0.95,
@@ -227,10 +216,8 @@ async def start_session(body: StartSessionRequest):
             session_id = data.get("agent_id") or data.get("id")
             if not session_id:
                 raise HTTPException(status_code=500, detail="Missing agent_id in Agora response")
-            session_id = str(session_id)
-            await _mark_session_active(session_id=session_id, channel_name=channel)
             return StartSessionResponse(
-                sessionId=session_id,
+                sessionId=str(session_id),
                 agentUid=agent_uid,
                 channelName=channel,
                 status="active",
@@ -244,12 +231,6 @@ async def start_session(body: StartSessionRequest):
 @router.post("/stop", response_model=StopSessionResponse)
 async def stop_session(body: StopSessionRequest):
     try:
-        if await _is_session_already_stopped(body.sessionId):
-            return StopSessionResponse(
-                sessionId=str(body.sessionId),
-                status="stopped",
-                stoppedAt=datetime.utcnow().isoformat() + "Z",
-            )
         base_url = os.getenv("AGORA_CONVO_AI_BASE_URL")
         app_id = os.getenv("AGORA_APP_ID")
         if not base_url or not app_id:
@@ -261,20 +242,12 @@ async def stop_session(body: StopSessionRequest):
                 headers={"Content-Type": "application/json", "Authorization": auth_header},
             )
             resp.raise_for_status()
-            await _mark_session_stopped(body.sessionId)
             return StopSessionResponse(
                 sessionId=str(body.sessionId),
                 status="stopped",
                 stoppedAt=datetime.utcnow().isoformat() + "Z",
             )
     except httpx.HTTPStatusError as e:
-        if _is_task_not_found_error(e.response.text):
-            await _mark_session_stopped(body.sessionId)
-            return StopSessionResponse(
-                sessionId=str(body.sessionId),
-                status="stopped",
-                stoppedAt=datetime.utcnow().isoformat() + "Z",
-            )
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
