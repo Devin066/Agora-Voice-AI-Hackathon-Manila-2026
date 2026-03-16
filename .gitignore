@@ -14,3 +14,7 @@ yarn.lock
 
 update-templates.js
 hackathon_config.yaml
+
+# Environment secrets
+**/.env
+**/.env.*

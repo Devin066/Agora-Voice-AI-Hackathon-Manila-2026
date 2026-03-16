@@ -1,4 +1,4 @@
-## **udging Criteria**
+## **Judging Criteria**
 
 Projects will be evaluated based on:
 
