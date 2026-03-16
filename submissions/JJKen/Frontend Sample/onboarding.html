@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Savor – AI Voice Assistant</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; outline: none; }
+
+:root {
+  --primary: #f3a025;
+  --bg-deep: #ffffff;
+  --surface: #f5f5f7;
+  --text-hi: #1d1d1f;
+  --text-mid: rgba(0,0,0,0.65);
+  --text-low: rgba(0,0,0,0.45);
+  --phone-w: 390px;
+  --phone-h: 844px;
+  --r-phone: 54px;
+}
+
+html, body {
+  min-height: 100%;
+  background: #fbfbfd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px 80px;
+  color: var(--text-hi);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.phone-wrap {
+  position: relative;
+  width: var(--phone-w);
+  height: var(--phone-h);
+  border-radius: var(--r-phone);
+  padding: 3px;
+  background: #000;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--r-phone) - 3px);
+  overflow: hidden;
+  background: var(--bg-deep);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-container {
+  flex: 1;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: left;
+}
+
+.header-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 60px;
+}
+
+.logo-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(243, 160, 37, 0.3);
+}
+
+.logo-circle svg {
+  width: 20px;
+  height: 20px;
+  fill: #fff;
+}
+
+.brand-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #2D3436;
+}
+
+.badge {
+  background: #E8F5E9;
+  color: #2ECC71;
+  padding: 8px 16px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #2ECC71;
+  border-radius: 50%;
+}
+
+.onboarding-title {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  letter-spacing: -1.5px;
+  color: #1d1d1f;
+}
+
+.onboarding-title span {
+  color: var(--primary);
+}
+
+.onboarding-desc {
+  font-size: 16px;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-bottom: 60px;
+}
+
+.button-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: auto;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  padding: 18px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(243, 160, 37, 0.3);
+  transition: transform 0.2s;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #1d1d1f;
+  padding: 18px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+  transition: background 0.2s;
+}
+
+.btn-secondary:active {
+  background: #f5f5f7;
+}
+
+.btn-secondary .play-icon {
+  width: 20px;
+  height: 20px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary .play-icon svg {
+  width: 10px;
+  height: 10px;
+  fill: #fff;
+  margin-left: 1px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="phone-wrap">
+  <div class="phone-screen">
+    <div class="onboarding-container">
+      <div class="header-row">
+        <div class="logo-circle">
+          <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </div>
+        <div class="brand-name">Savor</div>
+      </div>
+
+      <div class="badge">Agora powered real-time voice</div>
+
+      <h1 class="onboarding-title">
+        Cook with your <span>voice</span>, not your hands.
+      </h1>
+
+      <p class="onboarding-desc">
+        Savor provides instant, real-time voice guidance powered by Agora. No more messy screens or flipping through pages. Just focus on the flavor.
+      </p>
+
+      <div class="button-group">
+        <button class="btn-primary" onclick="window.location.href='preferences.html'">
+          Get Started 
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+        <button class="btn-secondary">
+          <div class="play-icon">
+            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          See how it works
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

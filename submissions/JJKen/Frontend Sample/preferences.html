@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Savor – Preferences</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; outline: none; }
+
+:root {
+  --primary: #f3a025;
+  --bg-deep: #ffffff;
+  --surface: #f5f5f7;
+  --text-hi: #1d1d1f;
+  --text-mid: rgba(0,0,0,0.65);
+  --text-low: rgba(0,0,0,0.45);
+  --phone-w: 390px;
+  --phone-h: 844px;
+  --r-phone: 54px;
+}
+
+html, body {
+  min-height: 100%;
+  background: #fbfbfd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px 80px;
+  color: var(--text-hi);
+  font-family: 'Montserrat', sans-serif;
+}
+
+.phone-wrap {
+  position: relative;
+  width: var(--phone-w);
+  height: var(--phone-h);
+  border-radius: var(--r-phone);
+  padding: 3px;
+  background: #000;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--r-phone) - 3px);
+  overflow-y: auto;
+  background: var(--bg-deep);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-screen::-webkit-scrollbar { display: none; }
+
+.pref-container {
+  padding: 24px;
+  padding-top: 40px;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.pref-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: -1px;
+}
+
+.pref-subtitle {
+  font-size: 14px;
+  color: var(--text-mid);
+  line-height: 1.5;
+  margin-bottom: 32px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #1d1d1f;
+}
+
+.section-title svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--primary);
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.chip {
+  padding: 10px 18px;
+  border-radius: 50px;
+  border: 1px solid rgba(0,0,0,0.08);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-mid);
+  transition: all 0.2s;
+}
+
+.chip.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.slider-group {
+  margin-bottom: 32px;
+}
+
+.slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  background: #eee;
+  border-radius: 5px;
+  outline: none;
+  margin-bottom: 12px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  border: 4px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transform: translateY(-9px);
+}
+
+.slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  border: 4px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  margin-top: -9px;
+}
+
+.slider::-webkit-slider-runnable-track {
+  background: #eee;
+  height: 6px;
+  border-radius: 5px;
+}
+
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-low);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stepper-card {
+  background: #F8F9FA;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.stepper-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.stepper-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2D3436;
+  margin-bottom: 4px;
+}
+
+.stepper-sub {
+  font-size: 11px;
+  color: var(--text-low);
+}
+
+.stepper-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.step-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.step-btn:active {
+  transform: scale(0.95);
+}
+
+.step-val {
+  font-size: 16px;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+}
+
+.image-card {
+  width: 100%;
+  height: 120px;
+  border-radius: 20px;
+  background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1547592166-23ac45744acd?q=80&w=1000&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.image-card p {
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+  padding: 0 40px;
+}
+
+.save-btn {
+  width: 100%;
+  background: var(--primary);
+  color: #fff;
+  padding: 18px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(243, 160, 37, 0.3);
+}
+
+.skip-link {
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-low);
+  margin-bottom: 40px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="phone-wrap">
+  <div class="phone-screen">
+    <div class="pref-container">
+      <div class="top-bar">
+        <button class="back-btn" onclick="window.location.href='onboarding.html'">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <div style="font-weight: 700; font-size: 14px;">Cooking Preferences</div>
+        <div style="width: 40px;"></div>
+      </div>
+
+      <h1 class="pref-title">Personalize Your Kitchen</h1>
+      <p class="pref-subtitle">Tailor your recipe feed based on your unique lifestyle and dietary needs.</p>
+
+      <div class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
+        Dietary Restrictions
+      </div>
+
+      <div class="chip-group">
+        <button class="chip">Vegan</button>
+        <button class="chip">Keto</button>
+        <button class="chip">Gluten-free</button>
+        <button class="chip">Vegetarian</button>
+        <button class="chip">Paleo</button>
+        <button class="chip">Dairy-free</button>
+        <button class="chip">Pescatarian</button>
+      </div>
+
+      <div class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M19 6.4L17.6 5 12 10.6 6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12z"/></svg>
+        Allergies
+      </div>
+
+      <div class="chip-group">
+        <button class="chip">Peanuts</button>
+        <button class="chip">Tree nuts</button>
+        <button class="chip">Shellfish</button>
+        <button class="chip">Fish</button>
+        <button class="chip">Soy</button>
+        <button class="chip">Eggs</button>
+      </div>
+
+      <div class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M17.03 13.5c-.38-.41-.75-.85-1.12-1.3l-.06-.07c-.4-.5-.81-1.02-1.2-1.57-.39-.56-.76-1.13-1.1-1.71-.34-.58-.64-1.16-.88-1.73-.24-.58-.42-1.14-.53-1.68-.1-.54-.15-1.05-.15-1.54V2h-4v1.9c0 .49-.05 1-.15 1.54-.11.54-.29 1.1-.53 1.68-.24.57-.54 1.15-.88 1.73-.34.58-.71 1.15-1.1 1.71-.39.55-.8 1.07-1.2 1.57l-.06.07c-.37.45-.74.89-1.12 1.3-.38.41-.77.81-1.16 1.19-.39.38-.79.74-1.2 1.08-.4.34-.82.65-1.24.95-.42.3-.84.58-1.27.84-.42.26-.85.49-1.27.7-.42.21-.84.39-1.24.54l-.19.06v4h1.9c.4 0 .84-.05 1.31-.15.47-.1 1.01-.28 1.61-.53.6-.25 1.25-.59 1.95-1 1.41-.83 3.02-2 4.49-3.41l.16-.16c.11-.11.23-.22.34-.34.11.12.23.23.34.34l.16.16c1.47 1.41 3.08 2.58 4.49 3.41.7.41 1.35.75 1.95 1 .6.25 1.14.43 1.61.53.47.1.91.15 1.31.15h1.9v-4l-.19-.06c-.4-.15-.82-.33-1.24-.54-.42-.21-.85-.44-1.27-.7-.43-.26-.85-.54-1.27-.84-.42-.3-1.01-.61-1.24-.95-.41-.34-.81-.7-1.2-1.08-.39-.38-.78-.78-1.16-1.19z"/></svg>
+        Spice Tolerance
+      </div>
+
+      <div class="slider-group">
+        <input type="range" min="1" max="4" value="2" class="slider">
+        <div class="slider-labels">
+          <span>Mild</span>
+          <span>Medium</span>
+          <span>Hot</span>
+          <span>Extra Hot</span>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        Default Serving Size
+      </div>
+
+      <div class="stepper-card">
+        <div class="stepper-info">
+          <span class="stepper-label">People per meal</span>
+          <span class="stepper-sub">Recipes will automatically scale ingredients</span>
+        </div>
+        <div class="stepper-controls">
+          <button class="step-btn">−</button>
+          <span class="step-val">2</span>
+          <button class="step-btn">+</button>
+        </div>
+      </div>
+
+      <div class="image-card">
+        <p>Get recipes that fit you perfectly.</p>
+      </div>
+
+      <button class="save-btn" onclick="window.location.href='index.html'">Save Preferences</button>
+      <div class="skip-link" onclick="window.location.href='index.html'">Skip for now</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Chip toggle functionality
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => chip.classList.toggle('active'));
+  });
+
+  // Stepper functionality
+  let servingSize = 2;
+  const stepValue = document.querySelector('.step-val');
+  const stepBtns = document.querySelectorAll('.step-btn');
+
+  stepBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isDecrement = btn.textContent.includes('−');
+      if (isDecrement) {
+        servingSize = Math.max(1, servingSize - 1);
+      } else {
+        servingSize = Math.min(15, servingSize + 1);
+      }
+      stepValue.textContent = servingSize;
+    });
+  });
+</script>
+
+</body>
+</html>
