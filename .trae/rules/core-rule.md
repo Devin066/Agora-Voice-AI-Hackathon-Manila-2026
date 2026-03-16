@@ -1,23 +1,14 @@
 # VisionVoice Core Project Rules
 
-1. **Mandatory Workflow**: You must strictly follow this order for all major tasks: 
-   - Analyze constraints -> Propose architecture -> Generate/update docs -> Write production code. 
-   - Never skip the documentation phase (ARCHITECTURE.md, TRAE_HANDOFF.md, PROJECT_DOCS.md, README.md, PITCH.md, TASKS.md).
+1. **Workflow**: Analyze -> Architect -> Document -> Code. Mandatory docs: ARCHITECTURE.md, TRAE_HANDOFF.md, PROJECT_DOCS.md, README.md, PITCH.md, TASKS.md.
 
-2. **Core Tech Stack**: 
-   - Frontend: React, TypeScript, TailwindCSS (or similar for polished UI).
-   - Voice/Comms: Agora ConvoAI (mandatory), Agora Web SDK (mandatory).
-   - Computer Vision: Browser-native `getUserMedia()`, `@tensorflow-models/coco-ssd` (objects), `@vladmandic/face-api` (faces). Optional: `Tesseract.js` (OCR).
-   - Backend/Cloud: Avoid unless absolutely necessary (AWS is optional and out of core scope). Start from the Agora boilerplate.
+2. **Tech Stack**: React, TS, Tailwind. Voice: Agora ConvoAI & Web SDK. CV: `getUserMedia()`, `coco-ssd` (objects), `face-api` (faces), `Tesseract.js` (OCR). Backend/AWS: Avoid unless critical. Start with Agora boilerplate.
 
-3. **Product Framing & Scope**: 
-   - This is an assistive awareness copilot and webcam simulation of smart-glasses, NOT a full navigation system, medical device, or general-purpose chatbot. 
-   - Face recognition MUST be strictly limited to pre-registered, known contacts (no public/open identity matching).
+3. **Scope**: Assistive awareness copilot (smart-glasses sim). NOT a medical device, nav system, or chatbot. Face matching restricted to pre-registered contacts only.
 
-4. **Interaction & Voice Rules**: 
-   - **Proactive:** Only speak unprompted for important hazards/obstacles or when a newly registered contact is detected.
-   - **Reactive:** Respond to user queries based ONLY on the most recent visual context.
-   - **Output Style:** Spoken responses via Agora must be short, calm, direct, and ideally under one sentence (e.g., "Chair ahead, slightly left," "Angela is in front of you"). No chatty or generic LLM paragraphs.
+4. **Voice Rules**: 
+   - Proactive: Hazards or known contacts only. 
+   - Reactive: Based ONLY on visual context. 
+   - Output: Short, calm, <1 sentence via Agora (e.g., "Chair ahead"). No chatty LLM text.
 
-5. **Caregiver Escalation (Secondary)**: 
-   - Treat caregiver mode as an escalation/fallback layer triggered by a safeword or button, using Agora to connect a remote user to the audio/video feed. The AI remains the primary daily interface.
+5. **Escalation**: Safeword/button triggers Agora A/V feed to remote caregiver. AI is primary.
