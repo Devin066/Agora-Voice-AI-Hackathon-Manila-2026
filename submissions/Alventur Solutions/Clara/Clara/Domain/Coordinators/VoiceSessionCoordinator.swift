@@ -141,7 +141,7 @@ class VoiceSessionCoordinator: ObservableObject {
             self.state = .active
         } catch {
             await agoraService.stop()
-            print("Failed to start speech analyzer: \(error)")
+            print("Failed to start voice session: \(error)")
             self.errorMessage = error.localizedDescription
             self.state = .idle
         }
