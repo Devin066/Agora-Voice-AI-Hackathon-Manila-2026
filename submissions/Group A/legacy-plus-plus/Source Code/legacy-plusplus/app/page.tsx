@@ -1,38 +1,114 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ShieldCheck,
-  ChevronRight,
-  Mic,
-  TrendingUp,
-  Heart,
-} from "lucide-react";
+import { ShieldCheck, ChevronRight, Mic, TrendingUp, Heart } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { saveConsent, saveChildProfile, getChildProfile, hasConsent } from "@/lib/db";
 import Button from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
+type Step = "landing" | "consent" | "profile" | "loading";
+
 export default function ParentGatePage() {
   const router = useRouter();
-  const [step, setStep] = useState<"landing" | "consent" | "profile">("landing");
+  const { user, loading: authLoading } = useAuth();
+
+  const [step, setStep] = useState<Step>("loading");
   const [consentGiven, setConsentGiven] = useState(false);
   const [childName, setChildName] = useState("");
   const [childAge, setChildAge] = useState("");
   const [parentName, setParentName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleConsent = () => {
-    if (!consentGiven) return;
-    setStep("profile");
+  // Determine which step to show once auth is resolved
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      router.replace("/auth");
+      return;
+    }
+
+    // Check if profile + consent already exist
+    (async () => {
+      const [profile, consent] = await Promise.all([
+        getChildProfile(user.id),
+        hasConsent(user.id),
+      ]);
+
+      if (profile && consent) {
+        // Already set up — go straight to child home
+        localStorage.setItem(
+          "legacypp_profile",
+          JSON.stringify({
+            childId: profile.id,
+            childName: profile.name,
+            childAge: profile.age,
+            parentName: "",
+          })
+        );
+        router.replace("/child/home");
+      } else if (!consent) {
+        setStep("landing");
+      } else {
+        setStep("profile");
+      }
+    })();
+  }, [user, authLoading, router]);
+
+  const handleConsent = async () => {
+    if (!consentGiven || !user) return;
+    setSaving(true);
+    try {
+      await saveConsent(user.id, parentName || "Parent");
+      setStep("profile");
+    } catch {
+      setError("Could not save consent. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleStart = () => {
-    if (!childName || !childAge || !parentName) return;
-    localStorage.setItem(
-      "legacypp_profile",
-      JSON.stringify({ childName, childAge: parseInt(childAge), parentName })
+  const handleStart = async () => {
+    if (!childName || !childAge || !user) return;
+    setSaving(true);
+    setError("");
+    try {
+      const profile = await saveChildProfile(user.id, childName, parseInt(childAge));
+      localStorage.setItem(
+        "legacypp_profile",
+        JSON.stringify({
+          childId: profile.id,
+          childName: profile.name,
+          childAge: profile.age,
+          parentName,
+        })
+      );
+      router.push("/child/home");
+    } catch {
+      setError("Could not save profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (step === "loading") {
+    return (
+      <main className="min-h-screen bg-bg flex items-center justify-center">
+        <div className="flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="w-3 h-3 bg-primary rounded-full animate-bounce"
+              style={{ animationDelay: `${i * 150}ms` }}
+            />
+          ))}
+        </div>
+      </main>
     );
-    router.push("/child/home");
-  };
+  }
 
   if (step === "landing") {
     return (
@@ -92,19 +168,31 @@ export default function ParentGatePage() {
           <div className="flex items-center gap-3 bg-success/10 border border-success/30 rounded-xl px-4 py-3 mb-6">
             <ShieldCheck className="text-success shrink-0" size={22} />
             <p className="text-sm font-body text-success font-medium">
-              Your child&apos;s data is encrypted, never sold, and deletable on
-              request.
+              Your child&apos;s data is encrypted, never sold, and deletable on request.
             </p>
           </div>
 
           <h2 className="font-heading font-bold text-2xl text-text mb-2">
             Parent Consent
           </h2>
-          <p className="text-muted font-body mb-6 text-sm leading-relaxed">
+          <p className="text-muted font-body mb-4 text-sm leading-relaxed">
             Legacy++ is an assistive practice tool — not a medical device or
             diagnostic authority. By continuing, you confirm you are the parent
-            or legal guardian of the child using this app.
+            or legal guardian.
           </p>
+
+          <div className="mb-4">
+            <label className="block text-sm font-body font-semibold text-text mb-1">
+              Your name
+            </label>
+            <input
+              type="text"
+              value={parentName}
+              onChange={(e) => setParentName(e.target.value)}
+              placeholder="e.g. Maria Santos"
+              className="w-full border border-border rounded-xl px-4 py-3 text-text font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
+            />
+          </div>
 
           <ul className="space-y-2 mb-6 text-sm font-body text-muted">
             {[
@@ -133,19 +221,24 @@ export default function ParentGatePage() {
             </span>
           </label>
 
+          {error && (
+            <p className="text-error text-sm font-body mb-4">{error}</p>
+          )}
+
           <Button
             size="lg"
             className="w-full"
-            disabled={!consentGiven}
+            disabled={!consentGiven || saving}
             onClick={handleConsent}
           >
-            Continue <ChevronRight size={18} />
+            {saving ? "Saving…" : "Continue"} <ChevronRight size={18} />
           </Button>
         </Card>
       </main>
     );
   }
 
+  // Profile step
   return (
     <main className="min-h-screen bg-bg flex items-center justify-center px-4 py-16">
       <Card elevated className="max-w-lg w-full">
@@ -153,23 +246,10 @@ export default function ParentGatePage() {
           Set Up Your Child&apos;s Profile
         </h2>
         <p className="text-muted font-body text-sm mb-6">
-          This helps us tailor the practice session to the right age level.
+          This helps us tailor the session to the right age level.
         </p>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-body font-semibold text-text mb-1">
-              Your name (parent/guardian)
-            </label>
-            <input
-              type="text"
-              value={parentName}
-              onChange={(e) => setParentName(e.target.value)}
-              placeholder="e.g. Maria Santos"
-              className="w-full border border-border rounded-xl px-4 py-3 text-text font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-surface"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-body font-semibold text-text mb-1">
               Child&apos;s first name
@@ -202,13 +282,18 @@ export default function ParentGatePage() {
           </div>
         </div>
 
+        {error && (
+          <p className="text-error text-sm font-body mt-3">{error}</p>
+        )}
+
         <Button
           size="lg"
           className="w-full mt-6"
-          disabled={!childName || !childAge || !parentName}
+          disabled={!childName || !childAge || saving}
           onClick={handleStart}
         >
-          Start Practice Session <ChevronRight size={18} />
+          {saving ? "Saving…" : "Start Practice Session"}{" "}
+          <ChevronRight size={18} />
         </Button>
       </Card>
     </main>

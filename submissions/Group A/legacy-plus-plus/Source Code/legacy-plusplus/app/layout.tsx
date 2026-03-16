@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Baloo_2, Nunito, Atkinson_Hyperlegible } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -34,7 +35,7 @@ export default function RootLayout({
       <body
         className={`${baloo.variable} ${nunito.variable} ${atkinson.variable} antialiased bg-bg text-text`}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
