@@ -20,6 +20,14 @@ const DEFAULT_ASSISTANT_PROMPT =
   process.env.DEFAULT_ASSISTANT_PROMPT || 'You are a helpful real-time cooking assistant.';
 const DEFAULT_ASSISTANT_NAME = process.env.DEFAULT_ASSISTANT_NAME || 'cook-assistant';
 const DEFAULT_TTS_ADDON = process.env.DEFAULT_TTS_ADDON || '';
+const DEFAULT_TTS_VENDOR = process.env.DEFAULT_TTS_VENDOR || '';
+const DEFAULT_TTS_PARAMS_JSON = process.env.DEFAULT_TTS_PARAMS_JSON || '';
+const DEFAULT_TTS_API_KEY = process.env.DEFAULT_TTS_API_KEY || '';
+const DEFAULT_TTS_REGION = process.env.DEFAULT_TTS_REGION || '';
+const DEFAULT_TTS_VOICE_ID = process.env.DEFAULT_TTS_VOICE_ID || '';
+const DEFAULT_LLM_URL = process.env.DEFAULT_LLM_URL || '';
+const DEFAULT_LLM_API_KEY = process.env.DEFAULT_LLM_API_KEY || '';
+const DEFAULT_LLM_MODEL = process.env.DEFAULT_LLM_MODEL || '';
 const MAX_RTC_UID = 2147483647;
 
 const sessions = new Map();
@@ -124,6 +132,22 @@ function isConvoAiConfigured() {
   );
 }
 
+function parseJsonObject(rawValue) {
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function getConvoAiAuthHeader() {
   const raw = `${process.env.AGORA_CUSTOMER_ID}:${process.env.AGORA_CUSTOMER_SECRET}`;
   return `Basic ${Buffer.from(raw).toString('base64')}`;
@@ -213,6 +237,25 @@ async function startConvoAiAgent(session, agentConfig = {}) {
   if (!Array.isArray(mergedLlm.system_messages) || mergedLlm.system_messages.length === 0) {
     mergedLlm.system_messages = [{ role: 'system', content: llmPrompt }];
   }
+  if (!mergedLlm.url && isRealEnvValue(DEFAULT_LLM_URL)) {
+    mergedLlm.url = DEFAULT_LLM_URL;
+  }
+  if (!mergedLlm.api_key && isRealEnvValue(DEFAULT_LLM_API_KEY)) {
+    mergedLlm.api_key = DEFAULT_LLM_API_KEY;
+  }
+  if (!mergedLlm.params || typeof mergedLlm.params !== 'object' || Array.isArray(mergedLlm.params)) {
+    mergedLlm.params = {};
+  }
+  if (!mergedLlm.params.model && isRealEnvValue(DEFAULT_LLM_MODEL)) {
+    mergedLlm.params.model = DEFAULT_LLM_MODEL;
+  }
+  if (!mergedLlm.url || !mergedLlm.api_key) {
+    const error = new Error(
+      'Missing Conversational AI LLM configuration. Provide agentConfig.properties.llm or set DEFAULT_LLM_URL and DEFAULT_LLM_API_KEY.'
+    );
+    error.status = 500;
+    throw error;
+  }
 
   const mergedTts =
     providedProperties.tts && typeof providedProperties.tts === 'object' ? { ...providedProperties.tts } : {};
@@ -222,9 +265,49 @@ async function startConvoAiAgent(session, agentConfig = {}) {
   if (!mergedTts.addon && isRealEnvValue(DEFAULT_TTS_ADDON)) {
     mergedTts.addon = DEFAULT_TTS_ADDON;
   }
-  if (!mergedTts.addon) {
+
+  if (!mergedTts.addon && !mergedTts.vendor && isRealEnvValue(agentConfig.ttsVendor)) {
+    mergedTts.vendor = agentConfig.ttsVendor;
+  }
+  if (!mergedTts.addon && !mergedTts.vendor && isRealEnvValue(DEFAULT_TTS_VENDOR)) {
+    mergedTts.vendor = DEFAULT_TTS_VENDOR;
+  }
+
+  const mergedTtsParams =
+    mergedTts.params && typeof mergedTts.params === 'object' && !Array.isArray(mergedTts.params)
+      ? { ...mergedTts.params }
+      : {};
+  const agentTtsParams =
+    agentConfig.ttsParams && typeof agentConfig.ttsParams === 'object' && !Array.isArray(agentConfig.ttsParams)
+      ? agentConfig.ttsParams
+      : null;
+  const defaultTtsParams = parseJsonObject(DEFAULT_TTS_PARAMS_JSON);
+
+  if (!mergedTts.addon && Object.keys(mergedTtsParams).length === 0 && agentTtsParams) {
+    Object.assign(mergedTtsParams, agentTtsParams);
+  }
+  if (!mergedTts.addon && Object.keys(mergedTtsParams).length === 0 && defaultTtsParams) {
+    Object.assign(mergedTtsParams, defaultTtsParams);
+  }
+  if (!mergedTts.addon && String(mergedTts.vendor || '').toLowerCase() === 'microsoft') {
+    if (!mergedTtsParams.key && isRealEnvValue(DEFAULT_TTS_API_KEY)) {
+      mergedTtsParams.key = DEFAULT_TTS_API_KEY;
+    }
+    if (!mergedTtsParams.region && isRealEnvValue(DEFAULT_TTS_REGION)) {
+      mergedTtsParams.region = DEFAULT_TTS_REGION;
+    }
+    if (!mergedTtsParams.voice_name && isRealEnvValue(DEFAULT_TTS_VOICE_ID)) {
+      mergedTtsParams.voice_name = DEFAULT_TTS_VOICE_ID;
+    }
+  }
+
+  if (!mergedTts.addon && mergedTts.vendor && Object.keys(mergedTtsParams).length > 0) {
+    mergedTts.params = mergedTtsParams;
+  }
+
+  if (!mergedTts.addon && !(mergedTts.vendor && mergedTts.params)) {
     const error = new Error(
-      'Missing Conversational AI TTS addon. Provide agentConfig.properties.tts.addon or set DEFAULT_TTS_ADDON.'
+      'Missing Conversational AI TTS configuration. Provide agentConfig.properties.tts, set DEFAULT_TTS_ADDON, or set DEFAULT_TTS_VENDOR plus params.'
     );
     error.status = 500;
     throw error;
