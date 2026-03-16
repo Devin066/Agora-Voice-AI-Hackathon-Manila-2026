@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct ClaraApp: App {
     @UIApplicationDelegateAdaptor(ClaraAppDelegate.self) var appDelegate
+    @StateObject private var coordinator = VoiceSessionCoordinator()
 
     var sharedModelContainer: ModelContainer = {
         func makeContainer(using configuration: ModelConfiguration) throws -> ModelContainer {
@@ -49,6 +50,7 @@ struct ClaraApp: App {
             NavigationStack {
                 ScenarioPickerView()
             }
+            .environmentObject(coordinator)
         }
         .modelContainer(sharedModelContainer)
     }

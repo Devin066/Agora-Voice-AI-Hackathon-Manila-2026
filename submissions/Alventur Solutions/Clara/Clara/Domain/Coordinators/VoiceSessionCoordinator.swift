@@ -49,16 +49,6 @@ class VoiceSessionCoordinator: ObservableObject {
             }
         }
     }
-    
-    private func configureAudioSession() {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(
-            .playAndRecord,
-            mode: .voiceChat,
-            options: [.defaultToSpeaker, .allowBluetooth]
-        )
-        try? session.setActive(true)
-    }
 
     func requestPermissions(completion: @escaping (Bool) -> Void) {
         speechAnalyzer.requestAuthorization { granted in
@@ -69,7 +59,6 @@ class VoiceSessionCoordinator: ObservableObject {
     func startSession(scenario: ScenarioType) async {
         guard state != .active && state != .connecting else { return }
 
-        configureAudioSession()
         resetMetricsForNewSession()
         self.state = .connecting
         self.errorMessage = nil
@@ -79,6 +68,9 @@ class VoiceSessionCoordinator: ObservableObject {
             guard let self = self else { return }
             self.currentPitch = hz
             self.pitchSamples.append(hz)
+            if self.pitchSamples.count > 10_000 {
+                self.pitchSamples.removeFirst(1_000)
+            }
             let elapsed = Int(Date().timeIntervalSince(self.session?.startedAt ?? Date()))
             self.liveActivityManager.updateMetrics(wpm: self.wpm, pitchHz: Int(hz), fillers: self.fillerCount, elapsed: elapsed, scenario: scenario)
         }
@@ -145,23 +137,12 @@ class VoiceSessionCoordinator: ObservableObject {
                 print("[agora] warning: token channel=\(token.channelName) start channel=\(startResponse.channelName)")
             }
 
-            try speechAnalyzer.start()
-            pitchAnalyzer.start()
-
-            // Re-assert audio session after AVAudioEngines have modified it
-            let audioSession = AVAudioSession.sharedInstance()
-            try? audioSession.setCategory(
-                .playAndRecord,
-                mode: .voiceChat,
-                options: [.defaultToSpeaker, .allowBluetooth, .duckOthers]
-            )
-            try? audioSession.setActive(true)
-            
-            // Re-apply speakerphone routing for Agora
-            Task {
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                agoraService.reconfigureAudioRoute()
+            agoraService.onAudioFrameCaptured = { [weak self] frame in
+                self?.pitchAnalyzer.processAgoraFrame(frame)
+                self?.speechAnalyzer.processAgoraFrame(frame)
             }
+
+            try speechAnalyzer.start()
 
             let newSession = VoiceSession(
                 id: startResponse.sessionId,
@@ -177,7 +158,10 @@ class VoiceSessionCoordinator: ObservableObject {
             self.state = .active
             
             liveActivityManager.startPrompt()
-            liveActivityManager.transitionToActive(scenario: scenario)
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                self?.liveActivityManager.transitionToActive(scenario: scenario)
+            }
         } catch {
             await agoraService.stop()
             print("Failed to start voice session: \(error)")
@@ -189,8 +173,8 @@ class VoiceSessionCoordinator: ObservableObject {
     func stopSession() async {
         guard state == .active || state == .connecting else { return }
         self.state = .stopping
+        agoraService.onAudioFrameCaptured = nil
         speechAnalyzer.stop()
-        pitchAnalyzer.stop()
         hapticsEngine.stop()
         liveActivityManager.endActivity()
 

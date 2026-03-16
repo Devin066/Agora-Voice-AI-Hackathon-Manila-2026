@@ -4,7 +4,7 @@ import SwiftData
 struct SessionView: View {
     let scenario: ScenarioType
     
-    @StateObject private var coordinator = VoiceSessionCoordinator()
+    @EnvironmentObject private var coordinator: VoiceSessionCoordinator
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     
@@ -262,4 +262,5 @@ struct MetricCard: View {
 
 #Preview {
     SessionView(scenario: .publicSpeaking)
+        .environmentObject(VoiceSessionCoordinator())
 }

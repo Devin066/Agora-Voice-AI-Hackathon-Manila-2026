@@ -1,5 +1,7 @@
 import Foundation
 import Speech
+import AVFoundation
+import AgoraRtcKit
 
 enum SpeechAnalyzerError: LocalizedError {
     case requestCreationFailed
@@ -16,7 +18,6 @@ class SpeechAnalyzer {
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
-    private let audioEngine = AVAudioEngine()
     
     private var isRunning = false
     
@@ -65,15 +66,7 @@ class SpeechAnalyzer {
         
         recognitionRequest.shouldReportPartialResults = true
         
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer, when) in
-            self.recognitionRequest?.append(buffer)
-        }
-        
-        audioEngine.prepare()
-        try audioEngine.start()
+        // No longer using AVAudioEngine. Audio buffers will be fed manually via processAgoraFrame(_:)
         
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
             guard let self = self else { return }
@@ -115,8 +108,6 @@ class SpeechAnalyzer {
             }
             
             if error != nil || isFinal {
-                self.audioEngine.stop()
-                inputNode.removeTap(onBus: 0)
                 self.recognitionRequest = nil
                 self.recognitionTask = nil
                 self.isRunning = false
@@ -144,10 +135,52 @@ class SpeechAnalyzer {
     
     func stop() {
         guard isRunning else { return }
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
         recognitionRequest?.endAudio()
         pauseTimer?.invalidate()
         isRunning = false
+    }
+
+    func processAgoraFrame(_ frame: AgoraAudioFrame) {
+        guard isRunning, let request = recognitionRequest else { return }
+        guard let srcData = frame.buffer else { return }
+        
+        let sampleCount = Int(frame.samplesPerChannel)
+        let channels = Int(frame.channels)
+        guard sampleCount > 0, channels > 0 else { return }
+
+        let totalSamples = sampleCount * channels
+        let src16 = srcData.bindMemory(to: Int16.self, capacity: totalSamples)
+
+        // Speech framework is more stable with a mono stream.
+        var monoSamples = [Int16](repeating: 0, count: sampleCount)
+        if channels == 1 {
+            for i in 0..<sampleCount {
+                monoSamples[i] = src16[i]
+            }
+        } else {
+            for frameIndex in 0..<sampleCount {
+                var mixed = 0
+                for channel in 0..<channels {
+                    mixed += Int(src16[(frameIndex * channels) + channel])
+                }
+                monoSamples[frameIndex] = Int16(mixed / channels)
+            }
+        }
+        
+        guard let format = AVAudioFormat(
+            commonFormat: .pcmFormatInt16,
+            sampleRate: Double(frame.samplesPerSec),
+            channels: 1,
+            interleaved: false
+        ), let pcmBuffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount)) else { return }
+        
+        pcmBuffer.frameLength = AVAudioFrameCount(sampleCount)
+        
+        if let dstData = pcmBuffer.int16ChannelData?[0] {
+            for i in 0..<sampleCount {
+                dstData[i] = monoSamples[i]
+            }
+            request.append(pcmBuffer)
+        }
     }
 }

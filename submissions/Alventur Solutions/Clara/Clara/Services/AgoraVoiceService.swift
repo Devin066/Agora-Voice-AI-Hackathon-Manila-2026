@@ -4,6 +4,7 @@ import AgoraRtcKit
 
 protocol AgoraVoiceServiceProtocol: AnyObject {
     var onAgentSpeakingChanged: ((Bool) -> Void)? { get set }
+    var onAudioFrameCaptured: ((AgoraAudioFrame) -> Void)? { get set }
 
     func start(appId: String, token: String, channelName: String, uid: UInt, agentUid: UInt) async throws
     func setExpectedAgentUid(_ uid: UInt)
@@ -68,11 +69,13 @@ struct AppRuntimeConfiguration {
 @MainActor
 final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
     var onAgentSpeakingChanged: ((Bool) -> Void)?
+    var onAudioFrameCaptured: ((AgoraAudioFrame) -> Void)?
 
     private var engine: AgoraRtcEngineKit?
     private var expectedAgentUid: UInt?
     private var activeRemoteUid: UInt?
     private var joinContinuation: CheckedContinuation<Void, Error>?
+    private var didLogFirstRecordFrame = false
 
     func setExpectedAgentUid(_ uid: UInt) {
         expectedAgentUid = uid
@@ -81,6 +84,11 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
 
     func reconfigureAudioRoute() {
         _ = engine?.setEnableSpeakerphone(true)
+        do {
+            try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
+        } catch {
+            print("[agora] failed to override output to speaker: \(error)")
+        }
         print("[agora] reconfigured audio route to speakerphone")
     }
 
@@ -97,7 +105,21 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
             config.appId = normalizedAppId
             config.channelProfile = .communication
             let rtcEngine = AgoraRtcEngineKit.sharedEngine(with: config, delegate: self)
+            rtcEngine.setAudioFrameDelegate(self)
             engine = rtcEngine
+        }
+
+        // In Agora iOS 4.x, register frame format explicitly so record callbacks fire predictably.
+        if let engine {
+            let result = engine.setRecordingAudioFrameParametersWithSampleRate(
+                16_000,
+                channel: 1,
+                mode: .readOnly,
+                samplesPerCall: 1024
+            )
+            if result != 0 {
+                print("[agora] setRecordingAudioFrameParameters failed code=\(result)")
+            }
         }
 
         try configureAudioSession()
@@ -110,6 +132,7 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         _ = engine?.setDefaultAudioRouteToSpeakerphone(true)
         _ = engine?.setEnableSpeakerphone(true)
         _ = engine?.enableAudioVolumeIndication(200, smooth: 3, reportVad: true)
+        reconfigureAudioRoute()
 
         try await joinChannel(token: token, channelName: channelName, uid: uid)
     }
@@ -130,7 +153,9 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
     }
 
     deinit {
-        AgoraRtcEngineKit.destroy()
+        DispatchQueue.main.async {
+            AgoraRtcEngineKit.destroy()
+        }
     }
 
     private func configureAudioSession() throws {
@@ -138,9 +163,10 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         try audioSession.setCategory(
             .playAndRecord,
             mode: .voiceChat,
-            options: [.defaultToSpeaker, .allowBluetooth, .duckOthers]
+            options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
         )
         try audioSession.setActive(true)
+        try audioSession.overrideOutputAudioPort(.speaker)
     }
 
     private func joinChannel(token: String, channelName: String, uid: UInt) async throws {
@@ -189,6 +215,9 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         }
 
         if let expectedAgentUid {
+            if expectedAgentUid == 0 {
+                return true
+            }
             return uid == expectedAgentUid
         }
 
@@ -244,8 +273,27 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
     nonisolated func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let isAgent = self.expectedAgentUid == 0 || uid == self.expectedAgentUid
-            guard isAgent else { return }
+            print("[agora] remoteJoined uid=\(uid) expectedAgentUid=\(String(describing: self.expectedAgentUid))")
+
+            _ = engine.muteRemoteAudioStream(uid, mute: false)
+
+            if self.activeRemoteUid == nil {
+                if let expectedUid = self.expectedAgentUid {
+                    if uid == expectedUid || expectedUid == 0 {
+                        self.activeRemoteUid = uid
+                    }
+                } else {
+                    self.activeRemoteUid = uid
+                }
+            }
+
+            if self.activeRemoteUid == nil && self.expectedAgentUid != uid && self.expectedAgentUid != 0 {
+                // Fall back to the first remote UID so agent speech state still updates
+                // when backend-assigned agent UID differs from requested UID.
+                self.activeRemoteUid = uid
+            }
+
+            guard self.isTrackedAgentUid(uid) else { return }
             self.onAgentSpeakingChanged?(false)
         }
     }
@@ -297,5 +345,29 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
         guard totalVolume > 0 else { return }
         let activeUids = speakers.map { $0.uid }
         print("[agora] volume total=\(totalVolume) activeUids=\(activeUids)")
+    }
+}
+
+extension AgoraVoiceService: AgoraAudioFrameDelegate {
+    func onRecordAudioFrame(_ frame: AgoraAudioFrame, channelId: String) -> Bool {
+        if !didLogFirstRecordFrame {
+            didLogFirstRecordFrame = true
+            print("[agora] first record frame sr=\(frame.samplesPerSec) channels=\(frame.channels) spc=\(frame.samplesPerChannel)")
+        }
+        onAudioFrameCaptured?(frame)
+        return true
+    }
+
+    func getObservedAudioFramePosition() -> AgoraAudioFramePosition {
+        return .record
+    }
+
+    func getRecordAudioParams() -> AgoraAudioParams {
+        let params = AgoraAudioParams()
+        params.sampleRate = 16_000
+        params.channel = 1
+        params.mode = .readOnly
+        params.samplesPerCall = 1024
+        return params
     }
 }
