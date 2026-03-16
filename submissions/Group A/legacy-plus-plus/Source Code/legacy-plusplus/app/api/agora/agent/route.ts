@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
   const CUSTOMER_ID      = process.env.AGORA_CUSTOMER_ID          ?? "";
   const CUSTOMER_SECRET  = process.env.AGORA_CUSTOMER_SECRET      ?? "";
   const GEMINI_API_KEY   = process.env.GOOGLE_AI_API_KEY          ?? "";
-  const ELEVENLABS_KEY   = process.env.ELEVENLABS_API_KEY         ?? "";
+  const AZURE_TTS_KEY    = process.env.AZURE_SPEECH_KEY            ?? "";
+  const AZURE_TTS_REGION = process.env.AZURE_SPEECH_REGION         ?? "eastasia";
 
   // Check for missing credentials and report exactly which ones
   const missing: string[] = [];
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (!CUSTOMER_ID)     missing.push("AGORA_CUSTOMER_ID");
   if (!CUSTOMER_SECRET) missing.push("AGORA_CUSTOMER_SECRET");
   if (!GEMINI_API_KEY)  missing.push("GOOGLE_AI_API_KEY");
-  if (!ELEVENLABS_KEY)  missing.push("ELEVENLABS_API_KEY");
+  if (!AZURE_TTS_KEY)   missing.push("AZURE_SPEECH_KEY");
 
   if (missing.length > 0) {
     console.error("Agent route — missing env vars:", missing);
@@ -85,11 +86,13 @@ export async function POST(req: NextRequest) {
         temperature: 0.7,
       },
       tts: {
-        vendor: "elevenlabs",
+        vendor: "microsoft",
         params: {
-          key:      ELEVENLABS_KEY,
-          voice_id: "21m00Tcm4TlvDq8ikWAM", // Rachel — clear, friendly voice
-          model_id: "eleven_flash_v2_5",
+          key:        AZURE_TTS_KEY,
+          region:     AZURE_TTS_REGION,
+          voice_name: "en-US-AnaNeural",  // child-friendly voice
+          rate:       0,
+          pitch:      0,
         },
       },
     },

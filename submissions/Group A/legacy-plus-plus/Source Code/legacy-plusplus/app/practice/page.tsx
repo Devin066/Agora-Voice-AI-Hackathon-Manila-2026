@@ -65,6 +65,8 @@ export default function PracticePage() {
   const micTrackRef      = useRef<IMicrophoneAudioTrack | null>(null);
   const speakTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initStartedRef   = useRef(false);
+  const agentIdRef       = useRef<string | null>(null);
+  const agentSpeakTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileRef       = useRef<{ childId?: string; childAge?: number; childName?: string } | null>(null);
   const channelRef       = useRef("");
   const userUidRef       = useRef(0);
@@ -115,15 +117,30 @@ export default function PracticePage() {
       const client   = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
       clientRef.current = client;
 
+      client.on("user-joined", (ru: IAgoraRTCRemoteUser) => {
+        console.log("[Agora] Remote user joined, uid:", ru.uid);
+      });
+      client.on("user-joined", (ru: IAgoraRTCRemoteUser) => {
+        console.log("[Agora] Remote user joined, uid:", ru.uid);
+      });
       client.on("user-published", async (ru: IAgoraRTCRemoteUser, mt: string) => {
+        console.log("[Agora] user-published uid:", ru.uid, "mediaType:", mt);
         if (mt === "audio") {
           await client.subscribe(ru, "audio");
+          console.log("[Agora] Subscribed to audio, playing...");
           ru.audioTrack?.play();
           setAgentSpeaking(true);
+          // Safety: auto-clear agentSpeaking after 15s in case user-unpublished never fires
+          if (agentSpeakTimer.current) clearTimeout(agentSpeakTimer.current);
+          agentSpeakTimer.current = setTimeout(() => setAgentSpeaking(false), 15_000);
         }
       });
       client.on("user-unpublished", (_: IAgoraRTCRemoteUser, mt: string) => {
-        if (mt === "audio") setAgentSpeaking(false);
+        console.log("[Agora] user-unpublished mediaType:", mt);
+        if (mt === "audio") {
+          if (agentSpeakTimer.current) clearTimeout(agentSpeakTimer.current);
+          setAgentSpeaking(false);
+        }
       });
 
       const { token } = await fetch("/api/agora/token", {
@@ -139,14 +156,23 @@ export default function PracticePage() {
       });
       micTrackRef.current = micTrack;
 
-      const agentData = await fetch("/api/agora/agent", {
+      // Mic is ready — let the child start speaking right away
+      setAgoraReady(true);
+
+      // Start agent in the background (non-blocking)
+      fetch("/api/agora/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ channelName, userUid, agentUid: 999, childAge: profile.childAge }),
-      }).then((r) => r.json());
-      if (agentData.agentId) setAgentId(agentData.agentId);
-
-      setAgoraReady(true);
+      })
+        .then((r) => r.json())
+        .then((agentData) => {
+          if (agentData.agentId) {
+            setAgentId(agentData.agentId);
+            agentIdRef.current = agentData.agentId;
+          }
+        })
+        .catch(console.error);
     } catch (err) {
       console.error("Agora init error:", err);
       setAgoraReady(true);
@@ -160,11 +186,13 @@ export default function PracticePage() {
       micTrackRef.current.close();
       micTrackRef.current = null;
     }
-    if (agentId) {
+    const idToStop = agentIdRef.current;
+    if (idToStop) {
+      agentIdRef.current = null;
       fetch("/api/agora/agent", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId }),
+        body: JSON.stringify({ agentId: idToStop }),
       }).catch(console.error);
     }
     if (clientRef.current) {
@@ -307,7 +335,7 @@ export default function PracticePage() {
 
   const prompt   = prompts[currentIndex];
   const isLast   = currentIndex + 1 >= prompts.length;
-  const disabled = micState === "processing" || !agoraReady || agentSpeaking;
+  const disabled = micState === "processing" || !agoraReady;
 
   return (
     <div className="min-h-screen bg-bg flex flex-col">
@@ -465,9 +493,9 @@ export default function PracticePage() {
             micState === "listening" ? "text-error" : "text-text"
           )}>
             {!agoraReady                       && "Setting up your session…"}
-            {agoraReady && agentSpeaking       && "Wait for Sparky to finish…"}
-            {agoraReady && !agentSpeaking && micState === "idle"       && "Tap the mic and say it! 🎤"}
-            {agoraReady && !agentSpeaking && micState === "listening"  && "I'm listening… tap to stop! 👂"}
+            {agoraReady && agentSpeaking  && micState === "idle"      && "Sparky is talking… tap mic anytime! 🎤"}
+            {agoraReady && !agentSpeaking && micState === "idle"      && "Tap the mic and say it! 🎤"}
+            {agoraReady && micState === "listening"                   && "I'm listening… tap to stop! 👂"}
             {micState === "processing"         && "Sparky is thinking… 🤔"}
             {micState === "done"               && "Awesome! What's next? 🎉"}
           </p>
