@@ -23,10 +23,25 @@
 
   <script>
     const BASE = 'http://localhost:3000';
-    const CHANNEL = 'test-room';
+    const CHANNEL = 'test-room-' + Math.floor(Date.now() / 1000);
     const USER_ID = 'web-tester-' + Math.floor(Math.random() * 9999);
+    const CLIENT_BUILD = 'debug-r5';
 
     let client, localTrack, sessionId;
+
+    async function subscribeToRemoteAudio(user) {
+      try {
+        await client.subscribe(user, 'audio');
+        if (user.audioTrack) {
+          user.audioTrack.play();
+          log('AI audio playing (uid=' + user.uid + ')');
+        } else {
+          log('Remote user has no audioTrack yet (uid=' + user.uid + ')');
+        }
+      } catch (err) {
+        log('Subscribe audio failed (uid=' + user.uid + '): ' + err.message);
+      }
+    }
 
     function log(msg) {
       const el = document.getElementById('log');
@@ -36,6 +51,11 @@
     function status(msg) {
       document.getElementById('status').textContent = msg;
     }
+
+    window.addEventListener('load', () => {
+      log('Client loaded: ' + CLIENT_BUILD);
+      log('Channel: ' + CHANNEL);
+    });
 
     async function joinAndStart() {
       document.getElementById('btnJoin').disabled = true;
@@ -54,7 +74,45 @@
         log('Session created: ' + sessionId);
         log('UID: ' + sess.uid);
 
-        // 2. Start AI agent
+        // 2. Join RTC channel first
+        status('Joining RTC channel...');
+        client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        client.on('user-joined', (user) => {
+          log('Remote user joined (uid=' + user.uid + ')');
+        });
+        client.on('user-published', async (user, mediaType) => {
+          log('Remote user published ' + mediaType + ' (uid=' + user.uid + ')');
+          if (mediaType === 'audio') {
+            await subscribeToRemoteAudio(user);
+          }
+        });
+        client.on('user-unpublished', (user, mediaType) => {
+          log('Remote user unpublished ' + mediaType + ' (uid=' + user.uid + ')');
+        });
+        client.on('autoplay-failed', () => {
+          log('Browser blocked autoplay/audio. Click anywhere on page and try speaking again.');
+        });
+
+        await client.join(
+          'e2ee42da3133464490bfa774ea8033a1',
+          CHANNEL,
+          sess.token,
+          sess.uid
+        );
+        log('Joined RTC channel: ' + CHANNEL);
+
+        for (const user of client.remoteUsers) {
+          log('Remote user present after join (uid=' + user.uid + ', hasAudio=' + Boolean(user.hasAudio) + ')');
+          if (user.hasAudio) {
+            await subscribeToRemoteAudio(user);
+          }
+        }
+
+        localTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        await client.publish([localTrack]);
+        log('Microphone published — speak now!');
+
+        // 3. Start AI agent after user is already in-channel.
         status('Starting AI agent...');
         log('POST /api/v1/start');
         const startRes = await fetch(BASE + '/api/v1/start', {
@@ -66,31 +124,24 @@
         if (!startRes.ok) throw new Error(JSON.stringify(startData));
         log('Agent joined: ' + startData.flow?.conversationalAi?.agentSessionId);
 
-        // 3. Join RTC channel
-        status('Joining RTC channel...');
-        client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
-        client.on('user-published', async (user, mediaType) => {
-          await client.subscribe(user, mediaType);
-          if (mediaType === 'audio') {
-            user.audioTrack.play();
-            log('AI audio playing (uid=' + user.uid + ')');
-          }
-        });
-
-        await client.join(
-          'e2ee42da3133464490bfa774ea8033a1',
-          CHANNEL,
-          sess.token,
-          sess.uid
-        );
-        log('Joined RTC channel: ' + CHANNEL);
-
-        localTrack = await AgoraRTC.createMicrophoneAudioTrack();
-        await client.publish([localTrack]);
-        log('Microphone published — speak now!');
-
-        status('✅ Connected! Speak into your mic to talk to HeardChef.');
+        status('🎤 HeardChef is listening — speak a cooking question now!');
         document.getElementById('btnLeave').disabled = false;
+        log('Pipeline ready. Speak now — agent responds after ASR → LLM → TTS (~3-8s cold start).');
+
+        // Poll for 30s so we can see when the agent publishes audio.
+        for (let i = 1; i <= 30; i += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const agentUser = client.remoteUsers.find((u) => u.uid === 1000000026) ||
+                            client.remoteUsers[0];
+          if (agentUser && agentUser.hasAudio) {
+            log('✅ Wait ' + i + 's: Agent is speaking! (uid=' + agentUser.uid + ')');
+          } else {
+            log('Wait ' + i + 's: remoteUsers=' + client.remoteUsers.length +
+              (agentUser ? ' hasAudio=' + Boolean(agentUser.hasAudio) : ' (no agent yet)'));
+          }
+        }
+        log('30s poll complete. Event handlers still active — agent will play whenever it speaks.');
+        status('✅ Connected! Speak to HeardChef at any time.');
       } catch (err) {
         log('ERROR: ' + err.message);
         status('❌ Error — see log below');
