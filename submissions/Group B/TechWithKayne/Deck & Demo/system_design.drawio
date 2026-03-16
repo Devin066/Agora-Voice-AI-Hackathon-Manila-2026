@@ -1,0 +1,393 @@
+<mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- Background -->
+    <mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#0A0A0F;strokeColor=none;" vertex="1" parent="1">
+      <mxGeometry x="0" y="0" width="1440" height="820" as="geometry" />
+    </mxCell>
+
+    <!-- Section header: CLIENTS -->
+    <mxCell id="hdr1" value="CLIENTS" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=11;fontColor=#555566;" vertex="1" parent="1">
+      <mxGeometry x="20" y="4" width="230" height="18" as="geometry" />
+    </mxCell>
+    <!-- Section header: BACKEND -->
+    <mxCell id="hdr2" value="BACKEND · Express 5 · Fly.io Singapore" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=11;fontColor=#555566;" vertex="1" parent="1">
+      <mxGeometry x="290" y="4" width="460" height="18" as="geometry" />
+    </mxCell>
+    <!-- Section header: EXTERNAL SERVICES -->
+    <mxCell id="hdr3" value="EXTERNAL SERVICES" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=11;fontColor=#555566;" vertex="1" parent="1">
+      <mxGeometry x="800" y="4" width="280" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         FRONTEND CLIENTS
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- BHW App -->
+    <mxCell id="3" value="&lt;b&gt;BHW App&lt;/b&gt;&lt;br/&gt;&lt;font color='#7090b0' style='font-size:9px'&gt;/ · React 19&lt;/font&gt;" style="swimlane;startSize=40;fillColor=#0d1f33;strokeColor=#4a90d9;fontColor=#a0c8f0;fontStyle=0;fontSize=13;rounded=1;arcSize=5;html=1;" vertex="1" parent="1">
+      <mxGeometry x="20" y="22" width="240" height="200" as="geometry" />
+    </mxCell>
+    <mxCell id="18" value="🎤 Agora ConvoAI Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#12273d;strokeColor=#7b68ee;fontColor=#b0c4de;fontSize=10;" vertex="1" parent="3">
+      <mxGeometry x="10" y="10" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="19" value="🗣 Web Speech API (mic + SpeechSynthesis)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#12273d;strokeColor=#7b68ee;fontColor=#b0c4de;fontSize=10;" vertex="1" parent="3">
+      <mxGeometry x="10" y="46" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="20" value="📡 Agora RTC SDK (emergency bridge)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1030;strokeColor=#9c27b0;fontColor=#ce93d8;fontSize=10;" vertex="1" parent="3">
+      <mxGeometry x="10" y="82" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="20b" value="🔑 Supabase Auth — BHW role JWT" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d2626;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="3">
+      <mxGeometry x="10" y="118" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="20c" value="Routes: POST /triage · /queue/join · /bridge/initiate" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#556677;fontSize=8;" vertex="1" parent="3">
+      <mxGeometry x="10" y="152" width="220" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- Patient App -->
+    <mxCell id="4" value="&lt;b&gt;Patient App&lt;/b&gt;&lt;br/&gt;&lt;font color='#7090b0' style='font-size:9px'&gt;/triage-form · React 19&lt;/font&gt;" style="swimlane;startSize=40;fillColor=#0d1f33;strokeColor=#4a90d9;fontColor=#a0c8f0;fontStyle=0;fontSize=13;rounded=1;arcSize=5;html=1;" vertex="1" parent="1">
+      <mxGeometry x="20" y="242" width="240" height="130" as="geometry" />
+    </mxCell>
+    <mxCell id="21" value="🔓 Anonymous Supabase Auth (no login)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d2626;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="4">
+      <mxGeometry x="10" y="10" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="22" value="🎤 Voice Mic + Web Speech API (transcript)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#12273d;strokeColor=#7b68ee;fontColor=#b0c4de;fontSize=10;" vertex="1" parent="4">
+      <mxGeometry x="10" y="46" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="22b" value="Route: POST /triage/patient (no auth)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#556677;fontSize=8;" vertex="1" parent="4">
+      <mxGeometry x="10" y="82" width="220" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- Nurse Dashboard -->
+    <mxCell id="5" value="&lt;b&gt;Nurse Dashboard&lt;/b&gt;&lt;br/&gt;&lt;font color='#7090b0' style='font-size:9px'&gt;/nurse · React 19&lt;/font&gt;" style="swimlane;startSize=40;fillColor=#0d1f33;strokeColor=#4a90d9;fontColor=#a0c8f0;fontStyle=0;fontSize=13;rounded=1;arcSize=5;html=1;" vertex="1" parent="1">
+      <mxGeometry x="20" y="395" width="240" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="23" value="📋 Queue View — priority sort (RED first)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d2626;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="5">
+      <mxGeometry x="10" y="10" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="24" value="📡 Agora RTC SDK (nurse voice call)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1030;strokeColor=#9c27b0;fontColor=#ce93d8;fontSize=10;" vertex="1" parent="5">
+      <mxGeometry x="10" y="46" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="24b" value="⚡ Supabase Realtime — bridge_sessions WS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d2626;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="5">
+      <mxGeometry x="10" y="82" width="220" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="24c" value="Routes: /queue/dashboard · /queue/complete · /bridge/reset" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#556677;fontSize=8;" vertex="1" parent="5">
+      <mxGeometry x="10" y="118" width="220" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         EXPRESS BACKEND CONTAINER
+    ══════════════════════════════════════════════════════════════ -->
+
+    <mxCell id="6" value="&lt;b&gt;Express 5 Server&lt;/b&gt; · Node.js · port 3000" style="swimlane;startSize=36;fillColor=#0a1a0a;strokeColor=#4CAF50;fontColor=#66BB6A;fontStyle=0;fontSize=14;rounded=1;arcSize=3;html=1;" vertex="1" parent="1">
+      <mxGeometry x="290" y="22" width="470" height="760" as="geometry" />
+    </mxCell>
+
+    <!-- Middleware banner -->
+    <mxCell id="mw" value="Middleware: helmet → cors → json → logger → verifySupabaseJWT → requireRole → rateLimiter" style="text;html=1;strokeColor=#1a3a1a;fillColor=#0f2a0f;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontColor=#66a060;fontSize=9;" vertex="1" parent="6">
+      <mxGeometry x="10" y="6" width="450" height="28" as="geometry" />
+    </mxCell>
+
+    <!-- Public Routes -->
+    <mxCell id="7" value="🟢 Public Routes (no auth)" style="swimlane;startSize=26;fillColor=#0f2000;strokeColor=#7CB342;fontColor=#AED581;fontStyle=1;fontSize=11;rounded=1;html=1;" vertex="1" parent="6">
+      <mxGeometry x="10" y="44" width="450" height="98" as="geometry" />
+    </mxCell>
+    <mxCell id="7a" value="POST /triage/patient — anonymous patients, no JWT required" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#c5e1a5;fontSize=10;" vertex="1" parent="7">
+      <mxGeometry x="10" y="4" width="430" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="7b" value="GET /health · GET /config (agoraAppId) · GET /token (Agora RTC)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#c5e1a5;fontSize=10;" vertex="1" parent="7">
+      <mxGeometry x="10" y="30" width="430" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="7c" value="POST /tts — ElevenLabs proxy, audio/mpeg, max 500 chars" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#c5e1a5;fontSize=10;" vertex="1" parent="7">
+      <mxGeometry x="10" y="56" width="430" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- Auth / BHW Triage Routes -->
+    <mxCell id="8" value="🔐 BHW Triage Routes (verifySupabaseJWT)" style="swimlane;startSize=26;fillColor=#0f1a2a;strokeColor=#5C6BC0;fontColor=#7986CB;fontStyle=1;fontSize=11;rounded=1;html=1;" vertex="1" parent="6">
+      <mxGeometry x="10" y="152" width="450" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="8a" value="POST /triage — bhw role, triageRateLimiter (10/min), → triage.js" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#9fa8da;fontSize=10;" vertex="1" parent="8">
+      <mxGeometry x="10" y="4" width="430" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="8b" value="GET/POST /cases/* — in-memory case management, local only" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#9fa8da;fontSize=10;" vertex="1" parent="8">
+      <mxGeometry x="10" y="30" width="430" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- Bridge Routes -->
+    <mxCell id="9" value="🌉 Bridge Routes" style="swimlane;startSize=26;fillColor=#1a1000;strokeColor=#FF9800;fontColor=#FFB74D;fontStyle=1;fontSize=11;rounded=1;html=1;" vertex="1" parent="6">
+      <mxGeometry x="10" y="242" width="450" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="9a" value="POST /bridge/initiate (bhw) — 5/min · GET /bridge/status (bhw, nurse)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#ffcc80;fontSize=10;" vertex="1" parent="9">
+      <mxGeometry x="10" y="4" width="430" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="9b" value="POST /bridge/reset (nurse) → bridge.js → Supabase bridge_sessions" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#ffcc80;fontSize=10;" vertex="1" parent="9">
+      <mxGeometry x="10" y="30" width="430" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- Queue Routes -->
+    <mxCell id="10" value="📋 Queue Routes (in-memory, priority-sorted)" style="swimlane;startSize=26;fillColor=#150a22;strokeColor=#AB47BC;fontColor=#CE93D8;fontStyle=1;fontSize=11;rounded=1;html=1;" vertex="1" parent="6">
+      <mxGeometry x="10" y="332" width="450" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="10a" value="POST /queue/join (bhw) · GET /queue/dashboard (nurse) · status polling" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#e1bee7;fontSize=10;" vertex="1" parent="10">
+      <mxGeometry x="10" y="4" width="430" height="22" as="geometry" />
+    </mxCell>
+    <mxCell id="10b" value="POST /queue/complete/:id (nurse) · POST /queue/cancel/:id (bhw)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#e1bee7;fontSize=10;" vertex="1" parent="10">
+      <mxGeometry x="10" y="30" width="430" height="22" as="geometry" />
+    </mxCell>
+
+    <!-- triage.js -->
+    <mxCell id="11" value="triage.js — AI Logic" style="swimlane;startSize=26;fillColor=#1a1200;strokeColor=#FFC107;fontColor=#FFD54F;fontStyle=1;fontSize=11;rounded=1;html=1;" vertex="1" parent="6">
+      <mxGeometry x="10" y="422" width="210" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="11a" value="✅ Safety override" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#fff9c4;fontSize=9;" vertex="1" parent="11">
+      <mxGeometry x="10" y="4" width="190" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="11b" value="🔴 RED_TRIGGERS hardcoded regex" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#fff9c4;fontSize=9;" vertex="1" parent="11">
+      <mxGeometry x="10" y="24" width="190" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="11c" value="📊 Audit log → Supabase (async)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#fff9c4;fontSize=9;" vertex="1" parent="11">
+      <mxGeometry x="10" y="44" width="190" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="11d" value="Output: RISK / AKSYON / TANONG (Filipino)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#aaa060;fontSize=8;" vertex="1" parent="11">
+      <mxGeometry x="10" y="64" width="190" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- bridge.js -->
+    <mxCell id="12" value="bridge.js — In-Memory State" style="swimlane;startSize=26;fillColor=#1a1200;strokeColor=#FFC107;fontColor=#FFD54F;fontStyle=1;fontSize=11;rounded=1;html=1;" vertex="1" parent="6">
+      <mxGeometry x="240" y="422" width="220" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="12a" value="callQueue[]  activeCall{}" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#fff9c4;fontSize=9;" vertex="1" parent="12">
+      <mxGeometry x="10" y="4" width="200" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="12b" value="localCases[]" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#fff9c4;fontSize=9;" vertex="1" parent="12">
+      <mxGeometry x="10" y="24" width="200" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="12c" value="Priority: RED+100, pregnant+30, &lt;1yr+40" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#aaa060;fontSize=8;" vertex="1" parent="12">
+      <mxGeometry x="10" y="44" width="200" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="12d" value="Resets on server restart (no DB)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#666040;fontSize=8;" vertex="1" parent="12">
+      <mxGeometry x="10" y="64" width="200" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- Background jobs -->
+    <mxCell id="bgjobs" value="⏱ Background Jobs: queue timeout (5 min, poll 60s) · nurse disconnect check (10 min, poll 60s)" style="text;html=1;strokeColor=#1a3a1a;fillColor=#0f2a0f;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontColor=#66a060;fontSize=9;" vertex="1" parent="6">
+      <mxGeometry x="10" y="532" width="450" height="28" as="geometry" />
+    </mxCell>
+
+    <!-- ConvoAI routes -->
+    <mxCell id="convoai_routes" value="🤖 ConvoAI Routes: POST /convoai/start (bhw) · POST /convoai/stop (bhw) → Agora ConvoAI REST API" style="text;html=1;strokeColor=#1a203a;fillColor=#0f1530;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontColor=#7986CB;fontSize=9;" vertex="1" parent="6">
+      <mxGeometry x="10" y="570" width="450" height="28" as="geometry" />
+    </mxCell>
+
+    <!-- RBAC legend -->
+    <mxCell id="rbac" value="RBAC: user_metadata.role — bhw | nurse | (no role → passes for backward compat)" style="text;html=1;strokeColor=#333;fillColor=#111;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontColor=#888;fontSize=9;" vertex="1" parent="6">
+      <mxGeometry x="10" y="608" width="450" height="24" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         EXTERNAL SERVICES
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- Supabase -->
+    <mxCell id="14" value="&lt;b&gt;Supabase&lt;/b&gt;" style="swimlane;startSize=34;fillColor=#071f1f;strokeColor=#00b8d4;fontColor=#00e5ff;fontStyle=0;fontSize=14;rounded=1;arcSize=3;html=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="22" width="300" height="240" as="geometry" />
+    </mxCell>
+    <mxCell id="25" value="🔑 Auth — JWT issuance · getUser() (service role)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a3333;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="14">
+      <mxGeometry x="10" y="10" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="26" value="📊 triage_events — audit log (bhw_id, risk, overridden)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a3333;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="14">
+      <mxGeometry x="10" y="46" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="27" value="🌉 bridge_sessions — channel, triggered_at, ended_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a3333;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="14">
+      <mxGeometry x="10" y="82" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="28" value="⚡ Realtime WebSocket — bridge_sessions DB push" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a3333;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="14">
+      <mxGeometry x="10" y="118" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="28b" value="🔒 RLS Policies: bhw=own rows, nurse=all rows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0a3333;strokeColor=#00b8d4;fontColor=#80deea;fontSize=10;" vertex="1" parent="14">
+      <mxGeometry x="10" y="154" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="28c" value="Anonymous users supported (signInAnonymously)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#336677;fontSize=8;" vertex="1" parent="14">
+      <mxGeometry x="10" y="190" width="280" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- Agora RTC Cloud -->
+    <mxCell id="15" value="&lt;b&gt;Agora RTC Cloud&lt;/b&gt;" style="swimlane;startSize=34;fillColor=#120a22;strokeColor=#9c27b0;fontColor=#ce93d8;fontStyle=0;fontSize=14;rounded=1;arcSize=3;html=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="282" width="300" height="180" as="geometry" />
+    </mxCell>
+    <mxCell id="29" value="🎤 Real-time voice channels (RTC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e0a33;strokeColor=#9c27b0;fontColor=#e1bee7;fontSize=10;" vertex="1" parent="15">
+      <mxGeometry x="10" y="10" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="30" value="🔑 Token-gated access (RtcTokenBuilder, 1hr)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e0a33;strokeColor=#9c27b0;fontColor=#e1bee7;fontSize=10;" vertex="1" parent="15">
+      <mxGeometry x="10" y="46" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="30b" value="🤖 Conversational AI Engine — STT pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e0a33;strokeColor=#9c27b0;fontColor=#e1bee7;fontSize=10;" vertex="1" parent="15">
+      <mxGeometry x="10" y="82" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="30c" value="BHW ↔ Nurse emergency bridge channel" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#553366;fontSize=8;" vertex="1" parent="15">
+      <mxGeometry x="10" y="120" width="280" height="18" as="geometry" />
+    </mxCell>
+
+    <!-- AI Provider -->
+    <mxCell id="16" value="&lt;b&gt;AI Provider&lt;/b&gt; (TRIAGE_PROVIDER)" style="swimlane;startSize=34;fillColor=#1a0e00;strokeColor=#FF9800;fontColor=#FFB74D;fontStyle=0;fontSize=13;rounded=1;arcSize=3;html=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="482" width="300" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="31" value="☁ AWS Bedrock — claude-sonnet-4-6 (production)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a1400;strokeColor=#FF9800;fontColor=#ffcc80;fontSize=10;" vertex="1" parent="16">
+      <mxGeometry x="10" y="10" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="31b" value="TRIAGE_PROVIDER=bedrock · us-east-1 region" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#aa6020;fontSize=8;" vertex="1" parent="16">
+      <mxGeometry x="10" y="42" width="280" height="16" as="geometry" />
+    </mxCell>
+    <mxCell id="32" value="🖥 Ollama — llama3 (dev, localhost:11434)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a1400;strokeColor=#FF9800;fontColor=#ffcc80;fontSize=10;" vertex="1" parent="16">
+      <mxGeometry x="10" y="68" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="32b" value="TRIAGE_PROVIDER=ollama (default) · OLLAMA_MODEL=llama3" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#aa6020;fontSize=8;" vertex="1" parent="16">
+      <mxGeometry x="10" y="100" width="280" height="16" as="geometry" />
+    </mxCell>
+    <mxCell id="32c" value="Prompt: Filipino only · RISK/AKSYON/TANONG format · triage not diagnose" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#664420;fontSize=8;" vertex="1" parent="16">
+      <mxGeometry x="10" y="120" width="280" height="16" as="geometry" />
+    </mxCell>
+
+    <!-- ElevenLabs TTS -->
+    <mxCell id="17" value="&lt;b&gt;ElevenLabs TTS&lt;/b&gt;" style="swimlane;startSize=34;fillColor=#1a0808;strokeColor=#FF5722;fontColor=#FF8A65;fontStyle=0;fontSize=14;rounded=1;arcSize=3;html=1;" vertex="1" parent="1">
+      <mxGeometry x="800" y="662" width="300" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="33" value="🗣 eleven_multilingual_v2 — Filipino voice" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2a0808;strokeColor=#FF5722;fontColor=#ffab91;fontSize=10;" vertex="1" parent="17">
+      <mxGeometry x="10" y="10" width="280" height="28" as="geometry" />
+    </mxCell>
+    <mxCell id="33b" value="AKSYON text → audio/mpeg → browser AudioContext" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#772020;fontSize=8;" vertex="1" parent="17">
+      <mxGeometry x="10" y="46" width="280" height="16" as="geometry" />
+    </mxCell>
+    <mxCell id="33c" value="Fallback: browser SpeechSynthesis (fil-PH)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#772020;fontSize=8;" vertex="1" parent="17">
+      <mxGeometry x="10" y="64" width="280" height="16" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ARROWS / DATA FLOWS
+    ══════════════════════════════════════════════════════════════ -->
+
+    <!-- BHW App → BHW Triage Routes -->
+    <mxCell id="e1" value="POST /triage&#xa;Bearer JWT (bhw)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#4a90d9;fontColor=#4a90d9;fontSize=9;" edge="1" source="3" target="8" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- BHW App → Bridge Routes: RED alert -->
+    <mxCell id="e2" value="POST /bridge/initiate&#xa;(RED alert)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.65;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#FF9800;fontColor=#FF9800;fontSize=9;" edge="1" source="3" target="9" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- BHW App → Queue Routes: join queue -->
+    <mxCell id="e3" value="POST /queue/join" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#AB47BC;fontColor=#AB47BC;fontSize=9;" edge="1" source="3" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Patient App → Public Routes -->
+    <mxCell id="e4" value="POST /triage/patient&#xa;(no auth)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#7CB342;fontColor=#7CB342;fontSize=9;" edge="1" source="4" target="7" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Nurse Dashboard → Queue Routes: dashboard poll -->
+    <mxCell id="e5" value="GET /queue/dashboard&#xa;Bearer JWT (nurse)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.35;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#4a90d9;fontColor=#4a90d9;fontSize=9;" edge="1" source="5" target="10" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Nurse Dashboard → Bridge Routes: reset -->
+    <mxCell id="e6" value="POST /bridge/reset" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.65;exitDx=0;exitDy=0;entryX=0;entryY=0.8;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#FF9800;fontColor=#FF9800;fontSize=9;" edge="1" source="5" target="9" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Auth Routes → triage.js (internal) -->
+    <mxCell id="e7" value="triageSymptoms(bhwId)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#FFC107;fontColor=#FFC107;fontSize=9;" edge="1" source="8" target="11" parent="6">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Public Routes → triage.js (internal, null bhwId) -->
+    <mxCell id="e8" value="triageSymptoms(null)" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#FFC107;fontColor=#FFC107;fontSize=9;" edge="1" source="7" target="11" parent="6">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Bridge Routes → bridge.js (internal) -->
+    <mxCell id="e9" value="triggerBridge() / resetBridge()" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeColor=#FFC107;fontColor=#FFC107;fontSize=9;" edge="1" source="9" target="12" parent="6">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- triage.js → AI Provider -->
+    <mxCell id="e10" value="chat completion&#xa;(symptoms → RISK/AKSYON/TANONG)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#FF9800;fontColor=#FF9800;fontSize=9;" edge="1" source="11" target="16" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- triage.js → Supabase (audit) -->
+    <mxCell id="e11" value="INSERT triage_events&#xa;(non-blocking audit)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#00b8d4;fontColor=#00b8d4;fontSize=9;" edge="1" source="11" target="14" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- bridge.js → Supabase (bridge_sessions) -->
+    <mxCell id="e12" value="UPSERT bridge_sessions&#xa;+ triggers Realtime push" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.9;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#00b8d4;fontColor=#00b8d4;fontSize=9;" edge="1" source="12" target="14" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Supabase Realtime → Nurse Dashboard (WS) -->
+    <mxCell id="e13" value="WebSocket push&#xa;(bridge event)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0;exitY=0.65;exitDx=0;exitDy=0;entryX=1;entryY=0.35;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#00b8d4;fontColor=#00b8d4;fontSize=9;dashed=1;" edge="1" source="14" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="770" y="185" />
+          <mxPoint x="770" y="440" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- BHW App → Agora RTC (emergency bridge) -->
+    <mxCell id="e14" value="RTC join (BHW, emergency)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.8;exitY=0;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#9c27b0;fontColor=#9c27b0;fontSize=9;" edge="1" source="3" target="15" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="212" y="8" />
+          <mxPoint x="860" y="8" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+
+    <!-- Nurse Dashboard → Agora RTC (accepts call) -->
+    <mxCell id="e15" value="RTC join (nurse, accepts)" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.85;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#9c27b0;fontColor=#9c27b0;fontSize=9;" edge="1" source="5" target="15" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Backend → ElevenLabs TTS (/tts proxy) -->
+    <mxCell id="e16" value="POST ElevenLabs API&#xa;text → audio/mpeg" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.88;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#FF5722;fontColor=#FF5722;fontSize=9;" edge="1" source="6" target="17" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Supabase → Backend (JWT verify) -->
+    <mxCell id="e17" value="getUser(token)&#xa;→ verified user + role" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0;exitY=0.15;exitDx=0;exitDy=0;entryX=1;entryY=0.15;entryDx=0;entryDy=0;endArrow=block;endFill=1;strokeColor=#00b8d4;fontColor=#00b8d4;fontSize=9;dashed=1;" edge="1" source="14" target="6" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         LEGEND
+    ══════════════════════════════════════════════════════════════ -->
+    <mxCell id="legend" value="&lt;b&gt;LEGEND&lt;/b&gt;" style="swimlane;startSize=22;fillColor=#111118;strokeColor=#444;fontColor=#888;fontStyle=1;fontSize=10;rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="20" y="600" width="240" height="170" as="geometry" />
+    </mxCell>
+    <mxCell id="l1" value="──────  HTTP request" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#4a90d9;fontSize=9;" vertex="1" parent="legend">
+      <mxGeometry x="10" y="6" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="l2" value="──────  Bridge / emergency flow" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#FF9800;fontSize=9;" vertex="1" parent="legend">
+      <mxGeometry x="10" y="26" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="l3" value="──────  AI / triage call" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#FFC107;fontSize=9;" vertex="1" parent="legend">
+      <mxGeometry x="10" y="46" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="l4" value="- - - -  WebSocket / Realtime push" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#00b8d4;fontSize=9;" vertex="1" parent="legend">
+      <mxGeometry x="10" y="66" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="l5" value="──────  Agora RTC voice channel" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#9c27b0;fontSize=9;" vertex="1" parent="legend">
+      <mxGeometry x="10" y="86" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="l6" value="──────  TTS audio pipeline" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#FF5722;fontSize=9;" vertex="1" parent="legend">
+      <mxGeometry x="10" y="106" width="220" height="18" as="geometry" />
+    </mxCell>
+    <mxCell id="l7" value="- - - -  JWT verification (Supabase→Backend)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontColor=#00b8d4;fontSize=9;" vertex="1" parent="legend">
+      <mxGeometry x="10" y="126" width="220" height="18" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
