@@ -8,6 +8,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const API_BASE = '/api/v1';
 const SESSION_TTL_MINUTES = Number(process.env.SESSION_TTL_MINUTES || 120);
+const CONVO_AI_BASE_URL = process.env.AGORA_CONVO_AI_BASE_URL || 'https://api.agora.io';
+const CONVO_AI_START_PATH_TEMPLATE =
+  process.env.AGORA_CONVO_AI_START_PATH || '/api/conversational-ai/v1/projects/{appId}/join';
+const CONVO_AI_STOP_PATH_TEMPLATE =
+  process.env.AGORA_CONVO_AI_STOP_PATH || '/api/conversational-ai/v1/projects/{appId}/leave';
+const CONVO_AI_TIMEOUT_MS = Number(process.env.CONVO_AI_TIMEOUT_MS || 10000);
+const CONVO_AI_RETRIES = Number(process.env.CONVO_AI_RETRIES || 1);
+const DEFAULT_ASSISTANT_PROMPT =
+  process.env.DEFAULT_ASSISTANT_PROMPT || 'You are a helpful real-time cooking assistant.';
+const DEFAULT_ASSISTANT_NAME = process.env.DEFAULT_ASSISTANT_NAME || 'cook-assistant';
 
 const sessions = new Map();
 
@@ -63,6 +73,133 @@ function buildRtcToken({ appId, appCertificate, channelName, uid }) {
   );
 }
 
+function getConvoAiPath(pathTemplate) {
+  return pathTemplate.replace('{appId}', process.env.AGORA_APP_ID || '');
+}
+
+function isRealEnvValue(value) {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  const placeholderMarkers = ['your-', 'example', 'placeholder', 'changeme', 'replace-me'];
+  return !placeholderMarkers.some((marker) => normalized.includes(marker));
+}
+
+function isRtcConfigured() {
+  return isRealEnvValue(process.env.AGORA_APP_ID) && isRealEnvValue(process.env.AGORA_APP_CERTIFICATE);
+}
+
+function isConvoAiConfigured() {
+  return (
+    isRealEnvValue(process.env.AGORA_CUSTOMER_ID) &&
+    isRealEnvValue(process.env.AGORA_CUSTOMER_SECRET)
+  );
+}
+
+function getConvoAiAuthHeader() {
+  const raw = `${process.env.AGORA_CUSTOMER_ID}:${process.env.AGORA_CUSTOMER_SECRET}`;
+  return `Basic ${Buffer.from(raw).toString('base64')}`;
+}
+
+async function callConvoAi({ path, body }) {
+  const maxAttempts = Math.max(1, CONVO_AI_RETRIES + 1);
+  const url = `${CONVO_AI_BASE_URL}${path}`;
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CONVO_AI_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: getConvoAiAuthHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(
+          data?.message || data?.error || `ConvoAI request failed with status ${response.status}`
+        );
+        error.status = response.status;
+        error.details = data;
+
+        if (response.status >= 500 && attempt < maxAttempts) {
+          lastError = error;
+          continue;
+        }
+
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      const timedOut = error.name === 'AbortError';
+      if (timedOut) {
+        error.status = 504;
+        error.message = `ConvoAI request timed out after ${CONVO_AI_TIMEOUT_MS}ms`;
+      }
+
+      if ((timedOut || error.status >= 500 || !error.status) && attempt < maxAttempts) {
+        lastError = error;
+        continue;
+      }
+
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  throw lastError || new Error('ConvoAI request failed after retries');
+}
+
+async function startConvoAiAgent(session, agentConfig = {}) {
+  const path = getConvoAiPath(CONVO_AI_START_PATH_TEMPLATE);
+  const payload = {
+    channelName: session.channelName,
+    rtc: {
+      uid: String(session.uid),
+      token: session.rtcToken
+    },
+    agent: {
+      name: agentConfig.name || DEFAULT_ASSISTANT_NAME,
+      prompt: agentConfig.prompt || DEFAULT_ASSISTANT_PROMPT
+    }
+  };
+
+  const response = await callConvoAi({ path, body: payload });
+  return {
+    raw: response,
+    agentSessionId:
+      response?.agentSessionId ||
+      response?.agent_id ||
+      response?.id ||
+      response?.data?.agentSessionId ||
+      null
+  };
+}
+
+async function stopConvoAiAgent(session) {
+  const path = getConvoAiPath(CONVO_AI_STOP_PATH_TEMPLATE);
+  const payload = {
+    channelName: session.channelName,
+    agentSessionId: session.agentSessionId || undefined
+  };
+  return callConvoAi({ path, body: payload });
+}
+
 function getSession(sessionId) {
   return sessions.get(sessionId);
 }
@@ -79,8 +216,7 @@ function createSession(req, res) {
     });
   }
 
-  const agoraConfigured = Boolean(process.env.AGORA_APP_ID && process.env.AGORA_APP_CERTIFICATE);
-  if (!agoraConfigured) {
+  if (!isRtcConfigured()) {
     return res.status(500).json({
       error: {
         code: 'CONFIG_ERROR',
@@ -104,6 +240,7 @@ function createSession(req, res) {
     userId,
     channelName,
     uid,
+    rtcToken: token,
     status: 'created',
     createdAt: now,
     updatedAt: now
@@ -116,11 +253,15 @@ function createSession(req, res) {
     uid,
     token,
     status: 'created',
-    expiresInSeconds: SESSION_TTL_MINUTES * 60
+    expiresInSeconds: SESSION_TTL_MINUTES * 60,
+    flow: {
+      rtc: 'token_issued',
+      conversationalAi: 'awaiting_start'
+    }
   });
 }
 
-function startConversation(req, res) {
+async function startConversation(req, res) {
   const { sessionId, agentConfig = {} } = req.body;
 
   if (!sessionId) {
@@ -142,9 +283,43 @@ function startConversation(req, res) {
     });
   }
 
+  if (!isConvoAiConfigured()) {
+    return res.status(500).json({
+      error: {
+        code: 'CONFIG_ERROR',
+        message:
+          'Conversational AI credentials are not configured. Set AGORA_CUSTOMER_ID and AGORA_CUSTOMER_SECRET.'
+      }
+    });
+  }
+
+  if (session.status === 'active') {
+    return res.status(409).json({
+      error: {
+        code: 'INVALID_STATE',
+        message: 'Session is already active'
+      }
+    });
+  }
+
+  let convoAiSession;
+  try {
+    convoAiSession = await startConvoAiAgent(session, agentConfig);
+  } catch (error) {
+    return res.status(error.status || 502).json({
+      error: {
+        code: 'CONVO_AI_START_FAILED',
+        message: error.message
+      },
+      details: error.details || null
+    });
+  }
+
   const now = new Date().toISOString();
   session.status = 'active';
   session.agentConfig = agentConfig;
+  session.agentSessionId = convoAiSession.agentSessionId;
+  session.convoAiStartResponse = convoAiSession.raw;
   session.startedAt = session.startedAt || now;
   session.updatedAt = now;
 
@@ -152,11 +327,21 @@ function startConversation(req, res) {
     sessionId: session.sessionId,
     channelName: session.channelName,
     status: session.status,
-    startedAt: session.startedAt
+    startedAt: session.startedAt,
+    flow: {
+      rtc: {
+        channelName: session.channelName,
+        uid: session.uid
+      },
+      conversationalAi: {
+        state: 'joined',
+        agentSessionId: session.agentSessionId
+      }
+    }
   });
 }
 
-function endSession(req, res) {
+async function endSession(req, res) {
   const { sessionId } = req.body;
 
   if (!sessionId) {
@@ -178,6 +363,31 @@ function endSession(req, res) {
     });
   }
 
+  if (session.status === 'active') {
+    if (!isConvoAiConfigured()) {
+      return res.status(500).json({
+        error: {
+          code: 'CONFIG_ERROR',
+          message:
+            'Conversational AI credentials are not configured. Set AGORA_CUSTOMER_ID and AGORA_CUSTOMER_SECRET.'
+        }
+      });
+    }
+
+    try {
+      const stopResponse = await stopConvoAiAgent(session);
+      session.convoAiStopResponse = stopResponse;
+    } catch (error) {
+      return res.status(error.status || 502).json({
+        error: {
+          code: 'CONVO_AI_STOP_FAILED',
+          message: error.message
+        },
+        details: error.details || null
+      });
+    }
+  }
+
   const endedAt = new Date().toISOString();
   session.status = 'terminated';
   session.endedAt = endedAt;
@@ -186,7 +396,11 @@ function endSession(req, res) {
   const response = {
     sessionId: session.sessionId,
     status: session.status,
-    endedAt: session.endedAt
+    endedAt: session.endedAt,
+    flow: {
+      rtc: 'left_channel',
+      conversationalAi: 'left_channel'
+    }
   };
 
   sessions.delete(sessionId);
@@ -200,7 +414,8 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'backend',
     uptimeSeconds: Math.floor(process.uptime()),
-    agoraConfigured: Boolean(process.env.AGORA_APP_ID && process.env.AGORA_APP_CERTIFICATE),
+    agoraRtcConfigured: isRtcConfigured(),
+    agoraConvoAiConfigured: isConvoAiConfigured(),
     activeSessions: sessions.size
   });
 });
