@@ -985,6 +985,28 @@ input {
   font-size: 0.92rem;
 }
 
+.demo-script-card {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  display: grid;
+  gap: 12px;
+}
+
+.demo-script-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.demo-script-button {
+  width: 100%;
+  justify-content: flex-start;
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #dbeafe;
+}
+
 .face-recognition-box {
   position: absolute;
   border: 2px solid rgba(14, 165, 233, 0.92);

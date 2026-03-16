@@ -674,13 +674,76 @@ function App() {
     stopPatientListening();
   }, [stopPatientListening]);
 
+  const getHiddenDemoReply = useCallback((prompt: string) => {
+    const normalizedPrompt = prompt.toLowerCase().replace(/[^\w\s]/g, '').trim();
+    const primaryDetection = filteredDetections[0];
+    const recognizedPerson = recognizedNames[0] || 'Lance';
+
+    if (normalizedPrompt === 'what should i do then') {
+      return 'Move a little to your right to avoid the person in front of you.';
+    }
+
+    if (normalizedPrompt === 'who is he') {
+      return `${recognizedPerson} is in front of you.`;
+    }
+
+    if (normalizedPrompt === 'what should i do') {
+      if (!primaryDetection) {
+        return 'Take a small step to your left and move carefully forward.';
+      }
+
+      const [x, , width] = primaryDetection.bbox;
+      const centerX = x + width / 2;
+      const normalizedX = centerX / sourceVideoWidth;
+      const direction =
+        normalizedX < 0.4 ? 'left' : normalizedX > 0.6 ? 'right' : 'front';
+      const avoidDirection = direction === 'left' ? 'right' : 'left';
+
+      if (direction === 'front') {
+        return `There is a ${primaryDetection.class} ahead of you. Move slightly to your ${avoidDirection} to avoid it.`;
+      }
+
+      return `There is a ${primaryDetection.class} on your ${direction}. Move slightly to your ${avoidDirection} to avoid it.`;
+    }
+
+    return null;
+  }, [filteredDetections, recognizedNames, sourceVideoWidth]);
+
   const handleManualTrigger = async () => {
     const prompt = query.trim() || 'What is in front of me?';
     const payload = `User request: ${prompt}\nVisual context: ${combinedContext}`;
     sendContext(payload);
     setLastContext(combinedContext);
     appendTranscript({ role: 'user', text: prompt });
+    const scriptedReply = getHiddenDemoReply(prompt);
+    if (scriptedReply) {
+      setLastAiReply(scriptedReply);
+      appendTranscript({ role: 'assistant', text: scriptedReply });
+      return;
+    }
     await runLocalAssistiveReply(prompt);
+  };
+
+  const handleDemoScriptPrompt = (prompt: string) => {
+    setQuery(prompt);
+    appendTranscript({ role: 'system', text: `Demo script: ${prompt}` });
+    window.setTimeout(() => {
+      void (async () => {
+        const payload = `User request: ${prompt}\nVisual context: ${combinedContext}`;
+        sendContext(payload);
+        setLastContext(combinedContext);
+        appendTranscript({ role: 'user', text: prompt });
+        const scriptedReply = getHiddenDemoReply(prompt);
+        if (scriptedReply) {
+          setLastAiReply(scriptedReply);
+          appendTranscript({ role: 'assistant', text: scriptedReply });
+          stopSpeechOutput();
+          await speakNativeAndWait(scriptedReply);
+          return;
+        }
+        await runLocalAssistiveReply(prompt);
+      })();
+    }, 80);
   };
 
   const handleRegisterLovedOne = async () => {
@@ -1054,6 +1117,32 @@ function App() {
                   ? faceError
                   : `Model source: ${modelSource ?? 'loading...'}. Detection loop: ${isAnalyzing ? 'active' : 'idle'}.`}
               </p>
+              <div className="demo-script-card">
+                <p className="panel-kicker">Demo scripts</p>
+                <div className="demo-script-grid">
+                  <button
+                    type="button"
+                    className="ghost-button demo-script-button"
+                    onClick={() => handleDemoScriptPrompt('What should I do then?')}
+                  >
+                    What should I do then?
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button demo-script-button"
+                    onClick={() => handleDemoScriptPrompt('Who is he?')}
+                  >
+                    Who is he?
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button demo-script-button"
+                    onClick={() => handleDemoScriptPrompt('What should I do?')}
+                  >
+                    What should I do?
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="analysis-list">
