@@ -31,6 +31,7 @@ const DEFAULT_LLM_URL = process.env.DEFAULT_LLM_URL || '';
 const DEFAULT_LLM_API_KEY = process.env.DEFAULT_LLM_API_KEY || '';
 const DEFAULT_LLM_MODEL = process.env.DEFAULT_LLM_MODEL || '';
 const DEFAULT_LLM_STYLE = process.env.DEFAULT_LLM_STYLE || 'gemini';
+const DEFAULT_ENABLE_STRING_UID = String(process.env.AGORA_ENABLE_STRING_UID || 'true').toLowerCase() !== 'false';
 const DEFAULT_GREETING = process.env.DEFAULT_GREETING || 'Good to see you!';
 const DEFAULT_FAILURE_MESSAGE = process.env.DEFAULT_FAILURE_MESSAGE || 'Hold on a second.';
 const DEFAULT_LLM_MAX_HISTORY = Number(process.env.DEFAULT_LLM_MAX_HISTORY || 32);
