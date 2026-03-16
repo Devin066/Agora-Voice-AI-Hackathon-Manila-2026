@@ -89,11 +89,12 @@ struct ContentView: View {
             guard health.status.lowercased() == "ok" else {
                 throw APIClientError.requestFailed("Backend health check did not return ok.")
             }
-            let token = try await APIClient.shared.generateToken(channelName: nil, uid: nil)
+            let localUid = Int.random(in: 100000...900000)
+            let token = try await APIClient.shared.generateToken(channelName: nil, uid: localUid)
             let start = try await APIClient.shared.startSession(
                 channelName: token.channelName,
                 scenario: selectedScenario,
-                userId: nil
+                userId: token.uid
             )
 
             currentSessionId = start.sessionId

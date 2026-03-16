@@ -33,6 +33,13 @@ struct SessionView: View {
                     .bold()
             }
             .padding()
+
+            if let errorMessage = coordinator.errorMessage, !errorMessage.isEmpty {
+                Text(errorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal)
+            }
             
             // Center: Real-time pitch graph (Placeholder for custom chart)
             VStack(alignment: .leading) {
@@ -68,6 +75,20 @@ struct SessionView: View {
                 MetricCard(title: "WPM", value: "\(coordinator.wpm)")
                 MetricCard(title: "Fillers", value: "\(coordinator.fillerCount)")
                 MetricCard(title: "Pitch", value: "\(Int(coordinator.currentPitch)) Hz")
+            }
+            .padding(.horizontal)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("You said")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Text(coordinator.liveTranscript.isEmpty ? "Waiting for speech..." : coordinator.liveTranscript)
+                    .font(.body)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .cornerRadius(10)
             }
             .padding(.horizontal)
             
@@ -112,7 +133,9 @@ struct SessionView: View {
             
             // Bottom: Waveform + Stop button
             Button(action: {
-                stopSession()
+                Task {
+                    await stopSession()
+                }
             }) {
                 HStack {
                     Image(systemName: "stop.fill")
@@ -137,7 +160,9 @@ struct SessionView: View {
         .onDisappear {
             // Clean up if backed out unintentionally
             if coordinator.state == .active {
-                coordinator.stopSession()
+                Task {
+                    await coordinator.stopSession()
+                }
                 timer?.invalidate()
             }
         }
@@ -157,18 +182,24 @@ struct SessionView: View {
     private func startSession() {
         coordinator.requestPermissions { granted in
             if granted {
-                coordinator.startSession(scenario: scenario)
-                coordinator.liveActivityManager.transitionToActive(scenario: scenario)
-                timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-                    elapsedTime += 1
-                    // Push live metrics to Dynamic Island
-                    coordinator.liveActivityManager.updateMetrics(
-                        wpm: coordinator.wpm,
-                        pitchHz: Int(coordinator.currentPitch),
-                        fillers: coordinator.fillerCount,
-                        elapsed: elapsedTime,
-                        scenario: scenario
-                    )
+                Task {
+                    await coordinator.startSession(scenario: scenario)
+                    guard coordinator.state == .active else { return }
+
+                    coordinator.liveActivityManager.transitionToActive(scenario: scenario)
+                    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                        Task { @MainActor in
+                            elapsedTime += 1
+                            // Push live metrics to Dynamic Island
+                            coordinator.liveActivityManager.updateMetrics(
+                                wpm: coordinator.wpm,
+                                pitchHz: Int(coordinator.currentPitch),
+                                fillers: coordinator.fillerCount,
+                                elapsed: elapsedTime,
+                                scenario: scenario
+                            )
+                        }
+                    }
                 }
             } else {
                 print("Permissions denied by user.")
@@ -182,16 +213,18 @@ struct SessionView: View {
         case .idle, .summary:
             startSession()
         case .active:
-            stopSession()
+            Task {
+                await stopSession()
+            }
         case .connecting, .stopping:
             break
         }
     }
-    
-    private func stopSession() {
+
+    private func stopSession() async {
         timer?.invalidate()
         timer = nil
-        coordinator.stopSession()
+        await coordinator.stopSession()
         
         // Persist via SwiftData
         if let session = coordinator.session {

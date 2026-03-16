@@ -2,12 +2,14 @@ import SwiftUI
 import SwiftData
 
 struct ScenarioPickerView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \VoiceSession.startedAt, order: .reverse) private var sessions: [VoiceSession]
     @State private var selectedScenario: ScenarioType?
     @State private var isSessionActive = false
     @State private var showBackTapSheet = false
     @State private var showLiveActivityAlert = false
     @State private var liveActivityAlertMessage = ""
+    @State private var statusText: String = "Idle"
+    @State private var errorText: String = ""
     
     private let liveActivityManager = LiveActivityManager()
     private let hapticsEngine = HapticsEngine()
@@ -86,6 +88,50 @@ struct ScenarioPickerView: View {
             }
             .padding(.bottom)
             #endif
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Status: \(statusText)")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Check Backend") {
+                        Task {
+                            await checkHealth()
+                        }
+                    }
+                    .font(.footnote)
+                }
+
+                if !errorText.isEmpty {
+                    Text(errorText)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                }
+
+                Text("Recent Sessions")
+                    .font(.subheadline)
+                    .bold()
+
+                if sessions.isEmpty {
+                    Text("No sessions yet.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(Array(sessions.prefix(3))) { session in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(ScenarioType(rawValue: session.scenario)?.label ?? session.scenario)
+                                .font(.footnote)
+                                .bold()
+                            Text("\(session.status) • \(session.durationSeconds)s")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
         }
         .navigationTitle("Scenarios")
         .navigationBarHidden(true)
@@ -126,6 +172,17 @@ struct ScenarioPickerView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(liveActivityAlertMessage)
+        }
+    }
+
+    private func checkHealth() async {
+        do {
+            let health = try await APIClient.shared.health()
+            statusText = "Backend \(health.status)"
+            errorText = ""
+        } catch {
+            statusText = "Backend unavailable"
+            errorText = error.localizedDescription
         }
     }
 }

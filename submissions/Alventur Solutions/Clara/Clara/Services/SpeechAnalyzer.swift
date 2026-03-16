@@ -1,6 +1,17 @@
 import Foundation
 import Speech
 
+enum SpeechAnalyzerError: LocalizedError {
+    case requestCreationFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .requestCreationFailed:
+            return "Unable to create speech recognition request."
+        }
+    }
+}
+
 class SpeechAnalyzer {
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -44,12 +55,16 @@ class SpeechAnalyzer {
         self.recognitionTask = nil
         
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+        try audioSession.setCategory(
+            .playAndRecord,
+            mode: .measurement,
+            options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .duckOthers]
+        )
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else {
-            fatalError("Unable to create an SFSpeechAudioBufferRecognitionRequest object")
+            throw SpeechAnalyzerError.requestCreationFailed
         }
         
         recognitionRequest.shouldReportPartialResults = true

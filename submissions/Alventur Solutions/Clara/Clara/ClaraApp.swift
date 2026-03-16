@@ -47,7 +47,7 @@ struct ClaraApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                ContentView()
+                ScenarioPickerView()
             }
         }
         .modelContainer(sharedModelContainer)

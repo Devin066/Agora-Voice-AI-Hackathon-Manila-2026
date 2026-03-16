@@ -133,7 +133,8 @@ async def start_session(body: StartSessionRequest):
     try:
         base_url = os.getenv("AGORA_CONVO_AI_BASE_URL")
         app_id = os.getenv("AGORA_APP_ID")
-        agent_uid = int(os.getenv("AGENT_UID", "0"))
+        configured_agent_uid = int(os.getenv("AGENT_UID", "10001"))
+        agent_uid = configured_agent_uid if configured_agent_uid > 0 else 10001
         if not base_url or not app_id:
             raise HTTPException(status_code=500, detail="Missing AGORA_CONVO_AI_BASE_URL or AGORA_APP_ID")
 

@@ -1,0 +1,232 @@
+import Foundation
+import AVFoundation
+import AgoraRtcKit
+
+protocol AgoraVoiceServiceProtocol: AnyObject {
+    var onAgentSpeakingChanged: ((Bool) -> Void)? { get set }
+
+    func start(appId: String, token: String, channelName: String, uid: UInt, agentUid: UInt) async throws
+    func stop() async
+}
+
+enum AgoraVoiceServiceError: LocalizedError {
+    case missingAppId
+    case invalidAppId
+    case engineCreationFailed
+    case joinFailed(code: Int32)
+    case leaveFailed(code: Int32)
+    case timeout
+
+    var errorDescription: String? {
+        switch self {
+        case .missingAppId:
+            return "AGORA_APP_ID is missing. Add it to your app target Info settings."
+        case .invalidAppId:
+            return "AGORA_APP_ID is invalid."
+        case .engineCreationFailed:
+            return "Unable to create Agora RTC engine."
+        case .joinFailed(let code):
+            return "Failed to join Agora channel (code: \(code))."
+        case .leaveFailed(let code):
+            return "Failed to leave Agora channel (code: \(code))."
+        case .timeout:
+            return "Timed out while joining Agora channel."
+        }
+    }
+}
+
+struct AppRuntimeConfiguration {
+    let agoraAppId: String
+
+    static func load(bundle: Bundle = .main) throws -> AppRuntimeConfiguration {
+        let infoValue = bundle.object(forInfoDictionaryKey: "AGORA_APP_ID")
+        let envValue = ProcessInfo.processInfo.environment["AGORA_APP_ID"]
+
+        let rawAppId = [infoValue.map { String(describing: $0) }, envValue]
+            .compactMap { $0 }
+            .first
+
+        guard let rawAppId else {
+            throw AgoraVoiceServiceError.missingAppId
+        }
+
+        let trimmedAppId = rawAppId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedAppId.isEmpty else {
+            throw AgoraVoiceServiceError.missingAppId
+        }
+
+        guard trimmedAppId.range(of: "^[A-Za-z0-9]+$", options: .regularExpression) != nil else {
+            throw AgoraVoiceServiceError.invalidAppId
+        }
+
+        return AppRuntimeConfiguration(agoraAppId: trimmedAppId)
+    }
+}
+
+@MainActor
+final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
+    var onAgentSpeakingChanged: ((Bool) -> Void)?
+
+    private var engine: AgoraRtcEngineKit?
+    private var expectedAgentUid: UInt?
+    private var joinContinuation: CheckedContinuation<Void, Error>?
+
+    func start(appId: String, token: String, channelName: String, uid: UInt, agentUid: UInt) async throws {
+        let normalizedAppId = appId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedAppId.isEmpty else {
+            throw AgoraVoiceServiceError.invalidAppId
+        }
+
+        if engine == nil {
+            let config = AgoraRtcEngineConfig()
+            config.appId = normalizedAppId
+            config.channelProfile = .communication
+            let rtcEngine = AgoraRtcEngineKit.sharedEngine(with: config, delegate: self)
+            engine = rtcEngine
+        }
+
+        try configureAudioSession()
+        onAgentSpeakingChanged?(false)
+        expectedAgentUid = agentUid
+
+        _ = engine?.enableAudio()
+        _ = engine?.enableLocalAudio(true)
+        _ = engine?.setDefaultAudioRouteToSpeakerphone(true)
+        _ = engine?.setEnableSpeakerphone(true)
+
+        try await joinChannel(token: token, channelName: channelName, uid: uid)
+    }
+
+    func stop() async {
+        joinContinuation?.resume(throwing: CancellationError())
+        joinContinuation = nil
+
+        onAgentSpeakingChanged?(false)
+        expectedAgentUid = nil
+
+        guard let engine else { return }
+        let result = engine.leaveChannel(nil)
+        if result != 0 {
+            print(AgoraVoiceServiceError.leaveFailed(code: result).localizedDescription)
+        }
+    }
+
+    deinit {
+        AgoraRtcEngineKit.destroy()
+    }
+
+    private func configureAudioSession() throws {
+        let audioSession = AVAudioSession.sharedInstance()
+        try audioSession.setCategory(
+            .playAndRecord,
+            mode: .voiceChat,
+            options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .duckOthers]
+        )
+        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+    }
+
+    private func joinChannel(token: String, channelName: String, uid: UInt) async throws {
+        guard let engine else {
+            throw AgoraVoiceServiceError.engineCreationFailed
+        }
+
+        let options = AgoraRtcChannelMediaOptions()
+        options.clientRoleType = .broadcaster
+        options.channelProfile = .communication
+        options.publishMicrophoneTrack = true
+        options.autoSubscribeAudio = true
+
+        let timeoutTask = Task { [weak self] in
+            try await Task.sleep(nanoseconds: 8_000_000_000)
+            await MainActor.run {
+                guard let self else { return }
+                if let continuation = self.joinContinuation {
+                    self.joinContinuation = nil
+                    continuation.resume(throwing: AgoraVoiceServiceError.timeout)
+                }
+            }
+        }
+
+        defer {
+            timeoutTask.cancel()
+        }
+
+        try await withCheckedThrowingContinuation { continuation in
+            self.joinContinuation = continuation
+
+            let result = engine.joinChannel(byToken: token, channelId: channelName, uid: uid, mediaOptions: options)
+            guard result == 0 else {
+                self.joinContinuation = nil
+                continuation.resume(throwing: AgoraVoiceServiceError.joinFailed(code: result))
+                return
+            }
+        }
+    }
+}
+
+extension AgoraVoiceService: AgoraRtcEngineDelegate {
+    nonisolated func rtcEngine(
+        _ engine: AgoraRtcEngineKit,
+        didJoinChannel channel: String,
+        withUid uid: UInt,
+        elapsed: Int
+    ) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.joinContinuation?.resume()
+            self.joinContinuation = nil
+        }
+    }
+
+    nonisolated func rtcEngine(_ engine: AgoraRtcEngineKit, didOccurError errorCode: AgoraErrorCode) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if let continuation = self.joinContinuation {
+                continuation.resume(throwing: AgoraVoiceServiceError.joinFailed(code: Int32(errorCode.rawValue)))
+                self.joinContinuation = nil
+            }
+        }
+    }
+
+    nonisolated func rtcEngine(_ engine: AgoraRtcEngineKit, didJoinedOfUid uid: UInt, elapsed: Int) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard uid == self.expectedAgentUid else { return }
+            self.onAgentSpeakingChanged?(false)
+        }
+    }
+
+    nonisolated func rtcEngine(
+        _ engine: AgoraRtcEngineKit,
+        remoteAudioStateChangedOfUid uid: UInt,
+        state: AgoraAudioRemoteState,
+        reason: AgoraAudioRemoteReason,
+        elapsed: Int
+    ) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard uid == self.expectedAgentUid else { return }
+
+            switch state {
+            case .starting, .decoding:
+                self.onAgentSpeakingChanged?(true)
+            case .stopped, .failed:
+                self.onAgentSpeakingChanged?(false)
+            default:
+                break
+            }
+        }
+    }
+
+    nonisolated func rtcEngine(
+        _ engine: AgoraRtcEngineKit,
+        didOfflineOfUid uid: UInt,
+        reason: AgoraUserOfflineReason
+    ) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard uid == self.expectedAgentUid else { return }
+            self.onAgentSpeakingChanged?(false)
+        }
+    }
+}

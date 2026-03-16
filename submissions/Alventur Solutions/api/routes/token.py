@@ -9,6 +9,7 @@ router = APIRouter(prefix="/token", tags=["token"])
 MAX_CHANNEL_BYTES = 64
 
 class TokenResponse(BaseModel):
+    appId: str
     token: str
     channelName: str
     uid: int
@@ -56,6 +57,7 @@ async def generate_token_post(body: TokenRequest):
             privilegeExpiredTs=expiration_time
         )
         return TokenResponse(
+            appId=str(os.getenv("AGORA_APP_ID")),
             token=token,
             uid=uid,
             channelName=channel_name,

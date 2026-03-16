@@ -11,6 +11,7 @@ struct TokenGenerateRequest: Encodable {
 }
 
 struct TokenResponse: Decodable {
+    let appId: String?
     let token: String
     let channelName: String
     let uid: Int
@@ -20,7 +21,7 @@ struct TokenResponse: Decodable {
 struct StartSessionRequest: Encodable {
     let channelName: String?
     let scenario: String
-    let userId: String?
+    let userId: Int?
 }
 
 struct StartSessionResponse: Decodable {

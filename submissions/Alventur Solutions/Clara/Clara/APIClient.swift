@@ -38,7 +38,7 @@ final class APIClient {
         return try await perform(req)
     }
 
-    func startSession(channelName: String?, scenario: ScenarioType, userId: String?) async throws -> StartSessionResponse {
+    func startSession(channelName: String?, scenario: ScenarioType, userId: Int?) async throws -> StartSessionResponse {
         let url = baseURL.appendingPathComponent("session").appendingPathComponent("start")
         let body = StartSessionRequest(channelName: channelName, scenario: scenario.rawValue, userId: userId)
         var req = URLRequest(url: url)

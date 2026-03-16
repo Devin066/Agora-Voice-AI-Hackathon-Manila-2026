@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class VoiceSessionCoordinator: ObservableObject {
     @Published var state: SessionState = .idle
     @Published var session: VoiceSession?
@@ -11,11 +12,18 @@ class VoiceSessionCoordinator: ObservableObject {
     @Published var currentPitch: Float = 0
     @Published var currentEnergy: Float = 0
     @Published var isAgentSpeaking: Bool = false
+    @Published var liveTranscript: String = ""
+    @Published var errorMessage: String?
     
     private let pitchAnalyzer = PitchAnalyzer()
     private let speechAnalyzer = SpeechAnalyzer()
     private let hapticsEngine = HapticsEngine()
+    private let apiClient: APIClient
+    private let agoraService: AgoraVoiceServiceProtocol
     let liveActivityManager = LiveActivityManager()
+
+    private var activeSessionId: String?
+    private var activeChannelName: String?
     
     enum SessionState {
         case idle
@@ -29,6 +37,17 @@ class VoiceSessionCoordinator: ObservableObject {
     private var pitchSamples: [Float] = []
     private var pauseCount = 0
     private var totalPauseDuration: TimeInterval = 0
+
+    init(apiClient: APIClient? = nil, agoraService: AgoraVoiceServiceProtocol? = nil) {
+        self.apiClient = apiClient ?? APIClient.shared
+        self.agoraService = agoraService ?? AgoraVoiceService()
+
+        self.agoraService.onAgentSpeakingChanged = { [weak self] speaking in
+            Task { @MainActor in
+                self?.isAgentSpeaking = speaking
+            }
+        }
+    }
     
     func requestPermissions(completion: @escaping (Bool) -> Void) {
         speechAnalyzer.requestAuthorization { granted in
@@ -36,10 +55,12 @@ class VoiceSessionCoordinator: ObservableObject {
         }
     }
     
-    func startSession(scenario: ScenarioType) {
-        let newSession = VoiceSession(scenario: scenario, startedAt: Date())
-        self.session = newSession
+    func startSession(scenario: ScenarioType) async {
+        guard state != .active && state != .connecting else { return }
+
+        resetMetricsForNewSession()
         self.state = .connecting
+        self.errorMessage = nil
         
         // Hooks
         pitchAnalyzer.onPitchDetected = { [weak self] hz in
@@ -51,8 +72,10 @@ class VoiceSessionCoordinator: ObservableObject {
             self?.currentEnergy = energy
         }
         
-        speechAnalyzer.onTranscriptionUpdated = { text in
-            // Handle logging if needed
+        speechAnalyzer.onTranscriptionUpdated = { [weak self] text in
+            Task { @MainActor in
+                self?.liveTranscript = text
+            }
         }
         
         speechAnalyzer.onFillerWordDetected = { [weak self] word in
@@ -67,30 +90,72 @@ class VoiceSessionCoordinator: ObservableObject {
         speechAnalyzer.onPauseDetected = { [weak self] duration in
             self?.pauseCount += 1
             self?.totalPauseDuration += duration
-            
-            // This is the trigger for the ConvoAI agent to speak!
-            // In a real integration, we'd signal Agora.
-            // For now, let's mock the agent speaking feedback back.
-            self?.triggerAgentMockFeedback()
         }
-        
-        // Start APIs
+
         do {
+            let localUid = Int.random(in: 100000...900000)
+            let token = try await apiClient.generateToken(channelName: nil, uid: localUid)
+            let resolvedAppId = token.appId?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let appId: String
+            if let resolvedAppId, !resolvedAppId.isEmpty {
+                appId = resolvedAppId
+            } else {
+                appId = try AppRuntimeConfiguration.load().agoraAppId
+            }
+
+            let startResponse = try await apiClient.startSession(
+                channelName: token.channelName,
+                scenario: scenario,
+                userId: token.uid
+            )
+
+            try await agoraService.start(
+                appId: appId,
+                token: token.token,
+                channelName: startResponse.channelName,
+                uid: UInt(token.uid),
+                agentUid: UInt(startResponse.agentUid)
+            )
+
             try speechAnalyzer.start()
             pitchAnalyzer.start()
+
+            let newSession = VoiceSession(
+                id: startResponse.sessionId,
+                scenario: scenario.rawValue,
+                startedAt: Date(),
+                status: startResponse.status,
+                channelName: startResponse.channelName,
+                userTokenExpiresAt: token.expiresAt
+            )
+            self.session = newSession
+            self.activeSessionId = startResponse.sessionId
+            self.activeChannelName = startResponse.channelName
             self.state = .active
         } catch {
+            await agoraService.stop()
             print("Failed to start speech analyzer: \(error)")
+            self.errorMessage = error.localizedDescription
             self.state = .idle
         }
     }
-    
-    func stopSession() {
+
+    func stopSession() async {
         self.state = .stopping
         speechAnalyzer.stop()
         pitchAnalyzer.stop()
         hapticsEngine.stop()
         liveActivityManager.endActivity()
+
+        if let sessionId = activeSessionId {
+            do {
+                _ = try await apiClient.stopSession(sessionId: sessionId, channelName: activeChannelName)
+            } catch {
+                self.errorMessage = error.localizedDescription
+            }
+        }
+
+        await agoraService.stop()
         
         guard let activeSession = session else { return }
         let ended = Date()
@@ -99,6 +164,8 @@ class VoiceSessionCoordinator: ObservableObject {
         
         computeFinalMetrics()
         
+        self.activeSessionId = nil
+        self.activeChannelName = nil
         self.state = .summary
     }
     
@@ -143,13 +210,15 @@ class VoiceSessionCoordinator: ObservableObject {
         // SwiftData Context persist done externally or via auto-save
     }
     
-    private func triggerAgentMockFeedback() {
-        DispatchQueue.main.async { [weak self] in
-            // Simulate agent speaking for 3 seconds
-            self?.isAgentSpeaking = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                self?.isAgentSpeaking = false
-            }
-        }
+    private func resetMetricsForNewSession() {
+        wpm = 0
+        fillerCount = 0
+        currentPitch = 0
+        currentEnergy = 0
+        isAgentSpeaking = false
+        liveTranscript = ""
+        pitchSamples = []
+        pauseCount = 0
+        totalPauseDuration = 0
     }
 }
