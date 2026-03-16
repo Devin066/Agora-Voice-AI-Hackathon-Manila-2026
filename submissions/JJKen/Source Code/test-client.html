@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>HeardChef – Voice Test</title>
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 0 20px; }
+    button { padding: 10px 20px; margin: 8px 4px; font-size: 14px; cursor: pointer; }
+    #status { margin-top: 16px; padding: 12px; background: #f4f4f4; border-radius: 6px; white-space: pre-wrap; font-size: 13px; }
+    #log { margin-top: 12px; padding: 12px; background: #1e1e1e; color: #d4d4d4; border-radius: 6px; white-space: pre-wrap; font-size: 12px; max-height: 200px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h2>🍳 HeardChef – Voice Test</h2>
+  <p>Click <strong>Join & Start AI</strong> to connect to the cooking assistant, then speak into your mic.</p>
+
+  <button id="btnJoin" onclick="joinAndStart()">Join & Start AI</button>
+  <button id="btnLeave" onclick="leaveAndEnd()" disabled>Leave & Stop AI</button>
+
+  <div id="status">Idle</div>
+  <div id="log"></div>
+
+  <script>
+    const BASE = 'http://localhost:3000';
+    const CHANNEL = 'test-room';
+    const USER_ID = 'web-tester-' + Math.floor(Math.random() * 9999);
+
+    let client, localTrack, sessionId;
+
+    function log(msg) {
+      const el = document.getElementById('log');
+      el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+      el.scrollTop = el.scrollHeight;
+    }
+    function status(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    async function joinAndStart() {
+      document.getElementById('btnJoin').disabled = true;
+      try {
+        // 1. Create session
+        status('Creating session...');
+        log('POST /api/v1/session');
+        const sessRes = await fetch(BASE + '/api/v1/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: USER_ID, channelName: CHANNEL })
+        });
+        const sess = await sessRes.json();
+        if (!sessRes.ok) throw new Error(JSON.stringify(sess));
+        sessionId = sess.sessionId;
+        log('Session created: ' + sessionId);
+        log('UID: ' + sess.uid);
+
+        // 2. Start AI agent
+        status('Starting AI agent...');
+        log('POST /api/v1/start');
+        const startRes = await fetch(BASE + '/api/v1/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId })
+        });
+        const startData = await startRes.json();
+        if (!startRes.ok) throw new Error(JSON.stringify(startData));
+        log('Agent joined: ' + startData.flow?.conversationalAi?.agentSessionId);
+
+        // 3. Join RTC channel
+        status('Joining RTC channel...');
+        client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+        client.on('user-published', async (user, mediaType) => {
+          await client.subscribe(user, mediaType);
+          if (mediaType === 'audio') {
+            user.audioTrack.play();
+            log('AI audio playing (uid=' + user.uid + ')');
+          }
+        });
+
+        await client.join(
+          'e2ee42da3133464490bfa774ea8033a1',
+          CHANNEL,
+          sess.token,
+          sess.uid
+        );
+        log('Joined RTC channel: ' + CHANNEL);
+
+        localTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        await client.publish([localTrack]);
+        log('Microphone published — speak now!');
+
+        status('✅ Connected! Speak into your mic to talk to HeardChef.');
+        document.getElementById('btnLeave').disabled = false;
+      } catch (err) {
+        log('ERROR: ' + err.message);
+        status('❌ Error — see log below');
+        document.getElementById('btnJoin').disabled = false;
+      }
+    }
+
+    async function leaveAndEnd() {
+      document.getElementById('btnLeave').disabled = true;
+      try {
+        if (localTrack) { localTrack.stop(); localTrack.close(); }
+        if (client) await client.leave();
+        log('Left RTC channel');
+
+        if (sessionId) {
+          await fetch(BASE + '/api/v1/end', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId })
+          });
+          log('Session ended');
+        }
+        status('Disconnected.');
+      } catch (err) {
+        log('ERROR during leave: ' + err.message);
+      }
+      document.getElementById('btnJoin').disabled = false;
+    }
+  </script>
+</body>
+</html>
