@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 import os
 from datetime import datetime, timezone
 import random
 import string
 
 router = APIRouter(prefix="/token", tags=["token"])
+MAX_CHANNEL_BYTES = 64
 
 class TokenResponse(BaseModel):
     token: str
@@ -16,6 +17,15 @@ class TokenResponse(BaseModel):
 class TokenRequest(BaseModel):
     channelName: str | None = None
     uid: int | None = 0
+
+    @field_validator("channelName")
+    @classmethod
+    def validate_channel_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if len(value.encode("utf-8")) > MAX_CHANNEL_BYTES:
+            raise ValueError(f"channelName must be within {MAX_CHANNEL_BYTES} bytes")
+        return value
 
 def generate_channel_name() -> str:
     timestamp = int(datetime.now().timestamp())
