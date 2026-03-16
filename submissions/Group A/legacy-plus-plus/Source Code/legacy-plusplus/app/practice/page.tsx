@@ -22,6 +22,12 @@ import type { FeedbackChip, SessionScore } from "@/types";
 
 type MicState = "idle" | "listening" | "processing" | "done";
 
+interface Caption {
+  who:  "child" | "sparky";
+  text: string;
+  ts:   number;
+}
+
 const NEXT_DRILLS: Record<string, string> = {
   pronunciation: "Practice slow, deliberate speaking with the R and S drill",
   fluency:       "Try reading a short sentence out loud three times smoothly",
@@ -60,16 +66,23 @@ export default function PracticePage() {
   const [childName,        setChildName]        = useState("there");
   const [lives,            setLives]            = useState(3);
   const [sessionStarted,   setSessionStarted]   = useState(false);
+  const [captions,         setCaptions]         = useState<Caption[]>([]);
+  const [volumeLevel,      setVolumeLevel]      = useState(0);
 
-  const clientRef        = useRef<IAgoraRTCClient | null>(null);
-  const micTrackRef      = useRef<IMicrophoneAudioTrack | null>(null);
-  const speakTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initStartedRef   = useRef(false);
-  const agentIdRef       = useRef<string | null>(null);
-  const agentSpeakTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const profileRef       = useRef<{ childId?: string; childAge?: number; childName?: string } | null>(null);
-  const channelRef       = useRef("");
-  const userUidRef       = useRef(0);
+  const clientRef          = useRef<IAgoraRTCClient | null>(null);
+  const micTrackRef        = useRef<IMicrophoneAudioTrack | null>(null);
+  const speakTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initStartedRef     = useRef(false);
+  const agentIdRef         = useRef<string | null>(null);
+  const agentSpeakTimer    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileRef         = useRef<{ childId?: string; childAge?: number; childName?: string } | null>(null);
+  const channelRef         = useRef("");
+  const userUidRef         = useRef(0);
+  // Track whether we're waiting for Sparky's response after the child spoke
+  const waitingForSparky   = useRef(false);
+  const seenSparkyStart    = useRef(false);
+  const speakDurationRef   = useRef(0);
+  const volumeRafRef       = useRef<number | null>(null);
 
   // Phase 1: load profile & prompts (no Agora, no audio)
   useEffect(() => {
@@ -123,16 +136,27 @@ export default function PracticePage() {
       client.on("user-joined", (ru: IAgoraRTCRemoteUser) => {
         console.log("[Agora] Remote user joined, uid:", ru.uid);
       });
+      client.on("user-joined", (ru: IAgoraRTCRemoteUser) => {
+        console.log("[Agora] Remote user joined, uid:", ru.uid);
+      });
       client.on("user-published", async (ru: IAgoraRTCRemoteUser, mt: string) => {
         console.log("[Agora] user-published uid:", ru.uid, "mediaType:", mt);
         if (mt === "audio") {
           await client.subscribe(ru, "audio");
-          console.log("[Agora] Subscribed to audio, playing...");
           ru.audioTrack?.play();
           setAgentSpeaking(true);
-          // Safety: auto-clear agentSpeaking after 15s in case user-unpublished never fires
+          seenSparkyStart.current = true;
+          // Safety: auto-clear after 20s
           if (agentSpeakTimer.current) clearTimeout(agentSpeakTimer.current);
-          agentSpeakTimer.current = setTimeout(() => setAgentSpeaking(false), 15_000);
+          agentSpeakTimer.current = setTimeout(() => {
+            setAgentSpeaking(false);
+            if (waitingForSparky.current) {
+              waitingForSparky.current = false;
+              const score = scoreFromDuration(speakDurationRef.current);
+              setScores((prev) => [...prev, score]);
+              setMicState("done");
+            }
+          }, 20_000);
         }
       });
       client.on("user-unpublished", (_: IAgoraRTCRemoteUser, mt: string) => {
@@ -140,10 +164,18 @@ export default function PracticePage() {
         if (mt === "audio") {
           if (agentSpeakTimer.current) clearTimeout(agentSpeakTimer.current);
           setAgentSpeaking(false);
+          // Sparky finished — transition child to "done" if we were waiting
+          if (waitingForSparky.current && seenSparkyStart.current) {
+            waitingForSparky.current = false;
+            seenSparkyStart.current  = false;
+            const score = scoreFromDuration(speakDurationRef.current);
+            setScores((prev) => [...prev, score]);
+            setMicState("done");
+          }
         }
       });
 
-      const { token } = await fetch("/api/agora/token", {
+      const { token, rtmToken } = await fetch("/api/agora/token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ channelName, uid: userUid }),
@@ -151,10 +183,48 @@ export default function PracticePage() {
 
       await client.join(APP_ID, channelName, token, userUid);
 
+      // Set up RTM v2 to receive live transcript captions
+      try {
+        const { RTMClient } = await import("agora-rtm");
+        const rtm = new RTMClient(APP_ID, String(userUid), { logLevel: "warn" });
+        // Try with token first, fall back to no-token (works in non-restricted Agora projects)
+        try {
+          await rtm.login({ token: rtmToken });
+        } catch {
+          await rtm.login({});
+        }
+        await rtm.subscribe(channelName, { withMessage: true });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        rtm.addEventListener("message", (evt: any) => {
+          try {
+            const raw  = typeof evt.message === "string" ? evt.message : new TextDecoder().decode(evt.message);
+            const data = JSON.parse(raw ?? "{}");
+            // data_type: "transcribe" | "word"  message_status: "IN_PROGRESS" | "END_OF_SENTENCE"
+            if (data.data_type === "transcribe" && data.message_status === "END_OF_SENTENCE") {
+              // publisher is the UID who sent the message; agent UID is 999
+              const who: Caption["who"] = evt.publisher === "999" ? "sparky" : "child";
+              if (data.text?.trim()) {
+                setCaptions((prev) => [
+                  ...prev.slice(-4),
+                  { who, text: data.text, ts: Date.now() },
+                ]);
+              }
+            }
+          } catch { /* ignore malformed */ }
+        });
+      } catch (rtmErr) {
+        console.warn("RTM setup failed:", rtmErr);
+      }
+
       const micTrack = await AgoraRTC.createMicrophoneAudioTrack({
-        encoderConfig: "speech_low_quality",
+        encoderConfig: "speech_standard",
       });
       micTrackRef.current = micTrack;
+
+      // Publish enabled, then immediately mute. This keeps the stream alive
+      // so the agent's VAD can detect speech/silence without re-subscribing.
+      await client.publish(micTrack);
+      await micTrack.setEnabled(false);
 
       // Mic is ready — let the child start speaking right away
       setAgoraReady(true);
@@ -206,29 +276,58 @@ export default function PracticePage() {
 
     if (micState === "listening") {
       const duration = Date.now() - speakStartTime;
-      await clientRef.current?.unpublish(micTrackRef.current);
+      speakDurationRef.current = duration;
+      // Stop volume polling
+      if (volumeRafRef.current) { cancelAnimationFrame(volumeRafRef.current); volumeRafRef.current = null; }
+      setVolumeLevel(0);
+      // Mute (don't unpublish) — keeps the stream alive so agent VAD detects silence naturally
       await micTrackRef.current.setEnabled(false);
       setMicState("processing");
 
+      // Mark that we're waiting for Sparky's coaching response
+      waitingForSparky.current  = true;
+      seenSparkyStart.current   = false;
+
+      // Fallback: if Sparky hasn't started within 10s, skip to done
+      if (speakTimerRef.current) clearTimeout(speakTimerRef.current);
       speakTimerRef.current = setTimeout(() => {
-        const score: SessionScore = scoreFromDuration(duration);
-        setAllFeedback((prev) => [
-          ...prev,
-          { type: "success", message: "Sparky is listening… 🎙️" },
-        ]);
-        setScores((prev) => [...prev, score]);
-        setMicState("done");
-      }, 800);
+        if (waitingForSparky.current && !seenSparkyStart.current) {
+          waitingForSparky.current = false;
+          const score = scoreFromDuration(duration);
+          setScores((prev) => [...prev, score]);
+          setMicState("done");
+        }
+      }, 10_000);
     } else if (micState === "idle" || micState === "done") {
       try {
         await micTrackRef.current.setEnabled(true);
-        await clientRef.current?.publish(micTrackRef.current);
         setSpeakStartTime(Date.now());
         setMicState("listening");
+        // Start polling volume level
+        const poll = () => {
+          if (!micTrackRef.current) return;
+          const level = micTrackRef.current.getVolumeLevel();
+          setVolumeLevel(level);
+          volumeRafRef.current = requestAnimationFrame(poll);
+        };
+        volumeRafRef.current = requestAnimationFrame(poll);
       } catch (err) {
-        console.error("Mic publish error:", err);
+        console.error("Mic enable error:", err);
       }
     }
+  };
+
+  // Speak the phrase using browser TTS so the child can hear it first
+  const handleDemoPhrase = (text: string) => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utt   = new SpeechSynthesisUtterance(text);
+    utt.rate    = 0.85;
+    utt.pitch   = 1.1;
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find((v) => v.lang.startsWith("en") && v.localService);
+    if (enVoice) utt.voice = enVoice;
+    window.speechSynthesis.speak(utt);
   };
 
   const handleRetry = () => {
@@ -398,6 +497,23 @@ export default function PracticePage() {
           </div>
         )}
 
+        {/* Live caption log */}
+        {captions.length > 0 && (
+          <div className="w-full space-y-1.5">
+            {captions.map((c, i) => (
+              <div key={c.ts + i} className={cn(
+                "flex items-start gap-2 px-3 py-2 rounded-2xl text-sm font-body",
+                c.who === "sparky"
+                  ? "bg-secondary/10 border border-secondary/20 text-secondary ml-6"
+                  : "bg-primary/10 border border-primary/20 text-primary mr-6"
+              )}>
+                <span className="shrink-0">{c.who === "sparky" ? "🤖" : "🧒"}</span>
+                <span>{c.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Sparky speech bubble (when agent is speaking) */}
         {agentSpeaking && (
           <div className="flex items-end gap-3 w-full animate-pop-up">
@@ -436,6 +552,16 @@ export default function PracticePage() {
             {prompt.text}
           </p>
 
+          {/* Demo button — hear how the phrase sounds */}
+          {micState === "idle" && (
+            <button
+              onClick={() => handleDemoPhrase(prompt.text)}
+              className="mt-4 inline-flex items-center gap-2 bg-secondary/10 border-2 border-secondary/30 text-secondary px-4 py-2 rounded-full font-heading font-semibold text-sm hover:bg-secondary/20 transition-colors"
+            >
+              🔊 Hear it first
+            </button>
+          )}
+
           {micState === "done" && (
             <div className="mt-5 animate-pop-up">
               <span className="inline-flex items-center gap-2 bg-success/15 text-success border-2 border-success/30 px-5 py-2 rounded-full font-heading font-bold text-sm">
@@ -460,6 +586,26 @@ export default function PracticePage() {
 
         {/* Mic area */}
         <div className="flex flex-col items-center gap-4">
+
+          {/* Volume meter — 8 bars that light up with mic input */}
+          <div className="flex items-end gap-1 h-8">
+            {Array.from({ length: 8 }).map((_, i) => {
+              const threshold = (i + 1) / 8;
+              const active    = micState === "listening" && volumeLevel >= threshold;
+              const color     = i < 5 ? "bg-success" : i < 7 ? "bg-accent" : "bg-error";
+              const height    = `${28 + i * 5}%`;
+              return (
+                <div
+                  key={i}
+                  style={{ height }}
+                  className={cn(
+                    "w-2.5 rounded-full transition-all duration-75",
+                    active ? color : "bg-border"
+                  )}
+                />
+              );
+            })}
+          </div>
 
           {/* Big mic button */}
           <div className="relative">

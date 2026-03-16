@@ -3,19 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 const AGORA_BASE_URL = `https://api.agora.io/api/conversational-ai-agent/v2/projects/${process.env.NEXT_PUBLIC_AGORA_APP_ID}`;
 
-const SYSTEM_PROMPT = `You are Sparky, a warm and encouraging speech therapy coach for children aged 5 to 13.
-
-Your role is to listen to the child say a word or phrase, then give brief, positive feedback.
-
-Rules:
-- Always lead with encouragement before any correction.
-- Keep every response to 1-2 sentences maximum — children have short attention spans.
-- Use simple words a young child understands.
-- Never say the child is wrong or bad. Frame corrections as "let's try together".
-- Focus on one specific sound or improvement at a time.
-- Celebrate clearly when they do well: "That was perfect! I heard every sound!"
-- When correcting: "Nice try! Let's say the R sound together — rrrr. Your turn!"
-- Always end with motivation to try again or keep going.`;
+const SYSTEM_PROMPT = `You are Sparky, a fun speech coach for kids aged 5-13. Keep every reply to 1-2 sentences max.
+After the child speaks: repeat the phrase correctly yourself, give one quick tip, then cheer them on.
+Example: "Here's how we say it: Rain rain go away! Great R sound — just stretch it a bit more. You're doing awesome, try again!"
+Never say the child is wrong. Always end with energy and encouragement.`;
 
 // POST — start agent
 export async function POST(req: NextRequest) {
@@ -24,7 +15,7 @@ export async function POST(req: NextRequest) {
   const APP_CERTIFICATE  = process.env.AGORA_APP_CERTIFICATE      ?? "";
   const CUSTOMER_ID      = process.env.AGORA_CUSTOMER_ID          ?? "";
   const CUSTOMER_SECRET  = process.env.AGORA_CUSTOMER_SECRET      ?? "";
-  const GEMINI_API_KEY   = process.env.GOOGLE_AI_API_KEY          ?? "";
+  const GROQ_API_KEY     = process.env.GROQ_API_KEY                ?? "";
   const AZURE_TTS_KEY    = process.env.AZURE_SPEECH_KEY            ?? "";
   const AZURE_TTS_REGION = process.env.AZURE_SPEECH_REGION         ?? "eastasia";
 
@@ -34,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (!APP_CERTIFICATE) missing.push("AGORA_APP_CERTIFICATE");
   if (!CUSTOMER_ID)     missing.push("AGORA_CUSTOMER_ID");
   if (!CUSTOMER_SECRET) missing.push("AGORA_CUSTOMER_SECRET");
-  if (!GEMINI_API_KEY)  missing.push("GOOGLE_AI_API_KEY");
+  if (!GROQ_API_KEY)    missing.push("GROQ_API_KEY");
   if (!AZURE_TTS_KEY)   missing.push("AZURE_SPEECH_KEY");
 
   if (missing.length > 0) {
@@ -72,18 +63,27 @@ export async function POST(req: NextRequest) {
       agent_rtc_uid:    String(agentUid),  // Agora requires string UID
       remote_rtc_uids:  ["*"],             // listen to all users in channel
       idle_timeout: 300,
+      advanced_features: { enable_rtm: true },
       asr: {
         language: "en-US",
       },
       llm: {
-        url:     "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        api_key: GEMINI_API_KEY,
-        model:   "gemini-2.0-flash",
-        system_prompt: `${SYSTEM_PROMPT}\n\nYou are speaking with a ${ageBand}.`,
+        url:     "https://api.groq.com/openai/v1/chat/completions",
+        api_key: GROQ_API_KEY,
+        style:   "openai",   // tells Agora this is an OpenAI-compatible endpoint
+        system_messages: [
+          {
+            role:    "system",
+            content: `${SYSTEM_PROMPT}\n\nYou are speaking with a ${ageBand}.`,
+          },
+        ],
         greeting_message: "Hi! I'm Sparky, your speech buddy! Say the phrase on your screen and I'll cheer you on!",
-        failure_message:  "Hmm, I didn't quite catch that. Try again — you've got this!",
-        max_tokens:  150,
-        temperature: 0.7,
+        failure_message:  "I couldn't hear you clearly — try speaking a little louder! You've got this!",
+        params: {
+          model:       "llama-3.3-70b-versatile",  // 70B — confirmed working at hackathon
+          max_tokens:  150,
+          temperature: 0.7,
+        },
       },
       tts: {
         vendor: "microsoft",
@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
 
   try {
     console.log(`Starting Agora agent → POST ${AGORA_BASE_URL}/join  channel:`, channelName);
+    console.log("Agent body:", JSON.stringify(body, null, 2));
     const response = await fetch(`${AGORA_BASE_URL}/join`, {
       method:  "POST",
       headers: {

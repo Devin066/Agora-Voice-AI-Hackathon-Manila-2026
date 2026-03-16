@@ -18,6 +18,8 @@ import {
   Circle,
   ShieldCheck,
   Mic,
+  BarChart2,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -28,10 +30,10 @@ import Button from "@/components/ui/Button";
 type NavKey = "overview" | "progress" | "history" | "settings";
 
 const NAV_ITEMS: { icon: React.ElementType; label: string; key: NavKey }[] = [
-  { icon: LayoutDashboard, label: "Overview", key: "overview" },
-  { icon: User, label: "Child Progress", key: "progress" },
-  { icon: Clock, label: "Session History", key: "history" },
-  { icon: Settings, label: "Settings", key: "settings" },
+  { icon: LayoutDashboard, label: "Overview",  key: "overview"  },
+  { icon: BarChart2,       label: "Progress",  key: "progress"  },
+  { icon: Clock,           label: "History",   key: "history"   },
+  { icon: Settings,        label: "Settings",  key: "settings"  },
 ];
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -318,75 +320,45 @@ export default function ParentDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg flex">
-      {/* Sidebar */}
-      <aside className="w-56 bg-surface shadow-sm flex flex-col py-6 px-4 shrink-0">
-        <div className="mb-2 px-2">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-sm font-heading font-bold">
-              L
-            </div>
-            <div>
-              <p className="font-heading font-bold text-text text-xs leading-tight">
-                Legacy++
-              </p>
-              <p className="text-muted text-xs font-body">
-                Voice AI Speech Therapy
-              </p>
-            </div>
+    <div className="min-h-screen bg-bg flex flex-col">
+
+      {/* ── Top bar ──────────────────────────────────────────── */}
+      <header className="bg-surface border-b-2 border-border px-5 py-3 flex items-center justify-between shrink-0">
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-[0_3px_0_#0b8a8b]">
+            <Mic size={18} className="text-white fill-white" />
           </div>
+          <span className="font-heading font-extrabold text-lg text-text">
+            Legacy<span className="text-primary">++</span>
+          </span>
         </div>
 
-        {/* Parent info */}
-        <div className="flex items-center gap-2 bg-bg rounded-xl px-3 py-2 mb-6 mt-2">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-heading font-bold text-sm">
-            {parentName?.[0]?.toUpperCase() ?? "P"}
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-body font-semibold text-text truncate">
-              {parentName || "Parent"}
-            </p>
-            <p className="text-xs font-body text-muted">{childName}&apos;s Parent</p>
-          </div>
-        </div>
-
-        <nav className="flex flex-col gap-1 flex-1">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => setActiveNav(item.key)}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-body font-medium transition-colors text-left",
-                activeNav === item.key
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted hover:bg-bg hover:text-text"
-              )}
-            >
-              <item.icon size={16} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="pt-4 border-t border-border space-y-1">
+        {/* Right side: child name + parent name + child view button */}
+        <div className="flex items-center gap-2">
+          {childName && (
+            <span className="text-xs font-body text-muted hidden sm:inline">
+              {childName}&apos;s Progress
+            </span>
+          )}
+          {parentName && (
+            <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-xl">
+              <User size={14} />
+              <span className="text-xs font-heading font-bold">{parentName}</span>
+            </div>
+          )}
           <button
             onClick={() => router.push("/child/home")}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-body font-medium text-muted hover:bg-bg hover:text-primary transition-colors"
+            className="flex items-center gap-1.5 border-2 border-border text-muted hover:text-primary hover:border-primary/40 px-3 py-1.5 rounded-xl text-xs font-heading font-bold transition-colors"
           >
-            <Baby size={16} />
+            <Baby size={14} />
             Child View
           </button>
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-body font-medium text-muted hover:text-error hover:bg-error/5 transition-colors"
-          >
-            <LogOut size={16} /> Log Out
-          </button>
         </div>
-      </aside>
+      </header>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto px-8 py-8">
+      {/* ── Main scrollable content ─────────────────────────── */}
+      <main className="flex-1 overflow-y-auto pb-24 px-5 pt-6 max-w-4xl mx-auto w-full">
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="flex gap-1">
@@ -439,6 +411,32 @@ export default function ParentDashboardPage() {
           </>
         )}
       </main>
+
+      {/* ── Bottom tab bar ──────────────────────────────────── */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t-2 border-border flex z-50">
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.key}
+            onClick={() => setActiveNav(item.key)}
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-colors relative"
+          >
+            {activeNav === item.key && (
+              <div className="absolute top-1.5 w-10 h-7 bg-primary/10 rounded-xl" />
+            )}
+            <item.icon
+              size={22}
+              strokeWidth={activeNav === item.key ? 2.5 : 1.8}
+              className={cn("relative z-10", activeNav === item.key ? "text-primary" : "text-muted")}
+            />
+            <span className={cn(
+              "text-[11px] font-heading font-bold leading-none relative z-10",
+              activeNav === item.key ? "text-primary" : "text-muted"
+            )}>
+              {item.label}
+            </span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -471,64 +469,51 @@ function OverviewSection({
       </div>
 
       {/* Welcome banner */}
-      <div className="bg-primary/5 border border-primary/20 rounded-2xl px-5 py-4 mb-6 flex items-center gap-4">
-        <div className="text-4xl">🦕</div>
-        <div>
-          <p className="font-heading font-semibold text-text">
+      <div className="bg-primary/8 border-2 border-primary/20 rounded-3xl px-5 py-4 mb-6 flex items-center gap-4 relative overflow-hidden">
+        <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-primary/10" />
+        <div className="w-14 h-14 rounded-[1rem] bg-primary flex items-center justify-center shadow-[0_4px_0_#0b8a8b] shrink-0 relative z-10">
+          <Mic size={26} className="text-white fill-white" strokeWidth={1.5} />
+        </div>
+        <div className="relative z-10">
+          <p className="font-heading font-extrabold text-text">
             {childName}&apos;s progress is looking great!
           </p>
-          <p className="text-sm font-body text-muted">
+          <p className="text-sm font-body text-muted mt-0.5">
             Keep up the daily practice to see continued improvement.
           </p>
         </div>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          {
-            icon: <Flame size={20} className="text-warning" />,
-            label: "Weekly Streak",
-            value: `${stats.streak} Days`,
-            bg: "bg-warning/10",
-          },
-          {
-            icon: <Target size={20} className="text-success" />,
-            label: "Avg Accuracy",
-            value: `${stats.accuracy}%`,
-            bg: "bg-success/10",
-          },
-          {
-            icon: <BookOpen size={20} className="text-secondary" />,
-            label: "Words Mastered",
-            value: String(stats.wordsMastered),
-            bg: "bg-secondary/10",
-          },
-          {
-            icon: <Star size={20} className="text-accent" />,
-            label: "Stars Earned",
-            value: String(stats.stars),
-            bg: "bg-accent/10",
-          },
+          { Icon: Flame,    label: "Weekly Streak",  value: `${stats.streak} Days`,       bg: "#F97316", shadow: "#c2410c", tint: "#FFF0E8", border: "#F9731655" },
+          { Icon: Target,   label: "Avg Accuracy",   value: `${stats.accuracy}%`,          bg: "#22C55E", shadow: "#15803d", tint: "#E8FFF0", border: "#22C55E55" },
+          { Icon: BookOpen, label: "Words Mastered", value: String(stats.wordsMastered),   bg: "#6366F1", shadow: "#4f46e5", tint: "#F0EEFF", border: "#6366F155" },
+          { Icon: Star,     label: "Stars Earned",   value: String(stats.stars),           bg: "#F59E0B", shadow: "#b45309", tint: "#FFFBE8", border: "#F59E0B55" },
         ].map((s) => (
-          <Card
+          <div
             key={s.label}
-            className={cn("flex items-center gap-3 py-4", s.bg, "border-0")}
+            className="rounded-2xl border-2 px-4 py-3 flex items-center gap-3"
+            style={{ backgroundColor: s.tint, borderColor: s.border }}
           >
-            {s.icon}
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: s.bg, boxShadow: `0 3px 0 ${s.shadow}` }}
+            >
+              <s.Icon size={20} className="text-white fill-white" strokeWidth={1.5} />
+            </div>
             <div>
               <p className="text-xs font-body text-muted">{s.label}</p>
-              <p className="font-heading font-bold text-xl text-text">
-                {s.value}
-              </p>
+              <p className="font-heading font-extrabold text-xl text-text">{s.value}</p>
             </div>
-          </Card>
+          </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
         {/* Weekly progress chart */}
-        <Card elevated className="col-span-2">
+        <Card elevated className="sm:col-span-2">
           <h2 className="font-heading font-semibold text-base text-text mb-4">
             Weekly Progress
           </h2>
@@ -618,7 +603,9 @@ function ProgressSection({
 
       {!hasData ? (
         <Card elevated className="text-center py-16">
-          <div className="text-5xl mb-4">📊</div>
+          <div className="flex justify-center mb-4">
+            <BarChart2 size={48} className="text-muted" strokeWidth={1.5} />
+          </div>
           <p className="font-heading font-semibold text-text mb-2">
             No session data yet
           </p>
@@ -629,8 +616,8 @@ function ProgressSection({
       ) : (
         <>
           {/* Overall score */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <Card elevated className="col-span-1 flex flex-col items-center justify-center py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <Card elevated className="sm:col-span-1 flex flex-col items-center justify-center py-8">
               <p className="text-sm font-body text-muted mb-2">
                 Overall Score
               </p>
@@ -662,7 +649,7 @@ function ProgressSection({
               <p className="text-xs font-data text-muted mt-2">Last Session</p>
             </Card>
 
-            <Card elevated className="col-span-2">
+            <Card elevated className="sm:col-span-2">
               <h2 className="font-heading font-semibold text-base text-text mb-4">
                 Skill Breakdown
               </h2>
@@ -709,21 +696,26 @@ function ProgressSection({
           </Card>
 
           {/* Stats summary */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Stars Earned", value: stats.stars, emoji: "⭐" },
-              { label: "Words Mastered", value: stats.wordsMastered, emoji: "📚" },
-              { label: "Day Streak", value: stats.streak, emoji: "🔥" },
+              { label: "Stars Earned",    value: stats.stars,         Icon: Star,     bg: "#F59E0B", shadow: "#b45309", tint: "#FFFBE8", border: "#F59E0B55" },
+              { label: "Words Mastered",  value: stats.wordsMastered, Icon: BookOpen, bg: "#6366F1", shadow: "#4f46e5", tint: "#F0EEFF", border: "#6366F155" },
+              { label: "Day Streak",      value: stats.streak,        Icon: Flame,    bg: "#F97316", shadow: "#c2410c", tint: "#FFF0E8", border: "#F9731655" },
             ].map((s) => (
-              <Card key={s.label} elevated className="text-center py-5">
-                <div className="text-3xl mb-2">{s.emoji}</div>
-                <div className="font-heading font-bold text-2xl text-text">
-                  {s.value}
+              <div
+                key={s.label}
+                className="rounded-2xl border-2 p-4 flex flex-col items-center"
+                style={{ backgroundColor: s.tint, borderColor: s.border }}
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-2"
+                  style={{ backgroundColor: s.bg, boxShadow: `0 3px 0 ${s.shadow}` }}
+                >
+                  <s.Icon size={22} className="text-white fill-white" strokeWidth={1.5} />
                 </div>
-                <div className="text-xs font-body text-muted mt-1">
-                  {s.label}
-                </div>
-              </Card>
+                <div className="font-heading font-extrabold text-2xl text-text">{s.value}</div>
+                <div className="text-xs font-body text-muted mt-1 text-center">{s.label}</div>
+              </div>
             ))}
           </div>
         </>
@@ -801,7 +793,9 @@ function HistorySection({
         </h2>
         {recentActivity.length === 0 ? (
           <div className="text-center py-10">
-            <div className="text-4xl mb-3">📭</div>
+            <div className="flex justify-center mb-3">
+              <Inbox size={40} className="text-muted" strokeWidth={1.5} />
+            </div>
             <p className="text-muted font-body text-sm">
               No activity yet. Complete a practice session to see milestones!
             </p>
@@ -860,11 +854,13 @@ function SettingsSection({
           Parent Account
         </h2>
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-heading font-bold text-lg">
-            {parentName?.[0]?.toUpperCase() ?? "P"}
+          <div className="w-14 h-14 rounded-[1rem] bg-secondary flex items-center justify-center shrink-0 shadow-[0_4px_0_#4f46e5]">
+            <span className="font-heading font-extrabold text-xl text-white">
+              {(parentName?.[0] ?? "P").toUpperCase()}
+            </span>
           </div>
           <div>
-            <p className="font-body font-semibold text-text">
+            <p className="font-heading font-extrabold text-text">
               {parentName || "Parent"}
             </p>
             <p className="text-muted text-sm font-body">{email}</p>
@@ -877,12 +873,19 @@ function SettingsSection({
         <h2 className="font-heading font-semibold text-base text-text mb-4">
           Child Profile
         </h2>
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-2xl">
-            🦕
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative shrink-0">
+            <div className="w-14 h-14 rounded-[1rem] bg-primary flex items-center justify-center shadow-[0_4px_0_#0b8a8b]">
+              <span className="font-heading font-extrabold text-xl text-white">
+                {childName.slice(0, 2).toUpperCase() || "KD"}
+              </span>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-accent flex items-center justify-center shadow-sm border-2 border-surface">
+              <Star size={11} className="text-white fill-white" />
+            </div>
           </div>
           <div>
-            <p className="font-body font-semibold text-text">{childName}</p>
+            <p className="font-heading font-extrabold text-text">{childName}</p>
             {childAge && (
               <p className="text-muted text-sm font-body">Age {childAge}</p>
             )}
@@ -890,7 +893,7 @@ function SettingsSection({
         </div>
         <button
           onClick={() => onNavigate("/child/home")}
-          className="w-full flex items-center justify-center gap-2 border border-primary/30 text-primary px-4 py-2.5 rounded-xl font-body font-semibold text-sm hover:bg-primary/5 transition-colors"
+          className="btn-3d w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl font-heading font-extrabold text-sm shadow-[0_4px_0_#0b8a8b]"
         >
           Go to Child View <ChevronRight size={16} />
         </button>

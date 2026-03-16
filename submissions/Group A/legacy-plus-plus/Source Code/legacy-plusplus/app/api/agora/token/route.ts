@@ -1,4 +1,4 @@
-import { RtcTokenBuilder, RtcRole } from "agora-token";
+import { RtcTokenBuilder, RtcRole, RtmTokenBuilder } from "agora-token";
 import { NextRequest, NextResponse } from "next/server";
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID!;
@@ -36,5 +36,12 @@ export async function POST(req: NextRequest) {
     privilegeExpiredTs
   );
 
-  return NextResponse.json({ token });
+  const rtmToken = RtmTokenBuilder.buildToken(
+    APP_ID,
+    APP_CERTIFICATE,
+    String(uid),
+    privilegeExpiredTs
+  );
+
+  return NextResponse.json({ token, rtmToken });
 }
