@@ -52,9 +52,9 @@ async function handleStartSession(channel?: string) {
           agent_rtc_uid: String(agentUid),
         },
         llm: {
-          url: "https://api.openai.com/v1",
-          api_key: process.env.OPENAI_API_KEY ?? "",
-          model: "gpt-4o-mini",
+          url: "https://generativelanguage.googleapis.com/v1beta/openai",
+          api_key: process.env.GEMINI_API_KEY ?? "",
+          model: "gemini-2.0-flash",
           system_messages: [
             {
               role: "system",
@@ -64,11 +64,11 @@ async function handleStartSession(channel?: string) {
           ],
         },
         tts: {
-          vendor: "microsoft",
+          vendor: "elevenlabs",
           params: {
-            key: process.env.AZURE_TTS_KEY ?? "",
-            region: process.env.AZURE_TTS_REGION ?? "eastus",
-            voice_name: "en-US-JennyNeural",
+            key: process.env.ELEVENLABS_API_KEY ?? "",
+            voice_id: process.env.ELEVENLABS_VOICE_ID ?? "21m00Tcm4TlvDq8ikWAM",
+            model_id: "eleven_turbo_v2",
           },
         },
       },
