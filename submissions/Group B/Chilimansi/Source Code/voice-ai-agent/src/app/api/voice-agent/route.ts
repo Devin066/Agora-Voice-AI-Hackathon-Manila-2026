@@ -53,7 +53,7 @@ async function startAgent(channel?: string) {
       channel: channelName,
       token: agentToken,
       agent_rtc_uid: AGENT_UID,
-      remote_rtc_uids: [USER_UID],
+      remote_rtc_uids: ["*"],
       idle_timeout: 120,
       asr: {
         language: "en-US",
@@ -81,6 +81,8 @@ async function startAgent(channel?: string) {
           key: ELEVENLABS_KEY,
           model_id: "eleven_turbo_v2",
           voice_id: ELEVENLABS_VOICE,
+          stability: 0.5,
+          sample_rate: 24000,
         },
       },
     },

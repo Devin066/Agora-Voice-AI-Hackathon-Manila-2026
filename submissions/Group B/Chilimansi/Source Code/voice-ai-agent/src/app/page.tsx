@@ -46,7 +46,15 @@ export default function Home() {
       const session = await startSession();
       if (!session || !client) return;
 
-      // 2. Join the Agora RTC channel as the user
+      // 2. Subscribe to remote audio (the AI agent)
+      client.on("user-published", async (user, mediaType) => {
+        await client.subscribe(user, mediaType);
+        if (mediaType === "audio") {
+          user.audioTrack?.play();
+        }
+      });
+
+      // 3. Join the Agora RTC channel as the user
       await joinVoiceSession({
         appId: session.appId,
         channel: session.channelName,
@@ -54,7 +62,7 @@ export default function Home() {
         uid: session.userUid,
       });
 
-      // 3. Create and publish local audio track
+      // 4. Create and publish local audio track
       const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
       const localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
       await client.publish([localAudioTrack]);

@@ -8,6 +8,7 @@
     "setup": "node update-templates.js"
   },
   "dependencies": {
+    "agora-rtc-sdk-ng": "^4.21.0",
     "yaml": "^2.3.4"
   }
 }
