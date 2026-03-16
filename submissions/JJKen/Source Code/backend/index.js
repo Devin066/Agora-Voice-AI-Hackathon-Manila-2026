@@ -30,10 +30,10 @@ const DEFAULT_ASR_LANGUAGE = process.env.DEFAULT_ASR_LANGUAGE || 'en-US';
 const DEFAULT_LLM_URL = process.env.DEFAULT_LLM_URL || '';
 const DEFAULT_LLM_API_KEY = process.env.DEFAULT_LLM_API_KEY || '';
 const DEFAULT_LLM_MODEL = process.env.DEFAULT_LLM_MODEL || '';
-const DEFAULT_LLM_STYLE = process.env.DEFAULT_LLM_STYLE || 'gemini';
-const DEFAULT_GREETING = process.env.DEFAULT_GREETING || 'Good to see you!';
-const DEFAULT_FAILURE_MESSAGE = process.env.DEFAULT_FAILURE_MESSAGE || 'Hold on a second.';
-const DEFAULT_LLM_MAX_HISTORY = Number(process.env.DEFAULT_LLM_MAX_HISTORY || 32);
+const DEFAULT_LLM_STYLE = process.env.DEFAULT_LLM_STYLE || 'groq';
+const DEFAULT_GREETING = process.env.DEFAULT_GREETING || 'Hello, how can I assist you?';
+const DEFAULT_FAILURE_MESSAGE = process.env.DEFAULT_FAILURE_MESSAGE || 'Please hold on a second.';
+const DEFAULT_LLM_MAX_HISTORY = Number(process.env.DEFAULT_LLM_MAX_HISTORY || 32); // Keep this line unchanged
 const DEFAULT_ELEVENLABS_TTS_KEY = process.env.ELEVENLABS_TTS_KEY || '';
 const DEFAULT_ELEVENLABS_TTS_BASE_URL = process.env.ELEVENLABS_TTS_BASE_URL || 'https://api.elevenlabs.io/v1';
 const DEFAULT_ELEVENLABS_TTS_MODEL = process.env.ELEVENLABS_TTS_MODEL || 'eleven_flash_v2_5';
@@ -174,7 +174,7 @@ function toGeminiSystemMessage(prompt) {
   };
 }
 
-function normalizeGeminiSystemMessages(messages, fallbackPrompt) {
+function normalizeGroqSystemMessages(messages, fallbackPrompt) {
   if (!Array.isArray(messages) || messages.length === 0) {
     return [toGeminiSystemMessage(fallbackPrompt)];
   }
@@ -303,40 +303,20 @@ async function startConvoAiAgent(session, agentConfig = {}) {
       uid: agentRtcUid
     });
 
-  const normalizedSystemMessages = normalizeGeminiSystemMessages(mergedLlm.system_messages, llmPrompt);
-  mergedLlm.system_messages =
-    normalizedSystemMessages.length > 0 ? normalizedSystemMessages : [toGeminiSystemMessage(llmPrompt)];
-  if (!mergedLlm.url && isRealEnvValue(DEFAULT_LLM_URL)) {
-    mergedLlm.url = DEFAULT_LLM_URL;
-  }
-  if (!mergedLlm.api_key && isRealEnvValue(DEFAULT_LLM_API_KEY)) {
-    mergedLlm.api_key = DEFAULT_LLM_API_KEY;
-  }
-  if (!mergedLlm.max_history || Number.isNaN(Number(mergedLlm.max_history))) {
-    mergedLlm.max_history = DEFAULT_LLM_MAX_HISTORY;
-  }
-  if (!mergedLlm.greeting_message) {
-    mergedLlm.greeting_message = agentConfig.greetingMessage || DEFAULT_GREETING;
-  }
-  if (!mergedLlm.failure_message) {
-    mergedLlm.failure_message = agentConfig.failureMessage || DEFAULT_FAILURE_MESSAGE;
-  }
-  if (!mergedLlm.style) {
-    mergedLlm.style = agentConfig.llmStyle || DEFAULT_LLM_STYLE;
-  }
-  if (!mergedLlm.params || typeof mergedLlm.params !== 'object' || Array.isArray(mergedLlm.params)) {
-    mergedLlm.params = {};
-  }
-  if (!mergedLlm.params.model && isRealEnvValue(DEFAULT_LLM_MODEL)) {
-    mergedLlm.params.model = DEFAULT_LLM_MODEL;
-  }
-  if (!mergedLlm.url || !mergedLlm.api_key) {
-    const error = new Error(
-      'Missing Conversational AI LLM configuration. Provide agentConfig.properties.llm or set DEFAULT_LLM_URL and DEFAULT_LLM_API_KEY.'
-    );
-    error.status = 500;
-    throw error;
-  }
+  const userSpeech = agentConfig.userSpeech || '';
+  mergedLlm.url = DEFAULT_LLM_URL;
+  mergedLlm.api_key = DEFAULT_LLM_API_KEY;
+  mergedLlm.max_history = DEFAULT_LLM_MAX_HISTORY;
+  mergedLlm.greeting_message = DEFAULT_GREETING;
+  mergedLlm.failure_message = DEFAULT_FAILURE_MESSAGE;
+  mergedLlm.style = DEFAULT_LLM_STYLE;
+  mergedLlm.params = {
+    model: 'openai/gpt-oss-120b',
+    messages: [
+      { role: 'system', content: llmPrompt },
+      { role: 'user', content: userSpeech }
+    ]
+  };
 
   const mergedTts =
     providedProperties.tts && typeof providedProperties.tts === 'object' ? { ...providedProperties.tts } : {};
