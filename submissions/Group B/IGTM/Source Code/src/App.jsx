@@ -97,6 +97,13 @@ function App() {
       })
       await addAssistantMessage(assistantText)
     } catch (error) {
+      const state = useConversationStore.getState()
+      const fallbackText = conversationEngine.generateFallback(
+        currentScenario,
+        state.negotiationState,
+        state.interviewState,
+      )
+      await addAssistantMessage(fallbackText)
       setErrorMessage(error.message || 'AI Brain unavailable. Start backend and try again.')
     } finally {
       setThinking(false)
@@ -218,8 +225,14 @@ function App() {
           keynotes: feedback.keynotes || [],
         })
       })
-      .catch((error) => {
-        setErrorMessage(error.message || 'Could not generate AI feedback summary.')
+      .catch(() => {
+        setAnalytics({
+          ...baseMetrics,
+          feedbackSummary: 'Session completed. Keep practicing with clearer examples and stronger measurable outcomes.',
+          strengths: ['Stayed engaged in the scenario', 'Completed a full practice session'],
+          tips: ['Use STAR structure consistently', 'Add metrics to each example'],
+          keynotes: ['Brain fallback feedback was used for this session'],
+        })
       })
   }
 
@@ -257,9 +270,18 @@ function App() {
       })
       return true
     } catch (error) {
-      setUploadMessage({ type: 'error', text: error.message || 'AI Brain analysis failed.' })
-      setErrorMessage('AI Brain is not reachable. Run npm run brain and verify API key.')
-      return false
+      const fallback = conversationEngine.fallbackBrainAnalysis(nextBrainProfile)
+      setBrainProfile({
+        analysisSummary: fallback.summary,
+        generatedInterviewQuestions: fallback.interviewQuestions,
+        generatedNegotiationQuestions: fallback.negotiationQuestions,
+      })
+      setUploadMessage({
+        type: 'info',
+        text: `AI Brain fallback generated ${fallback.interviewQuestions.length} interview and ${fallback.negotiationQuestions.length} negotiation questions.`,
+      })
+      setErrorMessage(error.message || 'AI Brain analysis failed. Using fallback mode.')
+      return true
     } finally {
       setBrainAnalyzing(false)
     }

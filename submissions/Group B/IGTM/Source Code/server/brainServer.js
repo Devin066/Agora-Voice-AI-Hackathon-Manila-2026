@@ -2,7 +2,7 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import OpenAI from 'openai'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 const app = express()
@@ -347,6 +347,15 @@ app.post('/api/brain/feedback', async (req, res) => {
     return res.status(500).json({ error: error?.message || 'Brain feedback failed' })
   }
 })
+
+const distPath = path.join(process.cwd(), 'dist')
+const indexPath = path.join(distPath, 'index.html')
+if (existsSync(indexPath)) {
+  app.use(express.static(distPath))
+  app.get(/^(?!\/api\/).*/, (_req, res) => {
+    res.sendFile(indexPath)
+  })
+}
 
 app.listen(port, () => {
   process.stdout.write(`AI Brain server running on http://localhost:${port}\n`)
