@@ -290,4 +290,3 @@ For hackathon-related questions:
 - Ensure all permissions are granted
 
 **Remember**: This is a hackathon MVP focused on demonstrating assistive awareness through Agora voice interaction. Keep testing simple and demo-focused.
->>>>>>> Stashed changes
