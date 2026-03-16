@@ -25,9 +25,28 @@ const DEFAULT_TTS_PARAMS_JSON = process.env.DEFAULT_TTS_PARAMS_JSON || '';
 const DEFAULT_TTS_API_KEY = process.env.DEFAULT_TTS_API_KEY || '';
 const DEFAULT_TTS_REGION = process.env.DEFAULT_TTS_REGION || '';
 const DEFAULT_TTS_VOICE_ID = process.env.DEFAULT_TTS_VOICE_ID || '';
+const DEFAULT_ASR_VENDOR = process.env.DEFAULT_ASR_VENDOR || 'ares';
+const DEFAULT_ASR_LANGUAGE = process.env.DEFAULT_ASR_LANGUAGE || 'en-US';
 const DEFAULT_LLM_URL = process.env.DEFAULT_LLM_URL || '';
 const DEFAULT_LLM_API_KEY = process.env.DEFAULT_LLM_API_KEY || '';
 const DEFAULT_LLM_MODEL = process.env.DEFAULT_LLM_MODEL || '';
+const DEFAULT_LLM_STYLE = process.env.DEFAULT_LLM_STYLE || 'gemini';
+const DEFAULT_GREETING = process.env.DEFAULT_GREETING || 'Good to see you!';
+const DEFAULT_FAILURE_MESSAGE = process.env.DEFAULT_FAILURE_MESSAGE || 'Hold on a second.';
+const DEFAULT_LLM_MAX_HISTORY = Number(process.env.DEFAULT_LLM_MAX_HISTORY || 32);
+const DEFAULT_ELEVENLABS_TTS_KEY = process.env.ELEVENLABS_TTS_KEY || '';
+const DEFAULT_ELEVENLABS_TTS_BASE_URL = process.env.ELEVENLABS_TTS_BASE_URL || 'https://api.elevenlabs.io/v1';
+const DEFAULT_ELEVENLABS_TTS_MODEL = process.env.ELEVENLABS_TTS_MODEL || 'eleven_flash_v2_5';
+const DEFAULT_ELEVENLABS_TTS_VOICE_ID = process.env.ELEVENLABS_TTS_VOICE_ID || '';
+const DEFAULT_OPENAI_TTS_API_KEY = process.env.OPENAI_TTS_API_KEY || '';
+const DEFAULT_OPENAI_TTS_BASE_URL = process.env.OPENAI_TTS_BASE_URL || 'https://api.openai.com/v1';
+const DEFAULT_OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts';
+const DEFAULT_OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE || 'coral';
+const DEFAULT_OPENAI_TTS_SPEED = parseFloat(process.env.OPENAI_TTS_SPEED || '1.0');
+const DEFAULT_MICROSOFT_TTS_SPEED = parseFloat(process.env.DEFAULT_MICROSOFT_TTS_SPEED || '1.0');
+const DEFAULT_MICROSOFT_TTS_VOLUME = parseFloat(process.env.DEFAULT_MICROSOFT_TTS_VOLUME || '70');
+const DEFAULT_MICROSOFT_TTS_SAMPLE_RATE = Number(process.env.DEFAULT_MICROSOFT_TTS_SAMPLE_RATE || 24000);
+const AGORA_AGENT_UID = process.env.AGORA_AGENT_UID || '';
 const MAX_RTC_UID = 2147483647;
 
 const sessions = new Map();
@@ -148,6 +167,42 @@ function parseJsonObject(rawValue) {
   }
 }
 
+function toGeminiSystemMessage(prompt) {
+  return {
+    role: 'user',
+    parts: [{ text: prompt }]
+  };
+}
+
+function normalizeGeminiSystemMessages(messages, fallbackPrompt) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return [toGeminiSystemMessage(fallbackPrompt)];
+  }
+
+  return messages
+    .map((message) => {
+      if (!message || typeof message !== 'object') {
+        return null;
+      }
+
+      const role = message.role || 'user';
+
+      if (Array.isArray(message.parts) && message.parts.length > 0) {
+        return { ...message, role };
+      }
+
+      if (typeof message.content === 'string' && message.content.trim()) {
+        return {
+          role,
+          parts: [{ text: message.content }]
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+}
+
 function getConvoAiAuthHeader() {
   const raw = `${process.env.AGORA_CUSTOMER_ID}:${process.env.AGORA_CUSTOMER_SECRET}`;
   return `Basic ${Buffer.from(raw).toString('base64')}`;
@@ -222,26 +277,50 @@ async function startConvoAiAgent(session, agentConfig = {}) {
     agentConfig.enableStringUid !== undefined ? Boolean(agentConfig.enableStringUid) : true;
   const remoteRtcUids =
     Array.isArray(agentConfig.remoteRtcUids) && agentConfig.remoteRtcUids.length > 0
-      ? agentConfig.remoteRtcUids.map((uid) => normalizeRtcUid(uid))
-      : [normalizeRtcUid(session.uid)];
+      ? agentConfig.remoteRtcUids.map((uid) => (uid === '*' ? '*' : normalizeRtcUid(uid)))
+      : ['*'];
 
   // Agent and remote participants must not share the same RTC UID in the same channel.
   let agentRtcUid =
     agentConfig.agentRtcUid !== undefined
       ? normalizeRtcUid(agentConfig.agentRtcUid)
+      : isRealEnvValue(AGORA_AGENT_UID)
+      ? normalizeRtcUid(Number(AGORA_AGENT_UID))
       : normalizeRtcUid(session.uid + 1);
   if (remoteRtcUids.includes(agentRtcUid)) {
     agentRtcUid = normalizeRtcUid(agentRtcUid + 1);
   }
 
-  if (!Array.isArray(mergedLlm.system_messages) || mergedLlm.system_messages.length === 0) {
-    mergedLlm.system_messages = [{ role: 'system', content: llmPrompt }];
-  }
+  // ConvoAI agent must use a token minted for its own UID, not the user's UID.
+  const agentRtcToken =
+    agentConfig.agentToken ||
+    buildRtcToken({
+      appId: process.env.AGORA_APP_ID,
+      appCertificate: process.env.AGORA_APP_CERTIFICATE,
+      channelName: session.channelName,
+      uid: agentRtcUid
+    });
+
+  const normalizedSystemMessages = normalizeGeminiSystemMessages(mergedLlm.system_messages, llmPrompt);
+  mergedLlm.system_messages =
+    normalizedSystemMessages.length > 0 ? normalizedSystemMessages : [toGeminiSystemMessage(llmPrompt)];
   if (!mergedLlm.url && isRealEnvValue(DEFAULT_LLM_URL)) {
     mergedLlm.url = DEFAULT_LLM_URL;
   }
   if (!mergedLlm.api_key && isRealEnvValue(DEFAULT_LLM_API_KEY)) {
     mergedLlm.api_key = DEFAULT_LLM_API_KEY;
+  }
+  if (!mergedLlm.max_history || Number.isNaN(Number(mergedLlm.max_history))) {
+    mergedLlm.max_history = DEFAULT_LLM_MAX_HISTORY;
+  }
+  if (!mergedLlm.greeting_message) {
+    mergedLlm.greeting_message = agentConfig.greetingMessage || DEFAULT_GREETING;
+  }
+  if (!mergedLlm.failure_message) {
+    mergedLlm.failure_message = agentConfig.failureMessage || DEFAULT_FAILURE_MESSAGE;
+  }
+  if (!mergedLlm.style) {
+    mergedLlm.style = agentConfig.llmStyle || DEFAULT_LLM_STYLE;
   }
   if (!mergedLlm.params || typeof mergedLlm.params !== 'object' || Array.isArray(mergedLlm.params)) {
     mergedLlm.params = {};
@@ -299,6 +378,51 @@ async function startConvoAiAgent(session, agentConfig = {}) {
     if (!mergedTtsParams.voice_name && isRealEnvValue(DEFAULT_TTS_VOICE_ID)) {
       mergedTtsParams.voice_name = DEFAULT_TTS_VOICE_ID;
     }
+    if (!mergedTtsParams.speed) {
+      mergedTtsParams.speed = DEFAULT_MICROSOFT_TTS_SPEED;
+    }
+    if (!mergedTtsParams.volume) {
+      mergedTtsParams.volume = DEFAULT_MICROSOFT_TTS_VOLUME;
+    }
+    if (!mergedTtsParams.sample_rate) {
+      mergedTtsParams.sample_rate = DEFAULT_MICROSOFT_TTS_SAMPLE_RATE;
+    }
+  }
+
+  if (!mergedTts.addon && String(mergedTts.vendor || '').toLowerCase() === 'elevenlabs') {
+    if (!mergedTtsParams.key && isRealEnvValue(DEFAULT_ELEVENLABS_TTS_KEY)) {
+      mergedTtsParams.key = DEFAULT_ELEVENLABS_TTS_KEY;
+    }
+    if (!mergedTtsParams.base_url) {
+      mergedTtsParams.base_url = DEFAULT_ELEVENLABS_TTS_BASE_URL;
+    }
+    if (!mergedTtsParams.model_id) {
+      mergedTtsParams.model_id = DEFAULT_ELEVENLABS_TTS_MODEL;
+    }
+    if (!mergedTtsParams.voice_id && isRealEnvValue(DEFAULT_ELEVENLABS_TTS_VOICE_ID)) {
+      mergedTtsParams.voice_id = DEFAULT_ELEVENLABS_TTS_VOICE_ID;
+    }
+    if (!mergedTtsParams.sample_rate) {
+      mergedTtsParams.sample_rate = 24000;
+    }
+  }
+
+  if (!mergedTts.addon && String(mergedTts.vendor || '').toLowerCase() === 'openai') {
+    if (!mergedTtsParams.api_key && isRealEnvValue(DEFAULT_OPENAI_TTS_API_KEY)) {
+      mergedTtsParams.api_key = DEFAULT_OPENAI_TTS_API_KEY;
+    }
+    if (!mergedTtsParams.base_url) {
+      mergedTtsParams.base_url = DEFAULT_OPENAI_TTS_BASE_URL;
+    }
+    if (!mergedTtsParams.model) {
+      mergedTtsParams.model = DEFAULT_OPENAI_TTS_MODEL;
+    }
+    if (!mergedTtsParams.voice) {
+      mergedTtsParams.voice = DEFAULT_OPENAI_TTS_VOICE;
+    }
+    if (!mergedTtsParams.speed) {
+      mergedTtsParams.speed = DEFAULT_OPENAI_TTS_SPEED;
+    }
   }
 
   if (!mergedTts.addon && mergedTts.vendor && Object.keys(mergedTtsParams).length > 0) {
@@ -313,22 +437,61 @@ async function startConvoAiAgent(session, agentConfig = {}) {
     throw error;
   }
 
+  const resolvedAgentName =
+    agentConfig.name || `${DEFAULT_ASSISTANT_NAME}-${session.sessionId || session.channelName}`;
+
   const payload = {
-    name: agentConfig.name || DEFAULT_ASSISTANT_NAME,
+    name: resolvedAgentName,
     properties: {
       channel: session.channelName,
-      token: session.rtcToken,
+      token: agentRtcToken,
       agent_rtc_uid: enableStringUid ? String(agentRtcUid) : agentRtcUid,
-      remote_rtc_uids: enableStringUid ? remoteRtcUids.map((uid) => String(uid)) : remoteRtcUids,
+      agent_rtm_uid: `${agentRtcUid}-${session.channelName}`,
+      remote_rtc_uids: enableStringUid
+        ? remoteRtcUids.map((uid) => (uid === '*' ? '*' : String(uid)))
+        : remoteRtcUids,
+      advanced_features: {
+        enable_rtm: true
+      },
       enable_string_uid: enableStringUid,
       idle_timeout: Number(agentConfig.idleTimeout || 120),
+      asr: {
+        vendor: agentConfig.asrVendor || DEFAULT_ASR_VENDOR,
+        language: agentConfig.asrLanguage || DEFAULT_ASR_LANGUAGE
+      },
       ...providedProperties,
       llm: mergedLlm,
       tts: mergedTts
     }
   };
 
+  console.log(
+    JSON.stringify({
+      level: 'info',
+      event: 'convo_ai_start_payload',
+      channel: session.channelName,
+      agentRtcUid: payload.properties.agent_rtc_uid,
+      agentRtmUid: payload.properties.agent_rtm_uid,
+      remoteRtcUids: payload.properties.remote_rtc_uids,
+      enableStringUid: payload.properties.enable_string_uid,
+      ttsVendor: payload.properties.tts?.vendor || null,
+      hasTtsAddon: Boolean(payload.properties.tts?.addon),
+      llmUrl: payload.properties.llm?.url || null,
+      llmModel: payload.properties.llm?.params?.model || null,
+      asrVendor: payload.properties.asr?.vendor || null,
+      asrLanguage: payload.properties.asr?.language || null
+    })
+  );
+
   const response = await callConvoAi({ path, body: payload });
+  console.log(
+    JSON.stringify({
+      level: 'info',
+      event: 'convo_ai_start_response',
+      channel: session.channelName,
+      response
+    })
+  );
   return {
     raw: response,
     agentSessionId:
@@ -427,6 +590,9 @@ function createSession(req, res) {
 
 async function startConversation(req, res) {
   const { sessionId, agentConfig = {} } = req.body;
+  const includeDebug =
+    String(req.query.debug || '').toLowerCase() === '1' ||
+    String(req.query.debug || '').toLowerCase() === 'true';
 
   if (!sessionId) {
     return res.status(400).json({
@@ -501,7 +667,8 @@ async function startConversation(req, res) {
         state: 'joined',
         agentSessionId: session.agentSessionId
       }
-    }
+    },
+    ...(includeDebug ? { debug: { convoAiStartResponse: session.convoAiStartResponse } } : {})
   });
 }
 
@@ -571,6 +738,12 @@ async function endSession(req, res) {
   return res.status(200).json(response);
 }
 
+function generateChannelName() {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `heardchef-${timestamp}-${random}`;
+}
+
 // 1. Health endpoint for demo safety
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -585,6 +758,9 @@ app.get('/health', (req, res) => {
 });
 
 // Locked contract routes
+app.get(`${API_BASE}/channel`, (req, res) => {
+  res.json({ channelName: generateChannelName() });
+});
 app.post(`${API_BASE}/session`, createSession);
 app.post(`${API_BASE}/start`, startConversation);
 app.post(`${API_BASE}/end`, endSession);
