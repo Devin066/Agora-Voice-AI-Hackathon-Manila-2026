@@ -1,292 +1,178 @@
 # VisionVoice
 
-An AI-powered assistive smart-glasses simulator that transforms any webcam into a voice-guided navigation assistant for visually impaired users.
+VisionVoice is a smart-glasses simulator that turns a webcam into an assistive awareness companion for visually impaired users. It detects nearby objects, recognizes pre-registered loved ones, builds short scene context, and speaks guidance through a patient-first voice workflow.
 
-## 🎯 What It Does
+## What It Does
 
-VisionVoice uses your webcam to see the world and speaks concise, helpful information about what's around you:
+- Detects nearby objects such as chairs, tables, bottles, bags, and people
+- Recognizes known faces that were registered in the contact dashboard
+- Speaks short scene summaries in `Patient view`
+- Answers follow-up voice or text questions using the current scene context
+- Supports a caregiver-style contact dashboard for monitoring and face registration
 
-- **Proactive Alerts**: "Chair ahead, slightly left"
-- **Person Recognition**: "Angela is in front of you"
-- **Voice Questions**: Ask "What's in front?" and get spoken answers
-- **Caregiver Support**: Optional human help when needed
+## Current Demo Flow
 
-## 🚀 Quick Start
+- `Patient view`: the AI speaks here
+- `Contact dashboard`: visual monitoring and setup only, no AI voice
+- Patient narration is based on object detection plus recognized-face context
+- The project currently prefers a stable local fallback voice path for demo reliability
+
+## Project Structure
+
+- `code/frontend`: React + Vite app
+- `code/backend`: Express + TypeScript backend for Gemini, TTS, and Agora agent endpoints
+- `code/docs`: supporting product and architecture notes
+
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 16+
-- Webcam access
-- Agora account (free tier works)
+- Node.js 18+
+- Webcam and microphone access
+- Backend API keys configured in `code/backend/.env`
 
-### Setup
-
-1. **Clone and Install**
+### 1. Start the backend
 
 ```bash
-cd submissions/Group A/iteam/code
+cd "submissions/Group A/iteam/code/backend"
 npm install
-```
-
-1. **Configure Agora**
-   Create a `.env` file in the root directory:
-
-```
-VITE_AGORA_APP_ID=your_agora_app_id
-VITE_AGORA_CHANNEL=your_channel_name
-VITE_AGORA_TOKEN=your_token (optional for development)
-```
-
-1. **Start Development**
-
-```bash
 npm run dev
 ```
 
-1. **Open Browser**
-   Navigate to `http://localhost:5173`
-
-## 📋 Agora Configuration
-
-### Getting Agora Credentials
-
-1. **Create Agora Account**: <https://console.agora.io>
-2. **Create New Project**:
-   - Project Name: "VisionVoice"
-   - Authentication: APP ID + Token (recommended)
-3. **Copy APP ID**: Found in project dashboard
-4. **Generate Token**: Use token generator for your channel
-
-### Environment Variables
-
-| Variable             | Description                     | Required     |
-| :------------------- | :------------------------------ | :----------- |
-| VITE\_AGORA\_APP\_ID | Your Agora project APP ID       | ✅            |
-| VITE\_AGORA\_CHANNEL | Channel name for voice sessions | ✅            |
-| VITE\_AGORA\_TOKEN   | Authentication token            | ❌ (dev only) |
-
-### Testing Without Token
-
-For local development, you can use APP ID only (less secure):
-
-```
-VITE_AGORA_APP_ID=your_app_id
-VITE_AGORA_CHANNEL=test_channel
-```
-
-## 🛠️ Technical Stack
-
-- **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS
-- **Computer Vision**:
-  - `@tensorflow-models/coco-ssd` (object detection)
-  - `@vladmandic/face-api` (face recognition)
-- **Voice**: Agora Web SDK + Agora ConvoAI
-- **Build**: Vite
-
-## 📁 Project Structure
-
-```
-src/
-├── components/          # React components
-│   ├── WebcamFeed.tsx   # Camera capture
-│   ├── ObjectDetector.tsx # CV object detection
-│   ├── FaceRecognizer.tsx # Face recognition
-│   ├── Dashboard.tsx    # Main UI dashboard
-│   └── VoiceInterface.tsx # Agora voice handling
-├── services/           # Core services
-│   ├── agora.ts       # Agora SDK integration
-│   ├── cvPipeline.ts  # Computer vision pipeline
-│   └── contextBuilder.ts # Scene context generation
-├── hooks/             # Custom React hooks
-│   ├── useWebcam.ts   # Webcam management
-│   ├── useObjectDetection.ts # Object detection logic
-│   └── useFaceRecognition.ts # Face recognition logic
-├── utils/             # Utility functions
-│   ├── hazardAnalysis.ts # Hazard detection logic
-│   └── voiceCommands.ts # Voice command parsing
-└── types/             # TypeScript type definitions
-```
-
-## 🎮 Usage Guide
-
-### Basic Operation
-
-1. **Grant Permissions**: Allow webcam and microphone access
-2. **Wait for Status**: All indicators should show green
-3. **Start Detection**: Objects and faces automatically detected
-4. **Voice Interaction**: Click microphone or use voice commands
-
-### Voice Commands
-
-- "What's in front of me?"
-- "Is the path clear?"
-- "Who is here?"
-- "Call \[person name]" (caregiver escalation)
-- "Help" or "Emergency" (safeword)
-
-### UI Elements
-
-**Status Bar**: Shows camera, CV, and Agora connection status
-**Webcam Feed**: Live preview with detection overlays
-**Scene Summary**: Current objects, people, and hazards
-**Transcript**: History of voice interactions
-
-## 🔧 Development
-
-### Available Scripts
+### 2. Start the frontend
 
 ```bash
-npm run dev      # Start development server
-npm run build    # Build for production
-npm run preview  # Preview production build
-npm run lint     # Run ESLint
-npm run type-check # Run TypeScript checks
+cd "submissions/Group A/iteam/code/frontend"
+npm install
+npm run dev
 ```
 
-### Adding New Objects
+### 3. Open the app
 
-Modify the detection pipeline in `src/services/cvPipeline.ts`:
+Open the local Vite URL shown in the terminal, usually:
 
-```typescript
-const OBJECTS_OF_INTEREST = [
-  'person', 'chair', 'bottle', 'cup', 'laptop', 
-  'cell phone', 'book', 'backpack', 'suitcase'
-];
+```text
+http://localhost:5173
 ```
 
-### Tuning Detection
+or
 
-Adjust sensitivity in `src/utils/hazardAnalysis.ts`:
-
-```typescript
-const PROXIMITY_THRESHOLD = 0.3; // 30% of frame
-const CONFIDENCE_THRESHOLD = 0.7; // 70% confidence
+```text
+http://localhost:5174
 ```
 
-## 🚨 Fallback Modes
+## How To Use The Demo
 
-If computer vision fails:
+### Contact Dashboard
 
-- **Manual Mode**: Click objects in webcam feed
-- **Test Mode**: Use pre-configured scenarios
-- **Text Mode**: Type questions manually
+Use this view to:
 
-If Agora voice fails:
+- monitor the live camera feed
+- see detected objects visually
+- capture a face photo
+- register a loved one by name
+- test typed prompts manually
 
-- **Text Display**: Responses shown in transcript
-- **Local TTS**: Browser text-to-speech backup
-- **Visual Alerts**: Color-coded status changes
+### Patient View
 
-## 🧪 Testing
+Use this view to:
 
-### Manual Testing
+- hear spoken context about detected objects
+- hear recognized loved-one context when available
+- ask follow-up questions
+- experience the assistive voice workflow
 
-1. Place common objects (chair, bottle, bag) in view
-2. Test with registered teammates' faces
-3. Verify voice responses are concise
-4. Check fallback modes work
+## Recognition And Context
 
-### Demo Scenarios
+VisionVoice combines two perception layers:
 
-**Scenario 1 - Hazard Detection**:
+- `Object detection`: identifies obstacles and useful nearby items
+- `Face recognition`: identifies only pre-registered known people
 
-- Place chair 3 feet away
-- Should alert: "Chair ahead, slightly left"
+These are merged into a short scene summary such as:
 
-**Scenario 2 - Person Recognition**:
-
-- Have registered teammate enter frame
-- Should say: "\[Name] is in front of you"
-
-**Scenario 3 - Voice Questions**:
-
-- Ask: "What's in front?"
-- Should describe current scene
-
-## 📱 Browser Support
-
-- **Chrome**: Full support (recommended)
-- **Firefox**: Full support
-- **Safari**: Full support
-- **Edge**: Full support
-
-**Requirements**:
-
-- WebRTC support
-- WebGL for CV acceleration
-- Modern JavaScript (ES2020+)
-
-## 🔒 Privacy & Security
-
-- **Local Processing**: All CV happens in browser
-- **No Image Storage**: Webcam feed never saved
-- **Face Recognition**: Pre-registered contacts only
-- **Opt-in Features**: All sharing requires consent
-- **Secure Connections**: HTTPS required for production
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Webcam not working**:
-
-- Check browser permissions
-- Ensure HTTPS in production
-- Try different browser
-
-**Objects not detected**:
-
-- Improve lighting conditions
-- Move objects closer (3-6 feet)
-- Check confidence threshold
-
-**Voice not responding**:
-
-- Verify Agora credentials
-- Check network connection
-- Try manual text input
-
-**Face recognition failing**:
-
-- Ensure face is well-lit
-- Look directly at camera
-- Re-register if needed
-
-### Debug Mode
-
-Enable verbose logging:
-
-```typescript
-const DEBUG = true; // In src/config.ts
+```text
+Chair in front of you. Angela is in front of you.
 ```
 
-## 🤝 Contributing
+If no strong reading is available yet, the assistant falls back to a cautious summary instead of inventing certainty.
 
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Submit pull request
+## Voice Behavior
 
-## 📄 License
+- AI speech only happens in `Patient view`
+- The app prefers a stable local voice fallback path for reliability
+- Agora token and agent routes still exist in the backend for the live voice architecture
+- Browser native speech may be used when upstream TTS is unavailable
 
-This project is part of the Voice AI Hackathon submission. See LICENSE file for details.
+## Environment Notes
 
-## 🙏 Acknowledgments
+### Frontend
 
-- Agora for voice AI technology
-- TensorFlow team for object detection models
-- Face API.js for face recognition
-- Voice AI Hackathon organizers
+Client-safe variables belong in `code/frontend/.env`, for example:
 
-## 📞 Support
+```env
+VITE_AGORA_APP_ID=...
+VITE_AGORA_CHANNEL=...
+VITE_AGORA_TOKEN=...
+VITE_LOCAL_AI_BASE_URL=http://localhost:8000
+```
 
-For hackathon-related questions:
+### Backend
 
-- Check troubleshooting section
-- Review Agora documentation
-- Test with provided demo scenarios
-- Ensure all permissions are granted
+Create `code/backend/.env` from `code/backend/.env.example` and fill in your real keys there.
 
-**Remember**: This is a hackathon MVP focused on demonstrating assistive awareness through Agora voice interaction. Keep testing simple and demo-focused.
+Do not commit backend secrets or frontend local `.env` files.
+
+## Tech Stack
+
+- Frontend: React, TypeScript, Vite
+- Backend: Express, TypeScript
+- Object detection: `@tensorflow-models/coco-ssd`
+- Face recognition: `@vladmandic/face-api`
+- Voice/LLM integration: Gemini, Agora endpoints, local fallback speech
+
+## Manual Test Checklist
+
+1. Open `Contact dashboard`
+2. Confirm the camera feed is visible
+3. Put a chair or similar object in view
+4. Register one teammate in the face library
+5. Switch to `Patient view`
+6. Confirm the assistant speaks object and face context
+7. Ask a short follow-up question
+
+## Known Demo Constraints
+
+- Face recognition works only for people registered in the current browser
+- Browser speech may be used if upstream TTS is unavailable
+- Camera and mic permissions must be allowed
+- Good lighting improves both object and face recognition
+
+## Troubleshooting
+
+### Camera not showing
+
+- Allow browser camera permission
+- Close other apps using the camera
+- Hard refresh the page
+
+### AI not speaking
+
+- Make sure you are in `Patient view`
+- Check that the backend is running on `http://localhost:8000`
+- Hard refresh after backend changes
+
+### Face recognition not naming people
+
+- Register the person first in `Contact dashboard`
+- Use a clear, front-facing photo
+- Improve lighting and move closer
+
+## Hackathon Positioning
+
+VisionVoice is a hackathon MVP focused on assistive awareness, simple spoken guidance, and a clean demo flow. The strongest demo path is:
+
+1. detect an object
+2. recognize a known person
+3. speak a combined scene summary
+4. answer a short patient follow-up question
