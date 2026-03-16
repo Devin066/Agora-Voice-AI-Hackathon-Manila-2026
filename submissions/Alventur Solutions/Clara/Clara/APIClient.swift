@@ -18,7 +18,7 @@ final class APIClient {
     static let shared = APIClient()
     var baseURL: URL
 
-    init(baseURL: URL = URL(string: "http://127.0.0.1:8000")!) {
+    init(baseURL: URL = URL(string: "http://172.20.10.5:8000")!) {
         self.baseURL = baseURL
     }
 
@@ -40,7 +40,7 @@ final class APIClient {
 
     func startSession(channelName: String?, scenario: ScenarioType, userId: String?) async throws -> StartSessionResponse {
         let url = baseURL.appendingPathComponent("session").appendingPathComponent("start")
-        let body = StartSessionRequest(channelName: channelName, scenario: scenario, userId: userId)
+        let body = StartSessionRequest(channelName: channelName, scenario: scenario.rawValue, userId: userId)
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -1,4 +1,4 @@
-# VoiceIQ — Real-Time AI Voice Trainer
+# Clara — Real-Time AI Voice Trainer
 ## Product Requirements Document + System Architecture
 **Hackathon:** AWS Cloud Clubs x Agora Philippines  
 **Track:** Conversational AI / Real-Time Engagement  
@@ -13,12 +13,12 @@
 Public speaking is the #1 fear globally, yet existing training tools (Toastmasters apps, Speeko, VirtualSpeech) only provide feedback *after* a speech ends. There is no tool that listens in real time, analyzes voice characteristics as you speak, and provides intelligent, context-aware feedback *during* the session — the way a human coach would.
 
 ### 1.2 Solution
-VoiceIQ is an iOS application powered by Agora ConvoAI that acts as a real-time AI voice coach. The user speaks in a chosen scenario (public speech, job interview, debate, English fluency practice). The app simultaneously analyzes pitch, intonation, pacing, filler words, and vocal energy using native iOS audio APIs, while an Agora ConvoAI agent listens and delivers intelligent spoken feedback during natural pauses — without interrupting the speaker's flow.
+Clara is an iOS application powered by Agora ConvoAI that acts as a real-time AI voice coach. The user speaks in a chosen scenario (public speech, job interview, debate, English fluency practice). The app simultaneously analyzes pitch, intonation, pacing, filler words, and vocal energy using native iOS audio APIs, while an Agora ConvoAI agent listens and delivers intelligent spoken feedback during natural pauses — without interrupting the speaker's flow.
 
 ### 1.3 Core Value Proposition
 - Feedback happens **during** the session, not after
 - The AI coach **speaks back** to the user — it is a two-way voice conversation
-- Native iOS features (Back Tap, Dynamic Island, CoreHaptics) make the experience feel premium and frictionless
+- Native iOS features (Back Tap to trigger Dynamic Island prompts, CoreHaptics) make the experience feel premium and frictionless
 - Metrics are scientific, specific, and actionable — not generic
 
 ### 1.4 Target Users
@@ -69,14 +69,14 @@ These features must work in the demo.
 | WPM meter | Words per minute tracked in real time |
 | AI spoken feedback | ConvoAI agent speaks feedback during user's pauses |
 | Session summary | Post-session report with all metrics |
-| Back Tap to start/stop | Double tap Apple logo triggers session toggle |
+| Back Tap & Dynamic Island | Double tap Apple logo expands Dynamic Island prompting the user for scenario selection to start session |
 
 ### 3.2 Should-Have (P1)
 Include if time permits.
 
 | Feature | Description |
 |---|---|
-| Dynamic Island live metrics | Pitch + WPM shown on Dynamic Island during session |
+| Dynamic Island live metrics | Pitch + WPM shown on Dynamic Island during active session |
 | CoreHaptics on filler words | Phone buzzes every time a filler word is detected |
 | Session history | Past sessions stored and viewable |
 | Monotone detection | Alert when pitch variance is too low for too long |
@@ -214,9 +214,9 @@ The session summary screen shows an overall score (0–100) computed from weight
 - `SpeechAnalyzer` — Apple Speech framework → transcription, fillers, WPM
 
 #### Native Features Layer
-- `BackTapHandler` — registers UIAccessibility magic tap, posts notification
+- `BackTapHandler` — registers UIAccessibility magic tap, triggers Dynamic Island scenario prompt
 - `HapticsEngine` — CoreHaptics patterns for filler word alerts
-- `LiveActivityManager` — starts/updates/ends ActivityKit Live Activity
+- `LiveActivityManager` — handles Dynamic Island UI (scenario prompt and active session metrics)
 
 #### Data Layer
 - `SwiftData` — stores `VoiceSession` and `SessionMetrics` models locally
@@ -271,7 +271,7 @@ Apple Speech Framework runs in parallel:
 ```
 IDLE
   │
-  │  [User taps Start OR Back Tap]
+  │  [User taps Start in App OR User Back Taps -> Dynamic Island Prompts -> Selects Scenario]
   ▼
 CONNECTING
   │  POST /session/start → backend
@@ -290,7 +290,7 @@ ACTIVE
   │      → ConvoAI agent speaks feedback
   │      → iOS resumes analysis after agent finishes
   │
-  │  [User taps Stop OR Back Tap]
+  │  [User taps Stop in App OR Dynamic Island Stop Button]
   ▼
 STOPPING
   │  POST /session/stop → backend
@@ -556,7 +556,7 @@ Session Summary Screen
 This is the recommended live demo flow for judges.
 
 1. Open app → show Scenario Picker → select "Job Interview Prep"
-2. **Double tap the Apple logo** → session starts immediately (Back Tap wow moment)
+2. **Double tap the Apple logo** → Dynamic Island expands, asking what scenario you want to practice. User selects and session starts (Back Tap + Dynamic Island wow moment)
 3. Speak for 30 seconds, intentionally using filler words — show the live filler counter incrementing and the **phone buzzing** on each filler word
 4. Pause deliberately — ConvoAI agent speaks back with feedback on the filler words
 5. Continue speaking with more varied pitch — show the live pitch graph moving dynamically
@@ -588,7 +588,7 @@ The hackathon build is considered successful if all of the following are demonst
 - [ ] Real-time pitch graph updates live during speech
 - [ ] Filler word counter increments correctly during speech
 - [ ] WPM updates every 5 seconds
-- [ ] Back Tap successfully toggles session start/stop
+- [ ] Back Tap triggers Dynamic Island prompting user for scenario selection, which then starts the session
 - [ ] Session summary shows meaningful scores after session ends
 - [ ] Demo runs without crashing for at least 3 minutes
 
