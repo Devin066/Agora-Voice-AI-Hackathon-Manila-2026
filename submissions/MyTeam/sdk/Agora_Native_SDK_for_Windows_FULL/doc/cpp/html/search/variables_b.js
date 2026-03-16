@@ -1,0 +1,23 @@
+var searchData=
+[
+  ['kadmmaxdevicenamesize_7790',['kAdmMaxDeviceNameSize',['../namespaceagora_1_1rtc.html#ab4fd029c4156c758f1c049c772d6d6eb',1,'agora::rtc']]],
+  ['kadmmaxguidsize_7791',['kAdmMaxGuidSize',['../namespaceagora_1_1rtc.html#a77a30ff9338c9952b2c57ff7ebed089c',1,'agora::rtc']]],
+  ['kagoraaudioextendlength_7792',['kAgoraAudioExtendLength',['../namespaceagora_1_1rtc.html#a4548e0b6f3b798de2c7e5ef5ef7dbf33',1,'agora::rtc']]],
+  ['kagoraheaderlength_7793',['kAgoraHeaderLength',['../namespaceagora_1_1rtc.html#a3f5ad00f79ec5d69655dd172b8aa2920',1,'agora::rtc']]],
+  ['kaudiostreamtrackid_7794',['kAudioStreamTrackId',['../namespaceagora_1_1rtc.html#ad6a1a941e587b5a19a1487454a13fe8f',1,'agora::rtc']]],
+  ['kbitrate_7795',['kBitrate',['../structagora_1_1rtc_1_1_simulcast_stream_config.html#a03a7b732b21f98ae923b80ff0dbe69c2',1,'agora::rtc::SimulcastStreamConfig']]],
+  ['kdeviceidsize_7796',['kDeviceIdSize',['../namespaceagora_1_1rtc.html#ad36b154713b817f964dc2cc7ad6af152',1,'agora::rtc']]],
+  ['key_5fforce_5fdevice_5fscore_7797',['key_force_device_score',['../structagora_1_1rtc_1_1_video_configuration_ex.html#a2e7d15e4a3f6a27291ed5f1e049abb9a',1,'agora::rtc::VideoConfigurationEx']]],
+  ['key_5fframe_5finterval_7798',['key_frame_interval',['../structagora_1_1rtc_1_1_video_configuration_ex.html#a988f36a8c12078dc79be284399b7452d',1,'agora::rtc::VideoConfigurationEx']]],
+  ['key_5fframe_5finterval_5fintra_5frequest_7799',['key_frame_interval_intra_request',['../structagora_1_1rtc_1_1_video_configuration_ex.html#aac2426afc7a210ce436ea76cbc745275',1,'agora::rtc::VideoConfigurationEx']]],
+  ['kintervalinmillseconds_7800',['kIntervalInMillseconds',['../namespaceagora_1_1rtc.html#a150844ef58e33b25f1ea24c24f3a28e8',1,'agora::rtc']]],
+  ['kmaxcharbufferlength_7801',['kMaxCharBufferLength',['../namespaceagora_1_1media_1_1base.html#ae6ccc1d9b35ac09778ffd36da2862324',1,'agora::media::base']]],
+  ['kmaxcodecnamelength_7802',['kMaxCodecNameLength',['../namespaceagora_1_1media_1_1base.html#a08321784e3dc1d0e3f888153a4bdff91',1,'agora::media::base']]],
+  ['kvideoengineflaghasintrarequest_7803',['kVideoEngineFlagHasIntraRequest',['../namespaceagora_1_1rtc.html#a764336937c77e56259f285853decf15c',1,'agora::rtc']]],
+  ['kvideoengineflagmajorstreamonly_7804',['kVideoEngineFlagMajorStreamOnly',['../namespaceagora_1_1rtc.html#acf31a87fc289119b9811f3960175c362',1,'agora::rtc']]],
+  ['kvideoengineflagnasa_7805',['kVideoEngineFlagNasa',['../namespaceagora_1_1rtc.html#ad7f95b7fa08cb812a46e8f3f943c192f',1,'agora::rtc']]],
+  ['kvideoengineflagscalabledelta_7806',['kVideoEngineFlagScalableDelta',['../namespaceagora_1_1rtc.html#ac13dbf9775c63781b1feaa3f2b4b2ebf',1,'agora::rtc']]],
+  ['kvideoengineflagstdcodec_7807',['kVideoEngineFlagStdCodec',['../namespaceagora_1_1rtc.html#ab467a192edbd1042bb2971af5661cbb5',1,'agora::rtc']]],
+  ['kvideomajorstreamtrackid_7808',['kVideoMajorStreamTrackId',['../namespaceagora_1_1rtc.html#a0712708ce42aefceb80aa5b112bf4cf4',1,'agora::rtc']]],
+  ['kvideominorstreamtrackid_7809',['kVideoMinorStreamTrackId',['../namespaceagora_1_1rtc.html#ae006747f732757b8a007892d59a7ef03',1,'agora::rtc']]]
+];
