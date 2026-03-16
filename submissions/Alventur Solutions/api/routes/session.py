@@ -150,10 +150,9 @@ async def start_session(body: StartSessionRequest):
         # joins with numeric RTC UID. Keep numeric UID mode for compatibility.
         use_string_uid = False
 
-        if body.userId is None:
-            remote_rtc_uids: list[str] = []
-        else:
-            remote_rtc_uids = [str(body.userId)]
+        # Subscribe the agent to any remote user in the channel.
+        # This avoids string-vs-numeric UID matching edge cases.
+        remote_rtc_uids: list[str] = ["*"]
 
         agent_rtc_uid = str(agent_uid)
 

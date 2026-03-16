@@ -153,6 +153,7 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
             await MainActor.run {
                 guard let self else { return }
                 if let continuation = self.joinContinuation {
+                    print("[agora] join timeout after 8s")
                     self.joinContinuation = nil
                     continuation.resume(throwing: AgoraVoiceServiceError.timeout)
                 }
@@ -167,6 +168,7 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
             self.joinContinuation = continuation
 
             let result = engine.joinChannel(byToken: token, channelId: channelName, uid: uid, mediaOptions: options)
+            print("[agora] joinChannel invoked channel=\(channelName) uid=\(uid) result=\(result)")
             guard result == 0 else {
                 self.joinContinuation = nil
                 continuation.resume(throwing: AgoraVoiceServiceError.joinFailed(code: result))
@@ -210,6 +212,25 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
             if let continuation = self.joinContinuation {
                 continuation.resume(throwing: AgoraVoiceServiceError.joinFailed(code: Int32(errorCode.rawValue)))
                 self.joinContinuation = nil
+            }
+        }
+    }
+
+    nonisolated func rtcEngine(
+        _ engine: AgoraRtcEngineKit,
+        connectionChangedTo state: AgoraConnectionStateType,
+        reason: AgoraConnectionChangedReason
+    ) {
+        print("[agora] connection state=\(state.rawValue) reason=\(reason.rawValue)")
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            // Some SDK/runtime combinations report connected state without
+            // immediately delivering didJoinChannel callback.
+            if state == .connected, let continuation = self.joinContinuation {
+                print("[agora] join continuation resumed from connection state")
+                self.joinContinuation = nil
+                continuation.resume()
             }
         }
     }
