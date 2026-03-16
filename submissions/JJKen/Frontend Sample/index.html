@@ -623,12 +623,12 @@ html, body {
 }
 
 .cook-step-tip {
-  background: #1d1d1f;
+  background: #f5f5f7;
   border-radius: 12px;
   padding: 14px;
   font-size: 13px;
-  color: #fff;
-  font-weight: 500;
+  color: var(--text-mid);
+  font-weight: 600;
   display: flex;
   gap: 8px;
   align-items: flex-start;
@@ -1205,16 +1205,7 @@ html, body {
 
         <div class="cook-body">
 
-          <div class="cook-progress-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 24px; font-weight: 800; color: #1d1d1f;" id="stepNum">Step 3</span>
-              <span style="font-size: 14px; color: var(--text-low); font-weight: 600;" id="stepTotal">/6</span>
-            </div>
-            <div style="width: 100%;">
-              <div class="cook-prog-bar"><div class="cook-prog-fill" id="stepFill"></div></div>
-              <span class="cook-prog-label" style="display: inline-block; margin-top: 8px;" id="stepPercent">50% complete</span>
-            </div>
-          </div>
+          <div class="cook-progress-row" style="flex-direction: column; align-items: flex-start; gap: 12px;"></div>
 
           <div>
             <div class="cook-task-label" style="margin-bottom: 8px;">Step Queue</div>
@@ -1225,10 +1216,7 @@ html, body {
             <div class="cook-task-label" style="text-align: center;">Active Task</div>
             <div class="cook-step-card" style="text-align: center;">
               <div class="cook-step-text" id="stepDesc">Sear chicken breasts in hot oil until golden brown on both sides.</div>
-              <div style="position: relative; background: #1a1a1a; border-radius: 12px; height: 150px; overflow: hidden;">
-                <img id="stepImg" src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=150&fit=crop&auto=format&q=80" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.85;">
-                <div style="position: absolute; text-align: center; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.75)); padding: 20px 10px 10px; font-size: 11px; color: #fff; font-weight: 600;" id="stepTip">Tip: Use medium-high heat for best results</div>
-              </div>
+              <div class="cook-step-tip" id="stepTipText">Tip: Use medium-high heat for best results</div>
             </div>
           </div>
 
@@ -1380,7 +1368,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="featured">
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-1">🍗</div>
             <div class="rec-body">
               <div class="rec-name">Garlic Herb Chicken</div>
@@ -1389,7 +1377,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-2">🍝</div>
             <div class="rec-body">
               <div class="rec-name">Creamy Basil Pasta</div>
@@ -1398,7 +1386,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card" onclick="showSubModal()">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-3">🥚</div>
             <div class="rec-body">
               <div class="rec-name">Creamy Egg Scramble</div>
@@ -1407,7 +1395,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-4">🥘</div>
             <div class="rec-body">
               <div class="rec-name">Herb Rice Bowl</div>
@@ -1419,7 +1407,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="quick" style="display: none;">
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-2">⏱</div>
             <div class="rec-body">
               <div class="rec-name">5-Minute Garlic Toast</div>
@@ -1428,7 +1416,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-1">🍳</div>
             <div class="rec-body">
               <div class="rec-name">Quick Fried Rice</div>
@@ -1437,7 +1425,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-3">🥙</div>
             <div class="rec-body">
               <div class="rec-name">30-Second Wrap</div>
@@ -1449,7 +1437,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="healthy" style="display: none;">
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-3">🥗</div>
             <div class="rec-body">
               <div class="rec-name">Quinoa Buddha Bowl</div>
@@ -1458,7 +1446,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-1">🍲</div>
             <div class="rec-body">
               <div class="rec-name">Grilled Salmon & Greens</div>
@@ -1467,7 +1455,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-4">🥑</div>
             <div class="rec-body">
               <div class="rec-name">Green Detox Smoothie</div>
@@ -1479,7 +1467,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="vegetarian" style="display: none;">
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-2">🥕</div>
             <div class="rec-body">
               <div class="rec-name">Roasted Veggie Medley</div>
@@ -1488,7 +1476,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-3">🌮</div>
             <div class="rec-body">
               <div class="rec-name">Black Bean Tacos</div>
@@ -1497,7 +1485,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-1">🍜</div>
             <div class="rec-body">
               <div class="rec-name">Miso Noodle Soup</div>
@@ -1509,7 +1497,7 @@ html, body {
         </div>
 
         <div class="rec-list" data-tab="desserts" style="display: none;">
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-1">🍰</div>
             <div class="rec-body">
               <div class="rec-name">Chocolate Lava Cake</div>
@@ -1518,7 +1506,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-2">🍓</div>
             <div class="rec-body">
               <div class="rec-name">Strawberry Shortcake</div>
@@ -1527,7 +1515,7 @@ html, body {
             </div>
             <div class="rec-arrow">›</div>
           </div>
-          <div class="rec-card">
+          <div class="rec-card" onclick="selectRecipeFromCard(this)">
             <div class="rec-img ri-4">🍪</div>
             <div class="rec-body">
               <div class="rec-name">Chocolate Chip Cookies</div>
@@ -1707,6 +1695,7 @@ async function fetchRecipePlanFromBackend() {
 }
 
 async function hydrateRecipePlan(force = false) {
+  useLocalRecipePlan = false;
   const key = recipeKey(selectedRecipe);
   if (!force && key === lastHydratedRecipeKey) {
     return;
@@ -1936,6 +1925,14 @@ function goToCooking() {
   document.getElementById('nav-cooking').classList.add('active');
   initCookRecognition();
 
+  if (useLocalRecipePlan) {
+    updateStepDisplay();
+    if (!cookFeedEntries.length) {
+      announceCurrentStep('Cook mode is ready');
+    }
+    return;
+  }
+
   hydrateRecipePlan().catch((error) => {
     console.error('Failed to fetch recipe steps:', error);
     updateStepDisplay();
@@ -1994,6 +1991,130 @@ const FALLBACK_STEPS = [
   { index: 6, title: 'Finish', instruction: 'Check internal temp reaches 165F, then plate and garnish.', tip: 'Rest chicken for 2 minutes before serving.', timerSeconds: 120 }
 ];
 
+const PRESET_RECIPES = {
+  'Garlic Herb Chicken': {
+    steps: [
+      { title: 'Season chicken', instruction: 'Pat chicken dry and coat with garlic, herbs, salt, and pepper.', tip: 'Let it rest 10 minutes before cooking.', timerSeconds: 180 },
+      { title: 'Sear chicken', instruction: 'Sear in hot oil until golden on both sides.', tip: 'Do not move the chicken too early.', timerSeconds: 420 },
+      { title: 'Add aromatics', instruction: 'Add garlic and herbs, then deglaze with broth and lemon.', tip: 'Scrape up the browned bits for flavor.', timerSeconds: 180 },
+      { title: 'Finish', instruction: 'Simmer until cooked through and garnish with fresh herbs.', tip: 'Check for 165F internal temp.', timerSeconds: 240 }
+    ]
+  },
+  'Creamy Basil Pasta': {
+    steps: [
+      { title: 'Boil pasta', instruction: 'Boil pasta in salted water until al dente.', tip: 'Reserve a cup of pasta water.', timerSeconds: 600 },
+      { title: 'Build sauce', instruction: 'Simmer cream, garlic, and basil until thickened.', tip: 'Keep heat low to avoid splitting.', timerSeconds: 300 },
+      { title: 'Toss together', instruction: 'Add pasta and parmesan, toss until glossy.', tip: 'Use pasta water to loosen if needed.', timerSeconds: 120 },
+      { title: 'Serve', instruction: 'Finish with basil and pepper.', tip: 'Serve immediately while hot.', timerSeconds: 60 }
+    ]
+  },
+  'Creamy Egg Scramble': {
+    steps: [
+      { title: 'Prep eggs', instruction: 'Whisk eggs with cream and salt.', tip: 'Whisk until fully combined.', timerSeconds: 60 },
+      { title: 'Warm pan', instruction: 'Melt butter over low heat.', tip: 'Keep heat gentle.', timerSeconds: 60 },
+      { title: 'Scramble', instruction: 'Cook eggs slowly, stirring to form soft curds.', tip: 'Remove before fully set.', timerSeconds: 240 },
+      { title: 'Finish', instruction: 'Top with chives and serve.', tip: 'Season with pepper to taste.', timerSeconds: 30 }
+    ]
+  },
+  'Herb Rice Bowl': {
+    steps: [
+      { title: 'Rinse rice', instruction: 'Rinse rice until water runs clear.', tip: 'This removes excess starch.', timerSeconds: 60 },
+      { title: 'Cook rice', instruction: 'Simmer rice with water until tender.', tip: 'Do not lift the lid early.', timerSeconds: 900 },
+      { title: 'Make dressing', instruction: 'Whisk garlic, oil, and herbs.', tip: 'Add lemon for brightness.', timerSeconds: 120 },
+      { title: 'Assemble', instruction: 'Fluff rice and drizzle dressing.', tip: 'Add herbs just before serving.', timerSeconds: 60 }
+    ]
+  },
+  '5-Minute Garlic Toast': {
+    steps: [
+      { title: 'Prep bread', instruction: 'Slice bread and brush with olive oil.', tip: 'Use thick slices for crunch.', timerSeconds: 60 },
+      { title: 'Toast', instruction: 'Toast until golden on both sides.', tip: 'Watch closely to avoid burning.', timerSeconds: 180 },
+      { title: 'Finish', instruction: 'Rub with garlic and sprinkle salt.', tip: 'Serve while warm.', timerSeconds: 60 }
+    ]
+  },
+  'Quick Fried Rice': {
+    steps: [
+      { title: 'Heat pan', instruction: 'Heat oil in a hot wok or skillet.', tip: 'Use high heat for sear.', timerSeconds: 60 },
+      { title: 'Stir fry', instruction: 'Cook eggs, then add rice and veggies.', tip: 'Break up clumps as you toss.', timerSeconds: 240 },
+      { title: 'Season', instruction: 'Add soy sauce and finish with scallions.', tip: 'Taste and adjust salt.', timerSeconds: 60 }
+    ]
+  },
+  '30-Second Wrap': {
+    steps: [
+      { title: 'Warm tortilla', instruction: 'Warm tortilla briefly on a dry pan.', tip: 'This makes it pliable.', timerSeconds: 30 },
+      { title: 'Layer fillings', instruction: 'Spread sauce, add cheese and herbs.', tip: 'Do not overfill.', timerSeconds: 30 },
+      { title: 'Roll', instruction: 'Roll tightly and slice.', tip: 'Wrap in foil for easy handling.', timerSeconds: 30 }
+    ]
+  },
+  'Quinoa Buddha Bowl': {
+    steps: [
+      { title: 'Cook quinoa', instruction: 'Simmer quinoa until fluffy.', tip: 'Let it rest covered for 5 minutes.', timerSeconds: 900 },
+      { title: 'Roast veggies', instruction: 'Roast vegetables with oil and salt.', tip: 'Roast until edges caramelize.', timerSeconds: 900 },
+      { title: 'Make sauce', instruction: 'Whisk tahini, lemon, and water.', tip: 'Adjust thickness to taste.', timerSeconds: 120 },
+      { title: 'Assemble', instruction: 'Layer quinoa, veggies, and drizzle sauce.', tip: 'Top with seeds for crunch.', timerSeconds: 60 }
+    ]
+  },
+  'Grilled Salmon & Greens': {
+    steps: [
+      { title: 'Season salmon', instruction: 'Season salmon with salt, pepper, and lemon.', tip: 'Pat dry for better sear.', timerSeconds: 60 },
+      { title: 'Grill salmon', instruction: 'Cook skin-side down until crisp, then flip.', tip: 'Do not overcook.', timerSeconds: 480 },
+      { title: 'Saute greens', instruction: 'Saute greens with garlic until wilted.', tip: 'Finish with lemon.', timerSeconds: 180 },
+      { title: 'Plate', instruction: 'Serve salmon over greens.', tip: 'Add olive oil to finish.', timerSeconds: 60 }
+    ]
+  },
+  'Green Detox Smoothie': {
+    steps: [
+      { title: 'Prep ingredients', instruction: 'Add kale, avocado, and fruit to blender.', tip: 'Remove thick stems.', timerSeconds: 60 },
+      { title: 'Blend', instruction: 'Blend with almond milk until smooth.', tip: 'Add ice for thickness.', timerSeconds: 60 },
+      { title: 'Serve', instruction: 'Pour into glass and enjoy.', tip: 'Drink immediately.', timerSeconds: 30 }
+    ]
+  },
+  'Roasted Veggie Medley': {
+    steps: [
+      { title: 'Prep veggies', instruction: 'Chop vegetables evenly.', tip: 'Keep pieces similar size.', timerSeconds: 180 },
+      { title: 'Season', instruction: 'Toss with oil, salt, and herbs.', tip: 'Coat thoroughly.', timerSeconds: 60 },
+      { title: 'Roast', instruction: 'Roast until tender and caramelized.', tip: 'Flip halfway through.', timerSeconds: 1200 },
+      { title: 'Serve', instruction: 'Finish with lemon and herbs.', tip: 'Serve hot.', timerSeconds: 60 }
+    ]
+  },
+  'Black Bean Tacos': {
+    steps: [
+      { title: 'Warm beans', instruction: 'Simmer beans with spices.', tip: 'Mash slightly for texture.', timerSeconds: 300 },
+      { title: 'Warm tortillas', instruction: 'Heat tortillas in a dry pan.', tip: 'Keep them covered.', timerSeconds: 120 },
+      { title: 'Assemble', instruction: 'Fill tortillas with beans and toppings.', tip: 'Finish with lime.', timerSeconds: 90 }
+    ]
+  },
+  'Miso Noodle Soup': {
+    steps: [
+      { title: 'Heat broth', instruction: 'Warm broth with miso until dissolved.', tip: 'Do not boil miso.', timerSeconds: 300 },
+      { title: 'Cook noodles', instruction: 'Cook noodles until tender.', tip: 'Rinse if needed.', timerSeconds: 300 },
+      { title: 'Assemble', instruction: 'Add tofu and noodles to broth.', tip: 'Garnish with scallions.', timerSeconds: 120 }
+    ]
+  },
+  'Chocolate Lava Cake': {
+    steps: [
+      { title: 'Mix batter', instruction: 'Whisk chocolate, butter, sugar, and eggs.', tip: 'Do not overmix.', timerSeconds: 300 },
+      { title: 'Fill ramekins', instruction: 'Pour batter into greased ramekins.', tip: 'Leave room to rise.', timerSeconds: 120 },
+      { title: 'Bake', instruction: 'Bake until edges set and center soft.', tip: 'Do not overbake.', timerSeconds: 600 },
+      { title: 'Serve', instruction: 'Invert and serve warm.', tip: 'Add ice cream.', timerSeconds: 60 }
+    ]
+  },
+  'Strawberry Shortcake': {
+    steps: [
+      { title: 'Prep berries', instruction: 'Slice strawberries and toss with sugar.', tip: 'Let them macerate.', timerSeconds: 300 },
+      { title: 'Whip cream', instruction: 'Whip cream to soft peaks.', tip: 'Chill the bowl first.', timerSeconds: 180 },
+      { title: 'Assemble', instruction: 'Layer cake, berries, and cream.', tip: 'Serve immediately.', timerSeconds: 120 }
+    ]
+  },
+  'Chocolate Chip Cookies': {
+    steps: [
+      { title: 'Mix dough', instruction: 'Cream butter and sugar, then add eggs and flour.', tip: 'Fold in chocolate last.', timerSeconds: 420 },
+      { title: 'Scoop', instruction: 'Scoop dough onto baking sheet.', tip: 'Space evenly.', timerSeconds: 120 },
+      { title: 'Bake', instruction: 'Bake until edges are golden.', tip: 'Center should look soft.', timerSeconds: 720 },
+      { title: 'Cool', instruction: 'Cool on rack before serving.', tip: 'Let them set.', timerSeconds: 300 }
+    ]
+  }
+};
+
 let activeRecipePlan = FALLBACK_STEPS.map((step, idx) => ({
   ...step,
   image: STEP_IMAGES[idx % STEP_IMAGES.length]
@@ -2002,6 +2123,53 @@ let currentStep = 0;
 let timerSec = 0;
 let timerRunning = false;
 let timerAutoAdvance = true;
+let useLocalRecipePlan = false;
+
+function buildGenericSteps(recipeName) {
+  return [
+    { title: 'Prep ingredients', instruction: `Prep ingredients for ${recipeName}.`, tip: 'Keep everything measured and ready.', timerSeconds: 180 },
+    { title: 'Cook base', instruction: `Cook the main components of ${recipeName}.`, tip: 'Use medium heat and stir often.', timerSeconds: 480 },
+    { title: 'Finish', instruction: `Combine and finish ${recipeName}.`, tip: 'Taste and adjust seasoning.', timerSeconds: 120 }
+  ];
+}
+
+function applyLocalRecipePlan(recipeName) {
+  const preset = PRESET_RECIPES[recipeName];
+  const steps = preset?.steps?.length ? preset.steps : buildGenericSteps(recipeName);
+
+  activeRecipePlan = steps.map((step, idx) => ({
+    index: idx + 1,
+    title: step.title || `Step ${idx + 1}`,
+    instruction: step.instruction || 'Follow this cooking instruction.',
+    tip: step.tip || 'Adjust heat and seasoning as needed.',
+    timerSeconds: Number(step.timerSeconds || 0),
+    image: STEP_IMAGES[idx % STEP_IMAGES.length]
+  }));
+
+  currentStep = 0;
+  useLocalRecipePlan = true;
+  updateStepDisplay();
+}
+
+function selectRecipeFromCard(card) {
+  if (!card) return;
+  const name = card.querySelector('.rec-name')?.textContent?.trim() || 'Recipe';
+  const desc = card.querySelector('.rec-desc')?.textContent?.trim() || '';
+  const timeText = card.querySelector('.rt-time')?.textContent || '';
+  const durationMinutes = parseInt((timeText.match(/\d+/) || [20])[0], 10);
+  const difficulty = card.querySelector('.rt-diff')?.textContent?.trim() || 'Beginner';
+
+  selectedRecipe = {
+    ...selectedRecipe,
+    name,
+    description: desc,
+    durationMinutes: Number.isFinite(durationMinutes) ? durationMinutes : 20,
+    difficulty
+  };
+
+  applyLocalRecipePlan(name);
+  goToCooking();
+}
 
 function formatClock(totalSeconds) {
   const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
@@ -2364,19 +2532,15 @@ function renderCookStepList() {
   }
 
   list.innerHTML = '';
-  activeRecipePlan.forEach((step, idx) => {
-    const chip = document.createElement('div');
-    chip.className = 'cook-step-chip';
-    if (idx < currentStep) {
-      chip.classList.add('done');
-    } else if (idx === currentStep) {
-      chip.classList.add('current');
-    }
+  const step = activeRecipePlan[currentStep];
+  if (!step) {
+    return;
+  }
 
-    const status = idx < currentStep ? 'Done' : idx === currentStep ? 'Now' : 'Next';
-    chip.textContent = `${status} - Step ${step.index}: ${step.title}`;
-    list.appendChild(chip);
-  });
+  const chip = document.createElement('div');
+  chip.className = 'cook-step-chip current';
+  chip.textContent = `Now - Step ${step.index}: ${step.title}`;
+  list.appendChild(chip);
 }
 
 async function runCookCommand(command) {
@@ -2465,13 +2629,11 @@ function updateStepDisplay() {
   const pct = Math.round(((currentStep + 1) / total) * 100);
   const timerForStep = Number(step.timerSeconds || 0);
 
-  document.getElementById('stepNum').textContent = 'Step ' + (currentStep + 1);
-  document.getElementById('stepTotal').textContent = '/' + total;
   document.getElementById('stepDesc').textContent = step.instruction;
-  document.getElementById('stepImg').src = step.image;
-  document.getElementById('stepTip').textContent = 'Tip: ' + step.tip;
-  document.getElementById('stepPercent').textContent = pct + '% complete';
-  document.getElementById('stepFill').style.width = pct + '%';
+  const tipEl = document.getElementById('stepTipText');
+  if (tipEl) {
+    tipEl.textContent = 'Tip: ' + step.tip;
+  }
   document.querySelector('.cook-recipe-name').textContent = selectedRecipe.name || 'Recipe';
 
   timerSec = timerForStep;
