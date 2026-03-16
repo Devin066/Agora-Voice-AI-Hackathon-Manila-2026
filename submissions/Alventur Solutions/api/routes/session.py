@@ -199,9 +199,13 @@ async def start_session(body: StartSessionRequest):
                 "idle_timeout": 30,
                 "asr": {"language": "en-US", "task": "conversation"},
                 "llm": {
-                    "url": os.getenv("LLM_URL"),
-                    "api_key": os.getenv("LLM_TOKEN"),
-                    "system_messages": [{"role": "system", "content": system_prompt}],
+                    "url": f"{os.getenv('LLM_URL')}?key={os.getenv('LLM_TOKEN')}",
+                    "system_messages": [
+                        {
+                            "role": "user",
+                            "parts": [{"text": system_prompt}]
+                        }
+                    ],
                     "greeting_message": os.getenv("GREETING_MESSAGE"),
                     "failure_message": "Please wait a moment.",
                     "max_history": 10,
@@ -212,6 +216,7 @@ async def start_session(body: StartSessionRequest):
                         "top_p": 0.95,
                     },
                     "output_modalities": output_modalities,
+                    "style": "gemini"
                 },
                 "tts": tts,
                 "vad": {
