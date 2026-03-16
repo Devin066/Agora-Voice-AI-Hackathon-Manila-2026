@@ -251,6 +251,7 @@ function createSession(req, res) {
     userId,
     channelName,
     uid,
+    appId: process.env.AGORA_APP_ID,
     token,
     status: 'created',
     expiresInSeconds: SESSION_TTL_MINUTES * 60,

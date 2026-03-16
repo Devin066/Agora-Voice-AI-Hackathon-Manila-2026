@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Cooking Mama – AI Voice Assistant</title>
+<style>
+/* ════════════════════════════════════════════
+   RESET
+════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+/* ════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES  (Orange Theme palette)
+════════════════════════════════════════════ */
+:root {
+  --c1: #f3a025; /* Primary Orange */
+  --c2: #d98205; /* Deep Orange */
+  --c3: #f7bc61; /* Light Orange */
+  --c4: #facf8b; /* Pale Orange */
+  --c5: #e65100; /* Contrast/Accent Red-Orange */
+
+  --bg-deep:   #ffffff;
+  --surface:   #f5f5f7;
+  --surface2:  #eaeaec;
+  --border:    rgba(0,0,0,0.08);
+  --text-hi:   #1d1d1f;
+  --text-mid:  rgba(0,0,0,0.65);
+  --text-low:  rgba(0,0,0,0.45);
+
+  --phone-w: 390px;
+  --phone-h: 844px;
+  --r-phone: 54px;
+}
+
+/* ════════════════════════════════════════════
+   PAGE
+════════════════════════════════════════════ */
+html, body {
+  min-height: 100%;
+  background: #fbfbfd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48px 16px 80px;
+  color: #1d1d1f;
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* ════════════════════════════════════════════
+   PHONE WRAPPER + APPLE INTELLIGENCE BORDER
+════════════════════════════════════════════ */
+.phone-wrap {
+  position: relative;
+  width: var(--phone-w);
+}
+
+@property --ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+.phone-ring {
+  position: relative;
+  width: var(--phone-w);
+  height: var(--phone-h);
+  border-radius: var(--r-phone);
+  padding: 3px;
+  background: conic-gradient(
+    from var(--ang),
+    var(--c1), var(--c2), var(--c3),
+    var(--c4), var(--c5), var(--c1)
+  );
+  /* Light mode glow: more subtle/golden */
+  animation: ringIdle 6s linear infinite, glowIdle 4s ease-in-out infinite alternate;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+.phone-ring.listening {
+  animation: ringLive 1.4s linear infinite, glowListen 1s ease-in-out infinite alternate;
+}
+.phone-ring.speaking {
+  animation: ringLive 0.8s linear infinite, glowSpeak 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes ringIdle { to { --ang: 360deg; } }
+@keyframes ringLive { to { --ang: 360deg; } }
+
+@keyframes glowIdle {
+  from { box-shadow: 0 0 20px 4px rgba(243,160,37,.2), 0 0 40px 10px rgba(217,130,5,.1); }
+  to   { box-shadow: 0 0 30px 8px rgba(243,160,37,.3), 0 0 60px 20px rgba(247,188,97,.2); }
+}
+@keyframes glowListen {
+  from { box-shadow: 0 0 40px 12px rgba(243,160,37,.5), 0 0 90px 30px rgba(230,81,0,.4); }
+  to   { box-shadow: 0 0 70px 24px rgba(243,160,37,.7), 0 0 130px 50px rgba(247,188,97,.6); }
+}
+@keyframes glowSpeak {
+  from { box-shadow: 0 0 50px 16px rgba(230,81,0,.6), 0 0 100px 40px rgba(243,160,37,.5); }
+  to   { box-shadow: 0 0 80px 28px rgba(243,160,37,.8), 0 0 160px 70px rgba(230,81,0,.6); }
+}
+
+/* Inner screen */
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--r-phone) - 3px);
+  overflow: hidden;
+  background: var(--bg-deep);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* ════════════════════════════════════════════
+   STATUS BAR
+════════════════════════════════════════════ */
+.status-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 54px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  /* Light mode: white text for status bar on dark bg, but here bg is white.
+     We need dark text. */
+  color: #000;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Dynamic Island */
+.dynamic-island {
+  position: absolute;
+  top: 12px; left: 50%;
+  transform: translateX(-50%);
+  width: 126px; height: 36px;
+  background: #000; /* Keep black for contrast */
+  border-radius: 20px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: width .45s cubic-bezier(.34,1.56,.64,1),
+              height .45s cubic-bezier(.34,1.56,.64,1),
+              border-radius .35s ease;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.dynamic-island.expanded {
+  width: 320px; height: 58px;
+  border-radius: 30px;
+  gap: 0; padding: 0 18px;
+  justify-content: flex-start;
+}
+
+.di-cam { width:11px; height:11px; border-radius:50%; background:#1e1e1e; flex-shrink:0; }
+.di-mic { width:7px;  height:7px;  border-radius:50%; background:#1e1e1e; flex-shrink:0; }
+
+.di-live-content {
+  display: none; align-items: center; gap:10px; width:100%;
+}
+.dynamic-island.expanded .di-cam,
+.dynamic-island.expanded .di-mic { display: none; }
+.dynamic-island.expanded .di-live-content { display: flex; }
+
+.di-eq { display:flex; align-items:center; gap:3px; height:26px; }
+.di-eq-bar {
+  width:3px; border-radius:2px;
+  background: linear-gradient(to top, var(--c2), var(--c1));
+  animation: diEq .55s ease-in-out infinite alternate;
+}
+.di-eq-bar:nth-child(1){height:8px;  animation-delay:0s;}
+.di-eq-bar:nth-child(2){height:20px; animation-delay:.08s;}
+.di-eq-bar:nth-child(3){height:26px; animation-delay:.04s;}
+.di-eq-bar:nth-child(4){height:14px; animation-delay:.12s;}
+.di-eq-bar:nth-child(5){height:22px; animation-delay:.06s;}
+.di-eq-bar:nth-child(6){height:10px; animation-delay:.14s;}
+.di-eq-bar:nth-child(7){height:18px; animation-delay:.02s;}
+@keyframes diEq {
+  from { transform:scaleY(.45); opacity:.6; }
+  to   { transform:scaleY(1.3); opacity:1;  }
+}
+
+.di-text-wrap { flex:1; overflow:hidden; }
+.di-title { font-size:12px; font-weight:700; color:#fff; white-space:nowrap; }
+.di-sub   { font-size:10px; color:rgba(255,255,255,.5); white-space:nowrap; margin-top:1px; }
+
+.di-waveform-pill { display:flex; align-items:center; gap:2px; height:20px; margin-left:auto; }
+.di-wp-bar {
+  width:2px; border-radius:2px;
+  background: linear-gradient(to top, var(--c5), var(--c1));
+  animation: diEq .4s ease-in-out infinite alternate;
+}
+.di-wp-bar:nth-child(1){height:6px;  animation-delay:.05s;}
+.di-wp-bar:nth-child(2){height:14px; animation-delay:0s;}
+.di-wp-bar:nth-child(3){height:10px; animation-delay:.1s;}
+.di-wp-bar:nth-child(4){height:18px; animation-delay:.03s;}
+.di-wp-bar:nth-child(5){height:8px;  animation-delay:.07s;}
+
+/* ════════════════════════════════════════════
+   AMBIENT BLOBS (shown during voice)
+════════════════════════════════════════════ */
+.ambient {
+  position: absolute; inset: 0;
+  pointer-events: none; z-index: 0;
+  overflow: hidden; border-radius: inherit;
+}
+.blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(80px); opacity: 0;
+  transition: opacity 1.2s ease;
+}
+.blob-1 { width:320px;height:320px; background:radial-gradient(circle,rgba(217,130,5,.55),transparent 70%); top:-80px;left:-60px; animation:blobDrift1 8s ease-in-out infinite alternate; }
+.blob-2 { width:280px;height:280px; background:radial-gradient(circle,rgba(243,160,37,.4),transparent 70%); bottom:-60px;right:-60px; animation:blobDrift2 10s ease-in-out infinite alternate; }
+.blob-3 { width:240px;height:240px; background:radial-gradient(circle,rgba(230,81,0,.35),transparent 70%); top:40%;left:30%; animation:blobDrift3 7s ease-in-out infinite alternate; }
+
+.phone-ring.listening .blob,
+.phone-ring.speaking  .blob { opacity: 1; }
+
+@keyframes blobDrift1 { from{transform:translate(0,0) scale(1);}  to{transform:translate(30px,40px) scale(1.15);} }
+@keyframes blobDrift2 { from{transform:translate(0,0) scale(1);}  to{transform:translate(-25px,-35px) scale(1.2);} }
+@keyframes blobDrift3 { from{transform:translate(0,0) scale(.9);} to{transform:translate(20px,-20px) scale(1.1);} }
+
+/* ════════════════════════════════════════════
+   VIEWS
+════════════════════════════════════════════ */
+.view {
+  position: absolute; inset: 0;
+  opacity: 0; pointer-events: none;
+  transition: opacity .5s ease;
+  z-index: 1;
+  display: flex; flex-direction: column;
+}
+.view.active { opacity: 1; pointer-events: all; }
+
+/* ════════════════════════════════════════════
+   VIEW 1 — HOME
+════════════════════════════════════════════ */
+#view-home {
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 54px;
+  cursor: pointer;
+}
+
+.home-top {
+  width: 100%;
+  padding: 32px 28px 0;
+  z-index: 2;
+}
+.home-time {
+  font-size: 13px; font-weight: 500;
+  color: var(--text-low); letter-spacing: .5px; margin-bottom: 6px;
+}
+.home-greeting {
+  font-size: 40px; font-weight: 800;
+  line-height: 1.06; letter-spacing: -1.5px;
+  color: var(--text-hi);
+}
+.home-greeting em {
+  font-style: normal;
+  background: linear-gradient(90deg, var(--c1) 0%, var(--c2) 50%, var(--c5) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.suggestion-area {
+  width: 100%; padding: 0 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 2;
+}
+.suggestion-label {
+  font-size: 11px; font-weight: 700;
+  color: var(--text-low); text-transform: uppercase;
+  letter-spacing: .8px; padding: 0 4px; margin-bottom: 2px;
+}
+.suggestion-card {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-mid); line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  transition: background .2s, transform .15s, box-shadow .2s;
+}
+.suggestion-card:hover {
+  background: #fafafa;
+  transform: scale(1.01);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+.tap-hint-area {
+  width: 100%; padding: 0 28px 32px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px; z-index: 2;
+}
+.tap-pulse-ring {
+  position: relative; width: 72px; height: 72px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tap-pulse-ring::before,
+.tap-pulse-ring::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(243,160,37,.5);
+  animation: tapPulse 2.4s ease-out infinite;
+}
+.tap-pulse-ring::after { animation-delay: 1.2s; }
+.tap-inner {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--c5), var(--c2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 0 20px rgba(243,160,37,.5);
+  position: relative; z-index: 1;
+}
+@keyframes tapPulse {
+  0%   { transform: scale(1);   opacity: .7; }
+  100% { transform: scale(2.2); opacity: 0;  }
+}
+.tap-hint-text { font-size: 13px; color: var(--text-low); font-weight: 500; }
+
+/* ════════════════════════════════════════════
+   VIEW 2 — LISTENING
+════════════════════════════════════════════ */
+#view-listen {
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 54px; background: transparent;
+}
+
+.listen-top { width:100%; padding:24px 28px 0; }
+.listen-mode-label { font-size:12px; font-weight:700; color:var(--c1); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px; }
+.listen-prompt { font-size:28px; font-weight:800; color:var(--text-hi); letter-spacing:-.8px; line-height:1.1; }
+
+.transcript-area {
+  flex:1; width:100%;
+  padding: 20px 24px;
+  display: flex; flex-direction: column;
+  justify-content: flex-end; gap: 10px;
+}
+.transcript-bubble {
+  align-self: flex-end; max-width: 82%;
+  background: #f0f0f2;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 20px 20px 4px 20px;
+  padding: 12px 16px;
+  color: #000;
+  font-weight: 500; line-height: 1.45;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  animation: bubblePop .3s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes bubblePop {
+  from { transform: scale(.85) translateY(8px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);   opacity: 1; }
+}
+
+.orb-area {
+  width:100%;
+  display:flex; flex-direction:column;
+  align-items:center; padding: 0 0 30px; gap: 20px;
+}
+
+/* Central waveform orb */
+.orb { position:relative; width:140px; height:140px; }
+.orb-bg {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(
+    from var(--ang),
+    var(--c2), var(--c1), var(--c5), var(--c3), var(--c4), var(--c2)
+  );
+  animation: ringLive 1.4s linear infinite;
+  filter: blur(1px);
+}
+.orb-inner {
+  position: absolute; inset: 4px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%,
+    rgba(217,130,5,.6) 0%, rgba(243,160,37,.35) 40%, rgba(7,8,15,.95) 75%
+  );
+  backdrop-filter: blur(10px);
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.orb-wave { display:flex; align-items:center; gap:4px; height:60px; }
+.orb-wave-bar {
+  width:4px; border-radius:3px;
+  background: linear-gradient(to top, var(--c2), var(--c1));
+  animation: orbWave .55s ease-in-out infinite alternate;
+}
+.orb-wave-bar:nth-child(1){height:12px;animation-delay:0s;}
+.orb-wave-bar:nth-child(2){height:30px;animation-delay:.08s;}
+.orb-wave-bar:nth-child(3){height:50px;animation-delay:.04s;}
+.orb-wave-bar:nth-child(4){height:38px;animation-delay:.12s;}
+.orb-wave-bar:nth-child(5){height:56px;animation-delay:.02s;}
+.orb-wave-bar:nth-child(6){height:42px;animation-delay:.10s;}
+.orb-wave-bar:nth-child(7){height:22px;animation-delay:.06s;}
+.orb-wave-bar:nth-child(8){height:48px;animation-delay:.14s;}
+.orb-wave-bar:nth-child(9){height:18px;animation-delay:.09s;}
+@keyframes orbWave {
+  from { transform:scaleY(.35); opacity:.5; }
+  to   { transform:scaleY(1.2); opacity:1;  }
+}
+
+.orb::after {
+  content:''; position:absolute; inset:-20px; border-radius:50%; z-index:-1;
+  background: radial-gradient(circle, rgba(217,130,5,.35) 0%, transparent 70%);
+  animation: orbGlow 1.2s ease-in-out infinite alternate;
+}
+@keyframes orbGlow {
+  from { transform:scale(.9);  opacity:.5; }
+  to   { transform:scale(1.15);opacity:1;  }
+}
+
+.orb-halo  { position:absolute; inset:-16px; border-radius:50%; border:1px solid rgba(217,130,5,.3); animation:haloRing 2s ease-out infinite; }
+.orb-halo2 { position:absolute; inset:-32px; border-radius:50%; border:1px solid rgba(243,160,37,.15); animation:haloRing 2s ease-out infinite .6s; }
+.orb-halo3 { position:absolute; inset:-50px; border-radius:50%; border:1px solid rgba(230,81,0,.1);  animation:haloRing 2s ease-out infinite 1.2s; }
+@keyframes haloRing {
+  0%   { transform:scale(.85); opacity:.8; }
+  100% { transform:scale(1.4); opacity:0;  }
+}
+
+.orb-status { font-size:14px; font-weight:600; color:var(--text-mid); letter-spacing:.3px; }
+.orb-stop-btn {
+  padding:10px 28px; border-radius:50px;
+  background:rgba(255,255,255,.08); border:1px solid var(--border);
+  color:var(--text-mid); font-size:13px; font-weight:600;
+  backdrop-filter:blur(10px); transition:all .2s;
+}
+.orb-stop-btn:hover { background:rgba(255,255,255,.14); }
+
+/* ════════════════════════════════════════════
+   VIEW 3 — AI SPEAKING / RESPONSE
+════════════════════════════════════════════ */
+#view-speaking {
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 54px;
+}
+
+.speak-top { width:100%; padding:24px 28px 0; }
+.speak-mode-label { font-size:12px; font-weight:700; color:var(--c3); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px; }
+.speak-question { font-size:14px; color:var(--text-low); font-weight:500; font-style:italic; }
+
+.speak-response-area {
+  flex:1; width:100%; padding:16px 22px;
+  display:flex; flex-direction:column; gap:10px; overflow-y:auto;
+}
+.speak-response-area::-webkit-scrollbar { display:none; }
+
+.ai-bubble {
+  align-self:flex-start; max-width:88%;
+  background:#ffffff; border:1px solid rgba(0,0,0,0.06);
+  border-radius:4px 20px 20px 20px;
+  padding:14px 16px;
+  font-size:14px; color:#1d1d1f; font-weight:500; line-height:1.55;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  animation:bubblePop .35s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.ai-bubble strong { color: var(--c5); }
+
+.ai-tip-card {
+  background:#fff8f0; border:1px solid rgba(243,160,37,.3);
+  border-radius:14px; padding:12px 14px;
+  font-size:13px; color:#c45e00; font-weight:600; line-height:1.4;
+  box-shadow: 0 2px 8px rgba(243,160,37,.1);
+}
+
+.speak-orb-area {
+  width:100%; display:flex; flex-direction:column;
+  align-items:center; padding:0 0 28px; gap:16px;
+}
+.speak-orb { position:relative; width:110px; height:110px; }
+.speak-orb .orb-bg {
+  background: conic-gradient(from var(--ang), var(--c3),var(--c4),var(--c1),var(--c2),var(--c5),var(--c3));
+  animation: ringLive .7s linear infinite;
+}
+.speak-orb .orb-wave-bar { background: linear-gradient(to top,var(--c4),var(--c3)); animation:orbWave .35s ease-in-out infinite alternate; }
+.speak-orb::after { background: radial-gradient(circle,rgba(230,81,0,.35) 0%,transparent 70%); }
+
+.speak-action-row { display:flex; gap:10px; }
+.speak-act-btn { padding:9px 20px; border-radius:50px; font-size:13px; font-weight:600; transition:all .2s; }
+.speak-act-btn.primary { background:linear-gradient(135deg,var(--c5),var(--c2)); color:#fff; box-shadow:0 3px 14px rgba(217,130,5,.45); }
+.speak-act-btn.ghost   { background:var(--surface); border:1px solid var(--border); color:var(--text-mid); }
+
+/* ════════════════════════════════════════════
+   VIEW 4 — STEP-BY-STEP COOKING
+════════════════════════════════════════════ */
+#view-cooking { padding-top: 54px; }
+
+.cook-header { padding:18px 24px 14px; border-bottom:1px solid var(--border); }
+.cook-recipe-name { font-size:17px; font-weight:800; color:var(--text-hi); letter-spacing:-.4px; }
+.cook-progress-row { display:flex; align-items:center; gap:10px; margin-top:10px; }
+.cook-prog-bar  { flex:1; height:5px; background:rgba(255,255,255,.1); border-radius:3px; }
+.cook-prog-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--c5),var(--c2)); width:45%; }
+.cook-prog-label { font-size:11px; color:var(--text-low); font-weight:600; }
+
+.cook-body { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:14px; }
+.cook-body::-webkit-scrollbar { display:none; }
+
+.cook-step-card {
+  background:#ffffff; border:1px solid rgba(0,0,0,0.06);
+  border-left:3px solid var(--c5); border-radius:16px; padding:16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.cook-step-num  { font-size:11px; font-weight:700; color:var(--c5); text-transform:uppercase; letter-spacing:.7px; margin-bottom:7px; }
+.cook-step-text { font-size:17px; font-weight:700; color:#1d1d1f; line-height:1.4; letter-spacing:-.3px; }
+.cook-step-tip  {
+  margin-top:11px; background:#fff8f0; border-radius:10px;
+  padding:9px 12px; font-size:12px; color:#c45e00; font-weight:600;
+  display:flex; gap:6px; align-items:flex-start;
+}
+
+.cook-tools-row { display:flex; gap:10px; }
+.cook-tool {
+  flex:1; background:#ffffff; border:1px solid rgba(0,0,0,0.06);
+  border-radius:14px; padding:13px 11px; display:flex; flex-direction:column; gap:7px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.cook-tool-label { font-size:10px; font-weight:700; color:var(--text-low); text-transform:uppercase; letter-spacing:.5px; }
+.cook-timer-val  { font-size:26px; font-weight:800; color:#1d1d1f; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
+.cook-timer-name { font-size:11px; color:var(--text-low); }
+.cook-timer-bar  { height:3px; border-radius:2px; background:rgba(0,0,0,0.06); }
+.cook-timer-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--c4),var(--c3)); width:55%; }
+
+.conv-input  { width:44px; padding:5px 7px; background:#f5f5f7; border:1px solid rgba(0,0,0,0.1); border-radius:8px; font-size:15px; font-weight:700; color:#1d1d1f; text-align:center; font-family:inherit; outline:none; }
+.conv-unit   { font-size:12px; color:var(--text-low); font-weight:600; }
+.conv-eq     { font-size:12px; color:var(--c5); font-weight:700; }
+.conv-field  { display:flex; align-items:center; gap:6px; }
+
+.cook-voice-strip {
+  background:linear-gradient(135deg, #fff3e0, #fff8e1);
+  border:1px solid #ffe0b2;
+  border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;
+}
+.cvs-eq { display:flex; align-items:center; gap:2px; height:22px; }
+.cvs-bar { width:3px; border-radius:2px; background:linear-gradient(to top,var(--c2),var(--c1)); animation:diEq .5s ease-in-out infinite alternate; }
+.cvs-bar:nth-child(1){height:8px; animation-delay:0s;}
+.cvs-bar:nth-child(2){height:16px;animation-delay:.08s;}
+.cvs-bar:nth-child(3){height:22px;animation-delay:.04s;}
+.cvs-bar:nth-child(4){height:12px;animation-delay:.12s;}
+.cvs-bar:nth-child(5){height:18px;animation-delay:.06s;}
+.cvs-text strong { font-size:13px; font-weight:700; color:#e65100; display:block; }
+.cvs-text span   { font-size:11px; color:rgba(230,81,0,.65); }
+
+.cook-cmd-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.cmd-chip {
+  background:#ffffff; border:1px solid rgba(0,0,0,0.08);
+  border-radius:50px; padding:5px 12px; font-size:11px;
+  color:var(--text-mid); font-weight:500;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.filter-pill {
+  padding:7px 16px; border-radius:50px; font-size:13px; font-weight:600;
+  background:#ffffff; border:1px solid rgba(0,0,0,0.08);
+  color:var(--text-mid); cursor:pointer; transition:all .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+.filter-pill.active { background:linear-gradient(135deg,rgba(243,160,37,.2),rgba(217,130,5,.15)); border-color:var(--c5); color:var(--c5); }
+
+.cook-nav { display:flex; gap:10px; }
+.cook-nav-btn { flex:1; padding:13px; border-radius:14px; font-size:15px; font-weight:700; transition:all .2s; }
+.cook-nav-btn.primary { background:linear-gradient(135deg,var(--c5),var(--c2)); color:#fff; box-shadow:0 4px 18px rgba(217,130,5,.4); }
+.cook-nav-btn.ghost   { background:var(--surface); border:1px solid var(--border); color:var(--text-mid); }
+
+/* ════════════════════════════════════════════
+   VIEW 5 — RECIPES
+════════════════════════════════════════════ */
+#view-recipes { padding-top:54px; }
+
+.rec-header { padding:20px 24px 12px; }
+.rec-title { font-size:22px; font-weight:800; color:var(--text-hi); letter-spacing:-.5px; }
+.rec-sub   { font-size:13px; color:var(--text-low); margin-top:3px; }
+
+.rec-filters { padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; }
+.rec-list { flex:1; overflow-y:auto; padding:0 20px 20px; display:flex; flex-direction:column; gap:12px; }
+.rec-list::-webkit-scrollbar { display:none; }
+
+.rec-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; display:flex; cursor:pointer; transition:all .2s; }
+.rec-card:hover { background:var(--surface2); transform:translateY(-2px); }
+.rec-img { width:90px; min-height:90px; display:flex; align-items:center; justify-content:center; font-size:38px; flex-shrink:0; }
+.ri-1{background:linear-gradient(135deg,rgba(243,160,37,.3),rgba(217,130,5,.2));}
+.ri-2{background:linear-gradient(135deg,rgba(255,224,178,.2),rgba(243,160,37,.15));}
+.ri-3{background:linear-gradient(135deg,rgba(230,81,0,.2),rgba(217,130,5,.15));}
+.ri-4{background:linear-gradient(135deg,rgba(243,160,37,.25),rgba(255,224,178,.15));}
+.rec-body { padding:13px 12px; flex:1; display:flex; flex-direction:column; gap:5px; }
+.rec-name  { font-size:15px; font-weight:700; color:var(--text-hi); }
+.rec-desc  { font-size:12px; color:var(--text-low); line-height:1.4; }
+.rec-tags  { display:flex; gap:7px; margin-top:auto; }
+.rec-tag   { font-size:10px; font-weight:700; padding:3px 9px; border-radius:50px; }
+.rt-time{ background:rgba(243,160,37,.15); color:var(--c3); border:1px solid rgba(243,160,37,.25); }
+.rt-diff{ background:rgba(217,130,5,.12); color:var(--c2);  border:1px solid rgba(217,130,5,.22); }
+.rt-warn{ background:rgba(230,81,0,.12); color:var(--c5); border:1px solid rgba(230,81,0,.22); }
+.rec-arrow { padding:13px 10px; display:flex; align-items:center; color:rgba(255,255,255,.2); font-size:20px; }
+
+/* ════════════════════════════════════════════
+   BOTTOM NAV
+════════════════════════════════════════════ */
+.bottom-nav {
+  position:absolute; bottom:0; left:0; right:0; height:82px;
+  background:rgba(255,255,255,.85); backdrop-filter:blur(30px);
+  -webkit-backdrop-filter:blur(30px); border-top:1px solid rgba(0,0,0,0.1);
+  display:flex; align-items:flex-start; justify-content:space-around;
+  padding-top:10px; z-index:40;
+}
+.nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 16px; border-radius:12px; cursor:pointer; transition:all .2s; }
+.nav-icon  { font-size:22px; }
+.nav-label { font-size:10px; font-weight:600; color:var(--text-low); }
+.nav-item.active .nav-label { color:var(--c5); }
+.nav-item.active .nav-icon  { filter:drop-shadow(0 0 5px var(--c5)); }
+
+/* ════════════════════════════════════════════
+   SUBSTITUTION MODAL
+════════════════════════════════════════════ */
+.modal-overlay {
+  display:none; position:absolute; inset:0;
+  background:rgba(0,0,0,.25); backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  z-index:200; align-items:flex-end;
+  border-radius:calc(var(--r-phone) - 3px); overflow:hidden;
+}
+.modal-overlay.open { display:flex; animation:sheetUp .38s cubic-bezier(.34,1.56,.64,1) forwards; }
+@keyframes sheetUp {
+  from { opacity:0; transform:translateY(50px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.modal-sheet {
+  background:#ffffff; border-top:1px solid rgba(0,0,0,0.1);
+  width:100%; border-radius:26px 26px 0 0; padding:0 0 24px;
+  max-height:74%; overflow-y:auto;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+}
+.modal-sheet::-webkit-scrollbar { display:none; }
+.modal-handle { width:38px; height:4px; background:rgba(0,0,0,0.15); border-radius:2px; margin:12px auto; }
+.modal-title-row { display:flex; align-items:center; justify-content:space-between; padding:4px 20px 10px; }
+.modal-title { font-size:18px; font-weight:800; color:#1d1d1f; }
+.modal-close-btn {
+  width:28px; height:28px; border-radius:50%;
+  background:rgba(0,0,0,0.06); border:1px solid rgba(0,0,0,0.05);
+  color:var(--text-mid); font-size:14px;
+  display:flex; align-items:center; justify-content:center;
+}
+.modal-sub-text { font-size:13px; color:var(--text-low); padding:0 20px 10px; }
+.sub-item {
+  display:flex; align-items:center; gap:12px; padding:13px 20px;
+  border-top:1px solid rgba(0,0,0,0.06); transition:background .15s; cursor:pointer;
+}
+.sub-item:hover { background:#f5f5f7; }
+.sub-emoji { font-size:28px; flex-shrink:0; }
+.sub-body  { flex:1; }
+.sub-name  { font-size:14px; font-weight:700; color:#1d1d1f; }
+.sub-desc  { font-size:12px; color:var(--text-low); margin-top:2px; }
+.sub-badge {
+  font-size:10px; font-weight:700; color:#e65100;
+  background:rgba(255,243,224,1); border:1px solid rgba(255,183,77,.4);
+  border-radius:50px; padding:2px 8px; display:inline-block; margin-top:4px;
+}
+.swap-btn  { padding:7px 16px; border-radius:50px; background:linear-gradient(135deg,var(--c5),var(--c2)); color:#fff; font-size:13px; font-weight:700; flex-shrink:0; transition:all .2s; box-shadow:0 2px 10px rgba(217,130,5,.3); }
+.swap-btn:hover { transform:scale(1.04); }
+</style>
+</head>
+<body>
+
+<div class="phone-wrap">
+
+  <!-- Apple Intelligence spinning ring -->
+  <div class="phone-ring" id="phoneRing">
+    <div class="phone-screen" id="phoneScreen">
+
+      <!-- Ambient blobs (voice-only) -->
+      <div class="ambient">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="dynamic-island" id="dynamicIsland">
+          <div class="di-cam"></div>
+          <div class="di-mic"></div>
+          <div class="di-live-content">
+            <div class="di-eq">
+              <div class="di-eq-bar"></div><div class="di-eq-bar"></div>
+              <div class="di-eq-bar"></div><div class="di-eq-bar"></div>
+              <div class="di-eq-bar"></div><div class="di-eq-bar"></div>
+              <div class="di-eq-bar"></div>
+            </div>
+            <div class="di-text-wrap">
+              <div class="di-title" id="diTitle">Cooking Mama</div>
+              <div class="di-sub"   id="diSub">Listening…</div>
+            </div>
+            <div class="di-waveform-pill">
+              <div class="di-wp-bar"></div><div class="di-wp-bar"></div>
+              <div class="di-wp-bar"></div><div class="di-wp-bar"></div>
+              <div class="di-wp-bar"></div>
+            </div>
+          </div>
+        </div>
+        <span>⚡84%</span>
+      </div>
+
+      <!-- ══════════════════════════════════
+           VIEW 1  HOME / IDLE
+      ═══════════════════════════════════ -->
+      <div class="view active" id="view-home" onclick="activateVoice()">
+
+        <div class="home-top">
+          <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <img src="./images/HeardChef_Logo.png" alt="HeardChef Logo" style="height: 60px; border-radius: 12px;">
+          </div>
+          <div class="home-time" id="homeTime">Good evening</div>
+          <div class="home-greeting">What can I<br/><em>help you cook?</em></div>
+        </div>
+
+        <div class="suggestion-area">
+          <div class="suggestion-label">Try asking…</div>
+          <div class="suggestion-card" onclick="triggerSuggestion(event,0)">
+            "What can I cook with chicken and rice tonight?"
+          </div>
+          <div class="suggestion-card" onclick="triggerSuggestion(event,1)">
+            "How do I make a quick pasta sauce from scratch?"
+          </div>
+          <div class="suggestion-card" onclick="triggerSuggestion(event,2)">
+            "I'm missing heavy cream — what can I substitute?"
+          </div>
+        </div>
+
+        <div class="tap-hint-area">
+          <div class="tap-pulse-ring">
+            <div class="tap-inner">🎙</div>
+          </div>
+          <div class="tap-hint-text">Tap anywhere to speak</div>
+        </div>
+
+      </div>
+
+      <!-- ══════════════════════════════════
+           VIEW 2  LISTENING
+      ═══════════════════════════════════ -->
+      <div class="view" id="view-listen">
+
+        <div class="listen-top">
+          <div class="listen-mode-label">● Listening</div>
+          <div class="listen-prompt" id="listenPrompt">What can I help<br/>you cook?</div>
+        </div>
+
+        <div class="transcript-area" id="transcriptArea"></div>
+
+        <div class="orb-area">
+          <div class="orb">
+            <div class="orb-halo"></div><div class="orb-halo2"></div><div class="orb-halo3"></div>
+            <div class="orb-bg"></div>
+            <div class="orb-inner">
+              <div class="orb-wave">
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div>
+              </div>
+            </div>
+          </div>
+          <div class="orb-status" id="orbStatus">Listening…</div>
+          <button class="orb-stop-btn" onclick="stopVoice()">Tap to cancel</button>
+        </div>
+
+      </div>
+
+      <!-- ══════════════════════════════════
+           VIEW 3  AI SPEAKING / RESPONSE
+      ═══════════════════════════════════ -->
+      <div class="view" id="view-speaking">
+
+        <div class="speak-top">
+          <div class="speak-mode-label">◉ Responding</div>
+          <div class="speak-question" id="speakQuestion">"What can I cook with chicken and rice?"</div>
+        </div>
+
+        <div class="speak-response-area">
+          <div class="ai-bubble" id="aiBubble">
+            You can make a delicious <strong>Garlic Herb Chicken Rice Bowl</strong>!
+            It takes about <strong>25 minutes</strong> and is perfect for beginners. 🍗🍚<br/><br/>
+            I can walk you through it step by step right now.
+          </div>
+          <div class="ai-tip-card">
+            💡 <strong>Chef tip:</strong> Let the chicken rest 2 minutes after cooking — it locks in all the juices.
+          </div>
+        </div>
+
+        <div class="speak-orb-area">
+          <div class="orb speak-orb">
+            <div class="orb-halo"></div><div class="orb-halo2"></div>
+            <div class="orb-bg"></div>
+            <div class="orb-inner">
+              <div class="orb-wave">
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div><div class="orb-wave-bar"></div>
+                <div class="orb-wave-bar"></div>
+              </div>
+            </div>
+          </div>
+          <div class="speak-action-row">
+            <button class="speak-act-btn primary" onclick="goToCooking()">Start cooking →</button>
+            <button class="speak-act-btn ghost"   onclick="stopVoice()">Done</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══════════════════════════════════
+           VIEW 4  STEP-BY-STEP COOKING
+      ═══════════════════════════════════ -->
+      <div class="view" id="view-cooking">
+
+        <div class="cook-header">
+          <div class="cook-recipe-name">🍗 Garlic Herb Chicken Rice Bowl</div>
+          <div class="cook-progress-row">
+            <div class="cook-prog-bar"><div class="cook-prog-fill"></div></div>
+            <span class="cook-prog-label">Step 4 / 8</span>
+          </div>
+        </div>
+
+        <div class="cook-body">
+
+          <div class="cook-voice-strip">
+            <div class="cvs-eq">
+              <div class="cvs-bar"></div><div class="cvs-bar"></div>
+              <div class="cvs-bar"></div><div class="cvs-bar"></div>
+              <div class="cvs-bar"></div>
+            </div>
+            <div class="cvs-text">
+              <strong>Voice Mode Active</strong>
+              <span>Say a command below</span>
+            </div>
+          </div>
+          <div class="cook-cmd-chips">
+            <span class="cmd-chip">"What's next?"</span>
+            <span class="cmd-chip">"Repeat step"</span>
+            <span class="cmd-chip">"Set timer"</span>
+            <span class="cmd-chip">"Help!"</span>
+            <span class="cmd-chip">"Convert cups to ml"</span>
+          </div>
+
+          <div class="cook-step-card">
+            <div class="cook-step-num">▶ Current — Step 4</div>
+            <div class="cook-step-text">Add the chicken to the hot pan and sear for 5 minutes without moving it.</div>
+            <div class="cook-step-tip"><span>💡</span><span>Don't disturb the chicken — let the crust form naturally before flipping.</span></div>
+          </div>
+
+          <div class="cook-tools-row">
+            <div class="cook-tool">
+              <div class="cook-tool-label">⏱ Timer</div>
+              <div class="cook-timer-val" id="timerVal">04:59</div>
+              <div class="cook-timer-name">Chicken sear</div>
+              <div class="cook-timer-bar"><div class="cook-timer-fill" id="timerFill"></div></div>
+            </div>
+            <div class="cook-tool">
+              <div class="cook-tool-label">⚖ Convert</div>
+              <div class="conv-field">
+                <input class="conv-input" id="convInput" value="2" type="number" oninput="updateConv()" />
+                <span class="conv-unit">tbsp</span>
+              </div>
+              <div class="conv-eq" id="convResult">= 30 mL</div>
+              <div style="display:flex;gap:5px;margin-top:7px;">
+                <span class="filter-pill active" style="padding:3px 10px;font-size:10px;" onclick="togglePill(this)">ml</span>
+                <span class="filter-pill" style="padding:3px 10px;font-size:10px;" onclick="togglePill(this)">cups</span>
+                <span class="filter-pill" style="padding:3px 10px;font-size:10px;" onclick="togglePill(this)">oz</span>
+              </div>
+            </div>
+          </div>
+
+          <button style="width:100%;padding:13px;border-radius:14px;background:rgba(230,81,0,.15);border:1px solid rgba(230,81,0,.35);color:#ffcc80;font-size:14px;font-weight:700;transition:all .2s;" onclick="showSubModal()">
+            ⚠️ Missing Heavy Cream — find a substitute
+          </button>
+
+          <div class="cook-nav">
+            <button class="cook-nav-btn ghost"   onclick="showView('view-speaking')">‹ Back</button>
+            <button class="cook-nav-btn primary" onclick="stopVoice()">Finish 🎉</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════
+           VIEW 5  RECIPES
+      ═══════════════════════════════════ -->
+      <div class="view" id="view-recipes">
+
+        <div class="rec-header">
+          <div class="rec-title">Recipes for you</div>
+          <div class="rec-sub">Based on: chicken, rice, basil, garlic</div>
+        </div>
+
+        <div class="rec-filters">
+          <span class="filter-pill active"  onclick="togglePill(this)">🌶 Spicy</span>
+          <span class="filter-pill"         onclick="togglePill(this)">🛋 Comfort</span>
+          <span class="filter-pill"         onclick="togglePill(this)">⚡ Quick</span>
+          <span class="filter-pill"         onclick="togglePill(this)">🌿 Healthy</span>
+          <span class="filter-pill active"  onclick="togglePill(this)">🏆 Adventurous</span>
+        </div>
+
+        <div class="rec-list">
+          <div class="rec-card" onclick="goToCooking()">
+            <div class="rec-img ri-1">🍗</div>
+            <div class="rec-body">
+              <div class="rec-name">Garlic Herb Chicken</div>
+              <div class="rec-desc">Pan-seared with lemon butter and fresh basil.</div>
+              <div class="rec-tags"><span class="rec-tag rt-time">⏱ 25 min</span><span class="rec-tag rt-diff">Beginner</span></div>
+            </div>
+            <div class="rec-arrow">›</div>
+          </div>
+          <div class="rec-card" onclick="goToCooking()">
+            <div class="rec-img ri-2">🍝</div>
+            <div class="rec-body">
+              <div class="rec-name">Creamy Basil Pasta</div>
+              <div class="rec-desc">Rich cream sauce with parmesan and herbs.</div>
+              <div class="rec-tags"><span class="rec-tag rt-time">⏱ 20 min</span><span class="rec-tag rt-diff">Easy</span></div>
+            </div>
+            <div class="rec-arrow">›</div>
+          </div>
+          <div class="rec-card" onclick="showSubModal()">
+            <div class="rec-img ri-3">🥚</div>
+            <div class="rec-body">
+              <div class="rec-name">Creamy Egg Scramble</div>
+              <div class="rec-desc">Silky eggs with heavy cream and chives.</div>
+              <div class="rec-tags"><span class="rec-tag rt-time">⏱ 10 min</span><span class="rec-tag rt-diff">Easy</span><span class="rec-tag rt-warn">⚠ Sub needed</span></div>
+            </div>
+            <div class="rec-arrow">›</div>
+          </div>
+          <div class="rec-card" onclick="goToCooking()">
+            <div class="rec-img ri-4">🥘</div>
+            <div class="rec-body">
+              <div class="rec-name">Herb Rice Bowl</div>
+              <div class="rec-desc">Fluffy rice with roasted garlic dressing.</div>
+              <div class="rec-tags"><span class="rec-tag rt-time">⏱ 18 min</span><span class="rec-tag rt-diff">Beginner</span></div>
+            </div>
+            <div class="rec-arrow">›</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Substitution modal -->
+      <div class="modal-overlay" id="subModal">
+        <div class="modal-sheet">
+          <div class="modal-handle"></div>
+          <div class="modal-title-row">
+            <div class="modal-title">Smart Substitution</div>
+            <button class="modal-close-btn" onclick="closeSubModal()">✕</button>
+          </div>
+          <p class="modal-sub-text">🥛 <strong style="color:var(--text-hi)">Heavy Cream</strong> — choose an AI-recommended alternative.</p>
+          <div class="sub-item">
+            <div class="sub-emoji">🥥</div>
+            <div class="sub-body">
+              <div class="sub-name">Coconut Milk</div>
+              <div class="sub-desc">Rich and creamy · slightly sweet</div>
+              <span class="sub-badge">✨ AI Top Pick</span>
+            </div>
+            <button class="swap-btn" onclick="closeSubModal()">Swap</button>
+          </div>
+          <div class="sub-item">
+            <div class="sub-emoji">🥛</div>
+            <div class="sub-body">
+              <div class="sub-name">Whole Milk + Butter</div>
+              <div class="sub-desc">¾ cup milk + ¼ cup butter · classic</div>
+              <span class="sub-badge">✨ AI Recommended</span>
+            </div>
+            <button class="swap-btn" onclick="closeSubModal()">Swap</button>
+          </div>
+          <div class="sub-item">
+            <div class="sub-emoji">🫙</div>
+            <div class="sub-body">
+              <div class="sub-name">Greek Yogurt</div>
+              <div class="sub-desc">Tangy · lower fat · high protein</div>
+            </div>
+            <button class="swap-btn" onclick="closeSubModal()">Swap</button>
+          </div>
+          <div class="sub-item">
+            <div class="sub-emoji">🌾</div>
+            <div class="sub-body">
+              <div class="sub-name">Silken Tofu (blended)</div>
+              <div class="sub-desc">Vegan · very neutral taste</div>
+            </div>
+            <button class="swap-btn" onclick="closeSubModal()">Swap</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav -->
+      <div class="bottom-nav">
+        <div class="nav-item active" id="nav-home"    onclick="navTo('home')">
+          <div class="nav-icon">🏠</div><div class="nav-label">Home</div>
+        </div>
+        <div class="nav-item" id="nav-recipes" onclick="navTo('recipes')">
+          <div class="nav-icon">📋</div><div class="nav-label">Recipes</div>
+        </div>
+        <div class="nav-item" id="nav-cooking" onclick="navTo('cooking')">
+          <div class="nav-icon">🍳</div><div class="nav-label">Cook</div>
+        </div>
+      </div>
+
+    </div><!-- /phone-screen -->
+  </div><!-- /phone-ring -->
+
+</div><!-- /phone-wrap -->
+
+<!-- Load Agora Web SDK -->
+<script src="./AgoraRTC_N-4.22.0.js"></script>
+
+<script>
+/* ── helpers ── */
+const ring = document.getElementById('phoneRing');
+const di   = document.getElementById('dynamicIsland');
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function navTo(name) {
+  const map = { home:'view-home', recipes:'view-recipes', cooking:'view-cooking' };
+  showView(map[name]);
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-' + name)?.classList.add('active');
+  if (name !== 'home') setRingState(null);
+}
+
+function togglePill(el) { el.classList.toggle('active'); }
+
+/* ── Ring states ── */
+function setRingState(state) {
+  ring.classList.remove('listening','speaking');
+  if (state) ring.classList.add(state);
+  if (!state) { di.classList.remove('expanded'); }
+}
+
+/* ── Agora Voice Logic ── */
+const BACKEND_URL = 'http://localhost:3000'; // Adjust if backend is on a different port/host
+let rtcClient;
+let localAudioTrack;
+let currentSessionId;
+let isVoiceActive = false;
+
+async function initAgora() {
+  if (rtcClient) return;
+  rtcClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+  
+  rtcClient.on("user-published", async (user, mediaType) => {
+    await rtcClient.subscribe(user, mediaType);
+    if (mediaType === "audio") {
+      user.audioTrack.play();
+      setRingState('speaking'); // AI is speaking
+      document.getElementById('orbStatus').textContent = 'Responding…';
+      document.getElementById('diSub').textContent = 'Responding…';
+    }
+  });
+
+  rtcClient.on("user-unpublished", (user) => {
+    if (mediaType === "audio") {
+        setRingState('listening'); // Back to listening
+        document.getElementById('orbStatus').textContent = 'Listening…';
+        document.getElementById('diSub').textContent = 'Listening…';
+    }
+  });
+
+  // Volume indicator for VAD visualization
+  rtcClient.enableAudioVolumeIndicator();
+  rtcClient.on("volume-indicator", volumes => {
+    volumes.forEach((volume) => {
+      if (volume.uid === 0 && volume.level > 5) {
+        // Local user speaking
+        // Could animate listening ring more intensely here
+      } else if (volume.uid !== 0 && volume.level > 5) {
+        // Remote user (AI) speaking
+        setRingState('speaking');
+      }
+    });
+  });
+}
+
+async function activateVoice(qIdx) {
+  if (isVoiceActive) return;
+  isVoiceActive = true;
+
+  // UI Updates
+  di.classList.add('expanded');
+  document.getElementById('diTitle').textContent = 'Cooking Mama';
+  document.getElementById('diSub').textContent   = 'Connecting…';
+  setRingState('listening');
+  showView('view-listen');
+  document.getElementById('transcriptArea').innerHTML = '<div class="transcript-bubble" style="font-style:italic; opacity:0.7;">Connecting to AI...</div>';
+  document.getElementById('orbStatus').textContent    = 'Connecting…';
+
+  try {
+    // 1. Initialize Client
+    await initAgora();
+
+    // 2. Get Session & Token
+    // Use a random user ID for demo purposes
+    const userId = Math.floor(Math.random() * 100000).toString();
+    const channelName = "cooking_demo_" + userId;
+    
+    const sessionRes = await fetch(`${BACKEND_URL}/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, channelName })
+    });
+    
+    if (!sessionRes.ok) throw new Error("Failed to create session");
+    const sessionData = await sessionRes.json();
+    currentSessionId = sessionData.sessionId;
+
+    // 3. Join Channel
+    await rtcClient.join(sessionData.appId, sessionData.channelName, sessionData.token, sessionData.uid);
+
+    // 4. Publish Microphone
+    localAudioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+    await rtcClient.publish([localAudioTrack]);
+    
+    document.getElementById('transcriptArea').innerHTML = ''; // Clear "Connecting..."
+    document.getElementById('diSub').textContent = 'Listening…';
+    document.getElementById('orbStatus').textContent = 'Listening…';
+
+    // 5. Start Conversational AI Agent
+    const startRes = await fetch(`${BACKEND_URL}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: currentSessionId })
+    });
+    
+    if (!startRes.ok) throw new Error("Failed to start AI agent");
+    const startData = await startRes.json();
+    console.log("AI Agent started:", startData);
+
+  } catch (err) {
+    console.error(err);
+    alert("Error activating voice: " + err.message);
+    stopVoice();
+  }
+}
+
+function triggerSuggestion(e, idx) {
+  e.stopPropagation();
+  activateVoice(idx);
+}
+
+async function stopVoice() {
+  if (!isVoiceActive) return;
+  
+  try {
+    // Stop local track
+    if (localAudioTrack) {
+      localAudioTrack.close();
+      localAudioTrack = null;
+    }
+
+    // Leave channel
+    if (rtcClient) {
+      await rtcClient.leave();
+    }
+
+    // Stop AI Agent session
+    if (currentSessionId) {
+      await fetch(`${BACKEND_URL}/end`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: currentSessionId })
+      });
+      currentSessionId = null;
+    }
+
+  } catch (err) {
+    console.error("Error stopping voice:", err);
+  } finally {
+    isVoiceActive = false;
+    setRingState(null);
+    showView('view-home');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('nav-home').classList.add('active');
+  }
+}
+
+function goToCooking() {
+  stopVoice(); // Stop voice when navigating away
+  setRingState(null);
+  showView('view-cooking');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-cooking').classList.add('active');
+}
+
+/* ── Substitution modal ── */
+function showSubModal() { document.getElementById('subModal').classList.add('open'); }
+function closeSubModal() { document.getElementById('subModal').classList.remove('open'); }
+
+/* ── Converter ── */
+function updateConv() {
+  const v = parseFloat(document.getElementById('convInput').value) || 0;
+  document.getElementById('convResult').textContent = '= ' + (v * 14.787).toFixed(0) + ' mL';
+}
+
+/* ── Live countdown timer ── */
+let timerSec = 299;
+setInterval(() => {
+  if (timerSec > 0) timerSec--;
+  const m  = String(Math.floor(timerSec / 60)).padStart(2,'0');
+  const s  = String(timerSec % 60).padStart(2,'0');
+  const el = document.getElementById('timerVal');
+  if (el) el.textContent = m + ':' + s;
+  const f  = document.getElementById('timerFill');
+  if (f)  f.style.width = ((299 - timerSec) / 299 * 100) + '%';
+}, 1000);
+
+/* ── Dynamic greeting ── */
+(function() {
+  const h = new Date().getHours();
+  const g = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const el = document.getElementById('homeTime');
+  if (el) el.textContent = g;
+})();
+</script>
+</body>
+</html>
