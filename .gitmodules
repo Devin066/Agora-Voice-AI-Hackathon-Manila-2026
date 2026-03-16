@@ -1,0 +1,6 @@
+[submodule "submissions/submissions/Group B"]
+	path = submissions/submissions/Group B
+	url = https://github.com/rylsherdamz-rgb/charmaine-v2.git
+[submodule "submissions/Group B/claw"]
+	path = submissions/Group B/claw
+	url = https://github.com/rylsherdamz-rgb/charmaine-v2.git

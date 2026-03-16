@@ -1,0 +1,305 @@
+```markdown
+# Prompt Trace Documentation
+
+## Charmaine — AI Study Partner
+
+This document tracks the AI prompts used during development of **Charmaine**.  
+It records how AI tools (such as ChatGPT or Gemini) were used to assist with:
+
+- Architecture design
+- Feature implementation
+- Debugging
+- Documentation generation
+- Prompt engineering
+
+This improves reproducibility, transparency, and academic integrity.
+
+---
+
+# AI Tools Used
+
+| Tool | Purpose |
+|-----|------|
+| ChatGPT | Development assistance, debugging, architecture guidance |
+| Google Gemini | Quiz generation and Q&A inside the application |
+| OpenAI Voice | Voice synthesis through Agora Conversational AI |
+
+---
+
+# Prompt Categories
+
+Prompts used during development fall into the following categories:
+
+1. Architecture Design  
+2. Feature Implementation  
+3. AI Prompt Engineering  
+4. Bug Fixing  
+5. Documentation Generation  
+
+---
+
+# Prompt Trace Examples
+
+## 1. Architecture Design Prompt
+
+**Purpose**
+
+Design the system architecture for an AI study application using Expo and AI services.
+
+**Prompt**
+
+```
+
+Design a modular architecture for an Expo React Native application that:
+
+* extracts text from PDFs
+* extracts text from images using OCR
+* allows editing extracted text
+* generates quizzes using Google Gemini
+* converts text into an audiobook reader
+* uses Agora Conversational AI for high-quality TTS
+* falls back to Expo Speech when offline
+
+Provide a recommended folder structure and component architecture.
+
+```
+
+**Outcome**
+
+Generated the base structure:
+
+```
+
+app/
+hooks/
+context/
+server/
+
+```
+
+and helped define the data flow between extraction, editing, and study tools.
+
+---
+
+# 2. Quiz Generation Prompt
+
+**Purpose**
+
+Generate quizzes from extracted text using Gemini.
+
+**Prompt Template**
+
+```
+
+You are an AI study assistant.
+
+Generate quiz questions from the following text.
+
+TEXT:
+{extractedText}
+
+Requirements:
+
+* Include multiple choice questions
+* Include true/false questions
+* Include concept explanation questions
+* Difficulty level: {difficulty}
+* Number of questions: {depth}
+
+Return JSON format:
+
+{
+"questions": [
+{
+"type": "multiple-choice",
+"question": "",
+"options": [],
+"answer": ""
+}
+]
+}
+
+```
+
+**Outcome**
+
+Used inside:
+
+```
+
+hooks/useGemini.ts
+
+```
+
+for quiz generation.
+
+---
+
+# 3. AI Tutor Q&A Prompt
+
+**Purpose**
+
+Enable contextual Q&A inside the eBook reader.
+
+**Prompt Template**
+
+```
+
+You are an AI tutor helping a student understand a chapter.
+
+Chapter Text:
+{chapterText}
+
+Student Question:
+{userQuestion}
+
+Explain the answer clearly and concisely.
+Use examples when possible.
+
+```
+
+**Outcome**
+
+Used in the eBook reader Q&A feature.
+
+---
+
+# 4. Voice Tutor Context Prompt
+
+**Purpose**
+
+Provide context to the Agora Conversational AI voice agent.
+
+**Prompt**
+
+```
+
+You are a friendly AI tutor reading a study chapter.
+
+Context:
+{chapterText}
+
+When speaking:
+
+* explain complex ideas clearly
+* answer questions about the chapter
+* guide the student through the material
+* keep responses concise
+
+```
+
+**Outcome**
+
+Used when starting the voice agent session.
+
+---
+
+# 5. Debugging Prompt
+
+**Purpose**
+
+Assist with debugging React Native / Expo integration issues.
+
+**Example Prompt**
+
+```
+
+I am building an Expo React Native application with:
+
+* Agora Conversational AI
+* WebRTC voice streaming
+* Gemini API
+* Expo Speech fallback
+
+The Agora voice agent only works on web builds.
+
+Explain why this happens and suggest solutions.
+
+```
+
+**Outcome**
+
+Helped identify WebRTC limitations in native Expo environments.
+
+---
+
+# 6. Documentation Generation Prompt
+
+**Purpose**
+
+Generate structured README documentation.
+
+**Prompt**
+
+```
+
+Create a professional README for an AI study companion app called Charmaine.
+
+The app:
+
+* extracts text from PDFs and images
+* generates quizzes with Google Gemini
+* converts notes into an audiobook
+* uses Agora Conversational AI for high quality TTS
+* falls back to expo-speech offline
+
+Include:
+
+* features
+* tech stack
+* setup instructions
+* user flow
+* project structure
+
+```
+
+**Outcome**
+
+Produced the base README documentation.
+
+---
+
+# Prompt Engineering Notes
+
+The following strategies improved AI output quality:
+
+### Context Injection
+
+Providing the chapter text improves tutor accuracy.
+
+### Structured JSON Output
+
+Quiz generation requires strict JSON format.
+
+### Difficulty Controls
+
+Quiz prompts include:
+
+```
+
+Difficulty: Easy | Medium | Hard
+Depth: Number of questions
+
+```
+
+---
+
+# Reproducibility
+
+To reproduce AI outputs:
+
+1. Use the same prompt templates  
+2. Provide similar extracted text  
+3. Use the same AI model version  
+
+---
+
+# Future Improvements
+
+Planned prompt improvements include:
+
+- adaptive quiz difficulty
+- AI-generated summaries
+- concept dependency graphs
+- automatic flashcard generation
+```
