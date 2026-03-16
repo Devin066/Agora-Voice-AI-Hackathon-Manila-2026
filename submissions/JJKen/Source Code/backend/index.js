@@ -10,14 +10,17 @@ const API_BASE = '/api/v1';
 const SESSION_TTL_MINUTES = Number(process.env.SESSION_TTL_MINUTES || 120);
 const CONVO_AI_BASE_URL = process.env.AGORA_CONVO_AI_BASE_URL || 'https://api.agora.io';
 const CONVO_AI_START_PATH_TEMPLATE =
-  process.env.AGORA_CONVO_AI_START_PATH || '/api/conversational-ai/v1/projects/{appId}/join';
+  process.env.AGORA_CONVO_AI_START_PATH || '/api/conversational-ai-agent/v2/projects/{appId}/join';
 const CONVO_AI_STOP_PATH_TEMPLATE =
-  process.env.AGORA_CONVO_AI_STOP_PATH || '/api/conversational-ai/v1/projects/{appId}/leave';
+  process.env.AGORA_CONVO_AI_STOP_PATH ||
+  '/api/conversational-ai-agent/v2/projects/{appId}/agents/{agentId}/leave';
 const CONVO_AI_TIMEOUT_MS = Number(process.env.CONVO_AI_TIMEOUT_MS || 10000);
 const CONVO_AI_RETRIES = Number(process.env.CONVO_AI_RETRIES || 1);
 const DEFAULT_ASSISTANT_PROMPT =
   process.env.DEFAULT_ASSISTANT_PROMPT || 'You are a helpful real-time cooking assistant.';
 const DEFAULT_ASSISTANT_NAME = process.env.DEFAULT_ASSISTANT_NAME || 'cook-assistant';
+const DEFAULT_TTS_ADDON = process.env.DEFAULT_TTS_ADDON || '';
+const MAX_RTC_UID = 2147483647;
 
 const sessions = new Map();
 
@@ -51,12 +54,20 @@ app.use((req, res, next) => {
 
 function toUid(userId) {
   const parsed = Number.parseInt(userId, 10);
-  if (Number.isInteger(parsed) && parsed >= 0) {
-    return parsed;
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return ((parsed - 1) % MAX_RTC_UID) + 1;
   }
 
   const hex = crypto.createHash('sha256').update(String(userId)).digest('hex').slice(0, 8);
-  return Number.parseInt(hex, 16) >>> 0;
+  return (Number.parseInt(hex, 16) % MAX_RTC_UID) + 1;
+}
+
+function normalizeRtcUid(uid) {
+  const n = Number.parseInt(uid, 10);
+  if (!Number.isInteger(n) || n <= 0) {
+    return 1;
+  }
+  return ((n - 1) % MAX_RTC_UID) + 1;
 }
 
 function buildRtcToken({ appId, appCertificate, channelName, uid }) {
@@ -73,8 +84,19 @@ function buildRtcToken({ appId, appCertificate, channelName, uid }) {
   );
 }
 
-function getConvoAiPath(pathTemplate) {
-  return pathTemplate.replace('{appId}', process.env.AGORA_APP_ID || '');
+function getConvoAiPath(pathTemplate, params = {}) {
+  const mergedParams = {
+    appId: process.env.AGORA_APP_ID || '',
+    ...params
+  };
+
+  return pathTemplate.replace(/\{(\w+)\}/g, (match, key) => {
+    const value = mergedParams[key];
+    if (value === undefined || value === null) {
+      return match;
+    }
+    return String(value);
+  });
 }
 
 function isRealEnvValue(value) {
@@ -167,15 +189,59 @@ async function callConvoAi({ path, body }) {
 
 async function startConvoAiAgent(session, agentConfig = {}) {
   const path = getConvoAiPath(CONVO_AI_START_PATH_TEMPLATE);
+  const providedProperties =
+    agentConfig.properties && typeof agentConfig.properties === 'object' ? agentConfig.properties : {};
+  const llmPrompt = agentConfig.prompt || DEFAULT_ASSISTANT_PROMPT;
+  const mergedLlm =
+    providedProperties.llm && typeof providedProperties.llm === 'object' ? { ...providedProperties.llm } : {};
+  const enableStringUid =
+    agentConfig.enableStringUid !== undefined ? Boolean(agentConfig.enableStringUid) : true;
+  const remoteRtcUids =
+    Array.isArray(agentConfig.remoteRtcUids) && agentConfig.remoteRtcUids.length > 0
+      ? agentConfig.remoteRtcUids.map((uid) => normalizeRtcUid(uid))
+      : [normalizeRtcUid(session.uid)];
+
+  // Agent and remote participants must not share the same RTC UID in the same channel.
+  let agentRtcUid =
+    agentConfig.agentRtcUid !== undefined
+      ? normalizeRtcUid(agentConfig.agentRtcUid)
+      : normalizeRtcUid(session.uid + 1);
+  if (remoteRtcUids.includes(agentRtcUid)) {
+    agentRtcUid = normalizeRtcUid(agentRtcUid + 1);
+  }
+
+  if (!Array.isArray(mergedLlm.system_messages) || mergedLlm.system_messages.length === 0) {
+    mergedLlm.system_messages = [{ role: 'system', content: llmPrompt }];
+  }
+
+  const mergedTts =
+    providedProperties.tts && typeof providedProperties.tts === 'object' ? { ...providedProperties.tts } : {};
+  if (!mergedTts.addon && isRealEnvValue(agentConfig.ttsAddon)) {
+    mergedTts.addon = agentConfig.ttsAddon;
+  }
+  if (!mergedTts.addon && isRealEnvValue(DEFAULT_TTS_ADDON)) {
+    mergedTts.addon = DEFAULT_TTS_ADDON;
+  }
+  if (!mergedTts.addon) {
+    const error = new Error(
+      'Missing Conversational AI TTS addon. Provide agentConfig.properties.tts.addon or set DEFAULT_TTS_ADDON.'
+    );
+    error.status = 500;
+    throw error;
+  }
+
   const payload = {
-    channelName: session.channelName,
-    rtc: {
-      uid: String(session.uid),
-      token: session.rtcToken
-    },
-    agent: {
-      name: agentConfig.name || DEFAULT_ASSISTANT_NAME,
-      prompt: agentConfig.prompt || DEFAULT_ASSISTANT_PROMPT
+    name: agentConfig.name || DEFAULT_ASSISTANT_NAME,
+    properties: {
+      channel: session.channelName,
+      token: session.rtcToken,
+      agent_rtc_uid: enableStringUid ? String(agentRtcUid) : agentRtcUid,
+      remote_rtc_uids: enableStringUid ? remoteRtcUids.map((uid) => String(uid)) : remoteRtcUids,
+      enable_string_uid: enableStringUid,
+      idle_timeout: Number(agentConfig.idleTimeout || 120),
+      ...providedProperties,
+      llm: mergedLlm,
+      tts: mergedTts
     }
   };
 
@@ -192,11 +258,25 @@ async function startConvoAiAgent(session, agentConfig = {}) {
 }
 
 async function stopConvoAiAgent(session) {
-  const path = getConvoAiPath(CONVO_AI_STOP_PATH_TEMPLATE);
-  const payload = {
-    channelName: session.channelName,
-    agentSessionId: session.agentSessionId || undefined
-  };
+  const pathTemplate = CONVO_AI_STOP_PATH_TEMPLATE;
+  const usesAgentIdPath = pathTemplate.includes('{agentId}');
+
+  if (usesAgentIdPath && !session.agentSessionId) {
+    const error = new Error('Missing agent session id for Conversational AI leave endpoint');
+    error.status = 400;
+    throw error;
+  }
+
+  const path = getConvoAiPath(pathTemplate, {
+    agentId: session.agentSessionId
+  });
+  const payload = usesAgentIdPath
+    ? {}
+    : {
+        channelName: session.channelName,
+        agentSessionId: session.agentSessionId || undefined
+      };
+
   return callConvoAi({ path, body: payload });
 }
 
