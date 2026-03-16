@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 import base64
 import httpx
+import random
+import string
 from prompts import get_system_prompt
 
 router = APIRouter(prefix="/session", tags=["session"])
@@ -71,6 +73,11 @@ def _generate_agent_token(channel: str, uid: int) -> str:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate Agora token: {str(e)}")
 
+def _generate_channel_name() -> str:
+    timestamp = int(datetime.now().timestamp())
+    random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+    return f"ai-conversation-{timestamp}-{random_str}"
+
 
 @router.post("/start", response_model=StartSessionResponse)
 async def start_session(body: StartSessionRequest):
@@ -81,7 +88,7 @@ async def start_session(body: StartSessionRequest):
         if not base_url or not app_id:
             raise HTTPException(status_code=500, detail="Missing AGORA_CONVO_AI_BASE_URL or AGORA_APP_ID")
 
-        channel = body.channelName or f"ai-conversation-{int(datetime.now().timestamp())}"
+        channel = body.channelName or _generate_channel_name()
         token = _generate_agent_token(channel, agent_uid)
 
         system_prompt = get_system_prompt(body.scenario)

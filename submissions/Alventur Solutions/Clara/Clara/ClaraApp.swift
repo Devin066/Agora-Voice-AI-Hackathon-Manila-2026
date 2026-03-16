@@ -1,10 +1,3 @@
-//
-//  ClaraApp.swift
-//  Clara
-//
-//  Created by Ali on 3/16/26.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -12,7 +5,7 @@ import SwiftData
 struct ClaraApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            VoiceSession.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

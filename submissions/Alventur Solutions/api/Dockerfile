@@ -5,7 +5,6 @@ WORKDIR /var/task
 COPY requirements.txt ./
 RUN python -m pip install -r requirements.txt
 COPY main.py ./
-COPY class_types ./class_types
 COPY routes ./routes
 COPY prompts ./prompts
 CMD exec uvicorn main:app --port=$PORT --host=0.0.0.0 --limit-concurrency=100

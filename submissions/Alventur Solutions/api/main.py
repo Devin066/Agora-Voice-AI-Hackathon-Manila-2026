@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routes import agent, token
-from routes import session
+from routes import token, session
 import os
 from datetime import datetime, timezone
 
@@ -31,7 +30,6 @@ async def health():
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 # Register routes
-app.include_router(agent.router)
 app.include_router(token.router)
 app.include_router(session.router)
 

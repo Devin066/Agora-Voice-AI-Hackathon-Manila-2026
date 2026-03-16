@@ -6,8 +6,8 @@ struct HealthResponse: Decodable {
 }
 
 struct TokenGenerateRequest: Encodable {
-    let channelName: String
-    let uid: Int
+    let channelName: String?
+    let uid: Int?
 }
 
 struct TokenResponse: Decodable {
@@ -55,4 +55,8 @@ struct StopSessionResponse: Decodable {
     let sessionId: String
     let status: String
     let stoppedAt: String
+}
+
+struct BackendErrorResponse: Decodable {
+    let detail: String
 }
