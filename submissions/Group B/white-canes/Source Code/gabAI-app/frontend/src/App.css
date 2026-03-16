@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #080810;
+  background-image: 
+    radial-gradient(ellipse at 0% 0%, rgba(79, 70, 229, 0.25) 0%, transparent 60%), 
+    radial-gradient(ellipse at 100% 0%, rgba(168, 85, 247, 0.2) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 100%, rgba(236, 72, 153, 0.1) 0%, transparent 60%);
+  color: white;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Base Glass Effect — pure CSS, no @apply */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* ==================== VOICE ORB ==================== */
+.voice-orb-container {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.voice-orb-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.18) 0%, transparent 70%);
+  animation: pulseOuter 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.voice-orb {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  box-shadow: 
+    0 0 40px rgba(99, 102, 241, 0.4),
+    inset 0 0 20px rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.5s ease;
+}
+
+.voice-orb.connected {
+  width: 210px;
+  height: 210px;
+  box-shadow: 
+    0 0 70px rgba(168, 85, 247, 0.6),
+    inset 0 0 30px rgba(255, 255, 255, 0.25);
+  animation: floatOrb 3s infinite ease-in-out;
+}
+
+.avatar-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  transform: scale(1.05);
+}
+
+/* ==================== ANIMATIONS ==================== */
+@keyframes pulseOuter {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+
+@keyframes floatOrb {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes waveGrow {
+  0%, 100% { height: 8px; opacity: 0.3; }
+  50% { height: 44px; opacity: 1; }
+}
+
+/* ==================== SOUND WAVE ==================== */
+.sound-wave {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 56px;
+}
+
+.wave-bar {
+  width: 4px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  opacity: 0.3;
+  transition: height 0.3s ease;
+}
+
+.connected .wave-bar {
+  animation: waveGrow 1.2s infinite ease-in-out;
+}
+
+/* ==================== SUGGESTION CARDS ==================== */
+.suggestion-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 20px 24px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.suggestion-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* ==================== TEXT GRADIENT ==================== */
+.text-gradient {
+  background: linear-gradient(to bottom right, #ffffff 30%, #a5b4fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ==================== BUTTONS ==================== */
+.btn-primary {
+  height: 60px;
+  padding: 0 36px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.45);
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px -5px rgba(79, 70, 229, 0.55);
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary.end-call {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.45);
+}
+
+.btn-primary.end-call:hover {
+  box-shadow: 0 16px 32px -5px rgba(239, 68, 68, 0.55);
+}
+
+.btn-secondary {
+  height: 60px;
+  width: 60px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:active {
+  transform: scale(0.94);
+}
+
+.btn-secondary.muted {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
