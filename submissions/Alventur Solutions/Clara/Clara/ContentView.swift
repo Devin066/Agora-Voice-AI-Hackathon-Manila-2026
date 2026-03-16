@@ -7,10 +7,14 @@
 
 import SwiftUI
 import SwiftData
+import Foundation
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var items: [Item]
+    @State private var statusText: String = ""
+    @State private var selectedScenario: ScenarioType = .publicSpeaking
+    @State private var currentSessionId: String? = nil
 
     var body: some View {
         NavigationSplitView {
@@ -23,6 +27,45 @@ struct ContentView: View {
                     }
                 }
                 .onDelete(perform: deleteItems)
+                Section("VoiceIQ Backend") {
+                    Text(statusText.isEmpty ? "Idle" : statusText)
+                    Picker("Scenario", selection: $selectedScenario) {
+                        ForEach(ScenarioType.allCases) { s in
+                            Text(s.label).tag(s)
+                        }
+                    }
+                    Button("Ping Backend") {
+                        Task {
+                            do {
+                                let res = try await APIClient.shared.health()
+                                statusText = "\(res.status)"
+                            } catch {
+                                statusText = "error"
+                            }
+                        }
+                    }
+                    Button(currentSessionId == nil ? "Start Session" : "Stop Session") {
+                        Task {
+                            if currentSessionId == nil {
+                                do {
+                                    let start = try await APIClient.shared.startSession(channelName: nil, scenario: selectedScenario, userId: nil)
+                                    currentSessionId = start.sessionId
+                                    statusText = start.status
+                                } catch {
+                                    statusText = "error"
+                                }
+                            } else if let id = currentSessionId {
+                                do {
+                                    let stop = try await APIClient.shared.stopSession(sessionId: id, channelName: nil)
+                                    statusText = stop.status
+                                    currentSessionId = nil
+                                } catch {
+                                    statusText = "error"
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
