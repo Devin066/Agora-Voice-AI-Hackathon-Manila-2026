@@ -143,6 +143,7 @@ class VoiceSessionCoordinator: ObservableObject {
             }
 
             try speechAnalyzer.start()
+            agoraService.reconfigureAudioRoute()
 
             let newSession = VoiceSession(
                 id: startResponse.sessionId,

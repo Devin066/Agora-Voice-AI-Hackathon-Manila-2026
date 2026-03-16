@@ -33,7 +33,7 @@ enum AgoraVoiceServiceError: LocalizedError {
         case .leaveFailed(let code):
             return "Failed to leave Agora channel (code: \(code))."
         case .timeout:
-            return "Timed out while joining Agora channel."
+            return "Timed out while waiting for Agora join confirmation."
         }
     }
 }
@@ -76,6 +76,8 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
     private var activeRemoteUid: UInt?
     private var joinContinuation: CheckedContinuation<Void, Error>?
     private var didLogFirstRecordFrame = false
+    private var routeChangeObserver: NSObjectProtocol?
+    private var interruptionObserver: NSObjectProtocol?
 
     func setExpectedAgentUid(_ uid: UInt) {
         expectedAgentUid = uid
@@ -83,12 +85,19 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
     }
 
     func reconfigureAudioRoute() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("[agora] failed to activate audio session while reconfiguring route: \(error)")
+        }
+
         _ = engine?.setEnableSpeakerphone(true)
         do {
             try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
         } catch {
             print("[agora] failed to override output to speaker: \(error)")
         }
+        logCurrentAudioRoute(context: "reconfigureAudioRoute")
         print("[agora] reconfigured audio route to speakerphone")
     }
 
@@ -99,6 +108,7 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         }
 
         print("[agora] start localUid=\(uid) expectedAgentUid=\(agentUid) channel=\(channelName)")
+        print("[agora] startup step=engine_init_begin")
 
         if engine == nil {
             let config = AgoraRtcEngineConfig()
@@ -107,7 +117,9 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
             let rtcEngine = AgoraRtcEngineKit.sharedEngine(with: config, delegate: self)
             rtcEngine.setAudioFrameDelegate(self)
             engine = rtcEngine
+            installAudioSessionObserversIfNeeded()
         }
+        print("[agora] startup step=engine_init_done")
 
         // In Agora iOS 4.x, register frame format explicitly so record callbacks fire predictably.
         if let engine {
@@ -121,20 +133,26 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
                 print("[agora] setRecordingAudioFrameParameters failed code=\(result)")
             }
         }
+        print("[agora] startup step=record_frame_params_done")
 
-        try configureAudioSession()
+        configureAudioSessionBestEffort()
+        print("[agora] startup step=audio_session_config_done")
         onAgentSpeakingChanged?(false)
         expectedAgentUid = agentUid
         activeRemoteUid = nil
 
         _ = engine?.enableAudio()
         _ = engine?.enableLocalAudio(true)
+        _ = engine?.muteAllRemoteAudioStreams(false)
         _ = engine?.setDefaultAudioRouteToSpeakerphone(true)
         _ = engine?.setEnableSpeakerphone(true)
         _ = engine?.enableAudioVolumeIndication(200, smooth: 3, reportVad: true)
         reconfigureAudioRoute()
+        print("[agora] startup step=agora_audio_flags_done")
 
+        print("[agora] startup step=join_begin")
         try await joinChannel(token: token, channelName: channelName, uid: uid)
+        print("[agora] startup step=join_done")
     }
 
     func stop() async {
@@ -153,20 +171,96 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
     }
 
     deinit {
+        if let routeChangeObserver {
+            NotificationCenter.default.removeObserver(routeChangeObserver)
+        }
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+        }
+
         DispatchQueue.main.async {
             AgoraRtcEngineKit.destroy()
         }
     }
 
-    private func configureAudioSession() throws {
+    private func configureAudioSessionBestEffort() {
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(
-            .playAndRecord,
-            mode: .voiceChat,
-            options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP]
-        )
-        try audioSession.setActive(true)
-        try audioSession.overrideOutputAudioPort(.speaker)
+        do {
+            try audioSession.setCategory(
+                .playAndRecord,
+                mode: .voiceChat,
+                options: [.defaultToSpeaker, .allowBluetooth]
+            )
+            try audioSession.setActive(true)
+            try audioSession.overrideOutputAudioPort(.speaker)
+            logCurrentAudioRoute(context: "configureAudioSession voiceChat")
+            return
+        } catch {
+            print("[agora] voiceChat audio session config failed: \(error)")
+        }
+
+        // Fallback: keep call running even if preferred mode fails.
+        do {
+            try audioSession.setCategory(
+                .playAndRecord,
+                mode: .default,
+                options: [.defaultToSpeaker, .allowBluetooth]
+            )
+            try audioSession.setActive(true)
+            try audioSession.overrideOutputAudioPort(.speaker)
+            logCurrentAudioRoute(context: "configureAudioSession fallback")
+        } catch {
+            print("[agora] fallback audio session config failed: \(error)")
+        }
+    }
+
+    private func installAudioSessionObserversIfNeeded() {
+        guard routeChangeObserver == nil, interruptionObserver == nil else { return }
+
+        routeChangeObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            self.handleRouteChange(notification)
+        }
+
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self else { return }
+            self.handleInterruption(notification)
+        }
+    }
+
+    private func handleRouteChange(_ notification: Notification) {
+        let reasonValue = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+        let reason = reasonValue.flatMap { AVAudioSession.RouteChangeReason(rawValue: $0) }
+        print("[agora] audio route changed reason=\(String(describing: reason))")
+        logCurrentAudioRoute(context: "routeChange before recover")
+
+        // Keep playback on speaker during active RTC sessions.
+        reconfigureAudioRoute()
+    }
+
+    private func handleInterruption(_ notification: Notification) {
+        let typeValue = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+        let type = typeValue.flatMap { AVAudioSession.InterruptionType(rawValue: $0) }
+
+        if type == .ended {
+            print("[agora] audio interruption ended; restoring route")
+            reconfigureAudioRoute()
+        }
+    }
+
+    private func logCurrentAudioRoute(context: String) {
+        let session = AVAudioSession.sharedInstance()
+        let outputs = session.currentRoute.outputs.map { "\($0.portType.rawValue):\($0.portName)" }.joined(separator: ",")
+        let inputs = session.currentRoute.inputs.map { "\($0.portType.rawValue):\($0.portName)" }.joined(separator: ",")
+        print("[agora] audio route [\(context)] outputs=[\(outputs)] inputs=[\(inputs)] category=\(session.category.rawValue) mode=\(session.mode.rawValue)")
     }
 
     private func joinChannel(token: String, channelName: String, uid: UInt) async throws {
@@ -181,11 +275,11 @@ final class AgoraVoiceService: NSObject, AgoraVoiceServiceProtocol {
         options.autoSubscribeAudio = true
 
         let timeoutTask = Task { [weak self] in
-            try await Task.sleep(nanoseconds: 8_000_000_000)
+            try await Task.sleep(nanoseconds: 45_000_000_000)
             await MainActor.run {
                 guard let self else { return }
                 if let continuation = self.joinContinuation {
-                    print("[agora] join timeout after 8s")
+                    print("[agora] join confirmation timeout after 45s")
                     self.joinContinuation = nil
                     continuation.resume(throwing: AgoraVoiceServiceError.timeout)
                 }
@@ -267,6 +361,13 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
                 self.joinContinuation = nil
                 continuation.resume()
             }
+
+            if state == .failed {
+                if let continuation = self.joinContinuation {
+                    self.joinContinuation = nil
+                    continuation.resume(throwing: AgoraVoiceServiceError.joinFailed(code: -1))
+                }
+            }
         }
     }
 
@@ -275,6 +376,7 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
             guard let self else { return }
             print("[agora] remoteJoined uid=\(uid) expectedAgentUid=\(String(describing: self.expectedAgentUid))")
 
+            self.reconfigureAudioRoute()
             _ = engine.muteRemoteAudioStream(uid, mute: false)
 
             if self.activeRemoteUid == nil {
@@ -308,6 +410,10 @@ extension AgoraVoiceService: AgoraRtcEngineDelegate {
         print("[agora] remoteAudioState uid=\(uid) state=\(state.rawValue) reason=\(reason.rawValue)")
         Task { @MainActor [weak self] in
             guard let self else { return }
+            if state == .starting || state == .decoding {
+                self.reconfigureAudioRoute()
+            }
+
             // Accept the expected agent UID or fall back to any remote user if agent UID is 0
             let isAgent = self.expectedAgentUid == 0 || uid == self.expectedAgentUid
             guard isAgent else { return }
