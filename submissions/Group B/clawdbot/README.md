@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Multi-school (multi-tenant) demo platform for school document requests + OCR + AI assistant (Gemini optional) + voice room (Agora optional).
 
 ## Getting Started
 
@@ -6,31 +6,39 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo Flow (In-Memory Backend)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Go to `/`
+- Pick a school (tenant) or create one
+- Use "Demo login" to sign in as `student`, `teacher`, or `school_admin`
+- Open the tenant dashboard at `/s/[schoolId]`
+- Request documents at `/s/[schoolId]/documents`
+- Track requests at `/s/[schoolId]/requests`
+- Run OCR uploads at `/s/[schoolId]/upload`
+- Chat with the assistant at `/s/[schoolId]/assistant`
+- Admin pages:
+  - Requests: `/s/[schoolId]/admin/requests`
+  - Audit: `/s/[schoolId]/admin/audit`
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+- Supabase (optional; currently not used by the demo store):
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_KEY`
+- Gemini (optional, for `/api/ai/chat`):
+  - `GEMINI_API_KEY` (server-side)
+- Agora voice (optional):
+  - `NEXT_PUBLIC_AGORA_APP_ID` (client-side)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Supabase Backend
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The current implementation uses an in-memory store for hackathon-friendly local development. The next step is adding a Supabase schema + RLS and switching the API routes to use Supabase. See `CODEX_PROMPT.md`.
 
-## Deploy on Vercel
+## Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- This is a demo auth flow (HttpOnly cookies set by `/api/auth/login`). Don’t ship as-is.
+- The OCR validation check is a simple heuristic (looks for name/email tokens).
